@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { Gift, Search, Sparkles, CheckCircle2, Lock, Heart } from 'lucide-react';
+import { Gift, Search, Sparkles, CheckCircle2, Lock, Heart, ChevronDown, ChevronUp } from 'lucide-react';
 import { INITIAL_CATEGORIES } from '../data/initialGifts';
 
 export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmin, isLoading = false }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [mimoCategory, setMimoCategory] = useState('Todos');
+  const [mimosExpanded, setMimosExpanded] = useState(false);
 
   const safeGifts = Array.isArray(gifts) ? gifts : [];
 
@@ -17,11 +19,24 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
         (gift.title && gift.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (gift.description && gift.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      return matchSearch;
-    });
+    }).sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999));
   }, [safeGifts, searchQuery]);
 
-  const mimos = useMemo(() => safeGifts.filter(g => g.category !== 'Fraldas'), [safeGifts]);
+  const mimos = useMemo(() => {
+    const pWeight = { high: 1, medium: 2, low: 3 };
+    return safeGifts.filter(g => g.category !== 'Fraldas').sort((a, b) => {
+      const pA = pWeight[a.priority || 'medium'] || 2;
+      const pB = pWeight[b.priority || 'medium'] || 2;
+      if (pA !== pB) return pA - pB;
+      return (a.displayOrder || 999) - (b.displayOrder || 999);
+    });
+  }, [safeGifts]);
+
+  const filteredMimos = useMemo(() => {
+    return mimos.filter(m => mimoCategory === 'Todos' || m.category === mimoCategory);
+  }, [mimos, mimoCategory]);
+
+  const mimoCategories = ['Todos', ...Array.from(new Set(mimos.map(m => m.category)))];
 
   return (
     <section id="presentes" className="py-16 md:py-20 relative">
@@ -68,14 +83,38 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
           {/* Mimos Preview Section */}
           {mimos.length > 0 && (
             <div className="bg-white/60 border border-slate-200/60 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg">🧸</span>
-                <h3 className="font-semibold text-sm text-slate-700 uppercase tracking-wide">Mimos disponíveis para acompanhar:</h3>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🧸</span>
+                  <h3 className="font-semibold text-sm text-slate-700 uppercase tracking-wide">Mimos disponíveis para acompanhar:</h3>
+                </div>
+                {mimos.length > 5 && (
+                  <button 
+                    onClick={() => setMimosExpanded(!mimosExpanded)}
+                    className="text-xs text-blush-600 hover:text-blush-700 font-semibold flex items-center gap-1"
+                  >
+                    {mimosExpanded ? <><ChevronUp className="w-3.5 h-3.5" /> Ocultar</> : <><ChevronDown className="w-3.5 h-3.5" /> Ver todos</>}
+                  </button>
+                )}
               </div>
+
+              {/* Categories */}
+              <div className="flex gap-2 overflow-x-auto pb-2 mb-2 scrollbar-none text-[11px]">
+                {mimoCategories.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setMimoCategory(cat)}
+                    className={`px-3 py-1 rounded-full whitespace-nowrap transition-colors ${mimoCategory === cat ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
               <div className="relative">
                 <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white/90 to-transparent z-10" />
-                <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none overscroll-x-contain pr-4">
-                  {mimos.map(mimo => {
+                <div className={`flex gap-2.5 ${mimosExpanded ? 'flex-wrap' : 'overflow-x-auto pb-2 scrollbar-none overscroll-x-contain pr-4'}`}>
+                  {filteredMimos.map(mimo => {
                     const mimoPledges = pledges.filter(p => p.giftId === mimo.id);
                     const mimoPledgedTotal = mimoPledges.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
                     const mimoTarget = Number(mimo.targetQuantity) || 5;
@@ -84,7 +123,12 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
                     return (
                       <div key={mimo.id} className={`whitespace-nowrap px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 border transition-all ${isMimoCompleted ? 'bg-slate-50 text-slate-400 border-slate-200 opacity-60' : 'bg-blush-50 text-blush-700 border-blush-100 hover:bg-blush-100/70'}`}>
                         <span className="text-base">{mimo.icon || '🎁'}</span>
-                        <span className="truncate max-w-[150px]">{mimo.title}</span>
+                        <div className="flex flex-col">
+                          <span className="truncate max-w-[150px]">{mimo.title}</span>
+                          {mimo.priority === 'high' && !isMimoCompleted && (
+                            <span className="text-[9px] text-amber-600 font-bold tracking-tight">★ Preferência</span>
+                          )}
+                        </div>
                       </div>
                     );
                   })}

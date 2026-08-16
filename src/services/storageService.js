@@ -62,8 +62,9 @@ function mapConfigToDB(cfg) {
   };
 }
 
-function mapGiftFromDB(row) {
+function mapGiftFromDB(row, index = 0) {
   let targetQuantity = 5;
+  let displayOrder = 999;
   let cleanDescription = row.description || '';
 
   // 1. Extrair tag de metadados [meta:X] da descrição se presente
@@ -73,9 +74,24 @@ function mapGiftFromDB(row) {
     cleanDescription = cleanDescription.replace(/\s*\[meta:\d+\]/, '').trim();
   }
 
-  // 2. Se a coluna nativa do Supabase existir e tiver valor, ela tem precedência
+  // 2. Extrair tag [order:X] da descrição
+  const orderMatch = cleanDescription.match(/\[order:(\d+)\]/);
+  if (orderMatch) {
+    displayOrder = parseInt(orderMatch[1], 10) || 999;
+    cleanDescription = cleanDescription.replace(/\s*\[order:\d+\]/, '').trim();
+  }
+
+  // 3. Se a coluna nativa do Supabase existir e tiver valor, ela tem precedência
   if (row.target_quantity !== undefined && row.target_quantity !== null) {
     targetQuantity = Number(row.target_quantity);
+  }
+
+  if (row.display_order !== undefined && row.display_order !== null) {
+    displayOrder = Number(row.display_order);
+  } else if (row.position !== undefined && row.position !== null) {
+    displayOrder = Number(row.position);
+  } else if (!orderMatch) {
+    displayOrder = index + 1; // fallback
   }
 
   return {
@@ -89,14 +105,16 @@ function mapGiftFromDB(row) {
     reservedAt: row.reserved_at || null,
     priority: row.priority || 'medium',
     targetQuantity: targetQuantity,
+    displayOrder: displayOrder,
   };
 }
 
 function mapGiftToDB(g) {
   const targetQty = Number(g.targetQuantity || 5);
-  let desc = (g.description || '').replace(/\s*\[meta:\d+\]/, '').trim();
+  const displayOrder = Number(g.displayOrder || 999);
+  let desc = (g.description || '').replace(/\s*\[meta:\d+\]/, '').replace(/\s*\[order:\d+\]/, '').trim();
   // Inclui tag de metadados para persistência garantida em qualquer ambiente
-  const descWithMeta = desc ? `${desc} [meta:${targetQty}]` : `[meta:${targetQty}]`;
+  const descWithMeta = desc ? `${desc} [meta:${targetQty}] [order:${displayOrder}]` : `[meta:${targetQty}] [order:${displayOrder}]`;
 
   return {
     id: g.id,
@@ -109,6 +127,7 @@ function mapGiftToDB(g) {
     reserved_at: g.reservedAt || null,
     priority: g.priority || 'medium',
     target_quantity: targetQty,
+    display_order: displayOrder,
   };
 }
 
@@ -475,6 +494,7 @@ export const storageService = {
     const gift = {
       ...newGift,
       targetQuantity: Number(newGift.targetQuantity || 5),
+      displayOrder: Number(newGift.displayOrder || 999),
       id: generateUniqueId('gift'),
       status: 'available',
       reservedBy: '',
