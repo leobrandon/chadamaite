@@ -1488,7 +1488,7 @@ export default function AdminPanel({
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div>
                   <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Categoria</label>
                   <select
@@ -1523,6 +1523,18 @@ export default function AdminPanel({
                     value={editingGift.targetQuantity ?? 5}
                     onChange={(e) => setEditingGift({ ...editingGift, targetQuantity: parseInt(e.target.value) || 1 })}
                     className="w-full px-2.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5" title="Ordem da esquerda para direita, de cima para baixo">Posição #{editingGift.displayOrder || '-'}</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="999"
+                    required
+                    value={editingGift.displayOrder ?? 1}
+                    onChange={(e) => setEditingGift({ ...editingGift, displayOrder: parseInt(e.target.value) || 1 })}
+                    className="w-full px-2.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition font-bold text-slate-800"
                   />
                 </div>
               </div>
