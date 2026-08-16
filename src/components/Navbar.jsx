@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Gift, CalendarCheck, Heart, Sparkles, Menu, X, Shield, MessageCircleHeart } from 'lucide-react';
+import { Gift, CalendarCheck, Heart, Sparkles, Menu, X, Shield, MessageCircleHeart, Share2 } from 'lucide-react';
 
 export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, totalGiftsAvailable }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -18,6 +18,12 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, totalGift
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  const getShareUrl = () => {
+    const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+    const shareText = `Olá! Veja o convite e lista de presentes do Chá de Bebê da Maitê: ${currentUrl}`;
+    return `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
   };
 
   return (
@@ -71,7 +77,19 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, totalGift
               );
             })}
 
-            <div className="h-6 w-px bg-slate-200 mx-2" />
+            <div className="h-6 w-px bg-slate-200 mx-1.5" />
+
+            {/* Social Share WhatsApp Button */}
+            <a
+              href={getShareUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Compartilhar Convite no WhatsApp"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>Compartilhar</span>
+            </a>
 
             {/* Admin Trigger */}
             <button
@@ -80,12 +98,22 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, totalGift
               className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition border border-slate-200"
             >
               <Shield className="w-3.5 h-3.5 text-slate-400" />
-              <span>Papais (Admin)</span>
+              <span>Papais</span>
             </button>
           </nav>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Buttons */}
           <div className="flex md:hidden items-center gap-2">
+            <a
+              href={getShareUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-full text-emerald-600 bg-emerald-50 border border-emerald-100"
+              title="Compartilhar no WhatsApp"
+            >
+              <Share2 className="w-4 h-4" />
+            </a>
+
             <button
               onClick={onOpenAdmin}
               className="p-2 rounded-full text-slate-400 hover:text-slate-600 bg-slate-50"
@@ -135,6 +163,18 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, totalGift
               </button>
             );
           })}
+
+          <div className="pt-2 border-t border-slate-100 mt-2">
+            <a
+              href={getShareUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 transition"
+            >
+              <Share2 className="w-4 h-4" />
+              <span>Compartilhar Convite no WhatsApp</span>
+            </a>
+          </div>
         </div>
       )}
     </header>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Calendar, Clock, Copy, Check, ExternalLink, Heart, Sparkles, QrCode } from 'lucide-react';
+import { MapPin, Calendar, Clock, Copy, Check, ExternalLink, Heart, Sparkles, QrCode, CalendarPlus, Download } from 'lucide-react';
 
 export default function EventDetails({ config, onOpenPixModal }) {
   const [copiedAddress, setCopiedAddress] = useState(false);
@@ -9,6 +9,38 @@ export default function EventDetails({ config, onOpenPixModal }) {
     navigator.clipboard.writeText(fullAddress);
     setCopiedAddress(true);
     setTimeout(() => setCopiedAddress(false), 2500);
+  };
+
+  const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Chá de Bebê da Maitê 🌸')}&dates=20261017T153000/20261017T200000&ctz=America/Sao_Paulo&details=${encodeURIComponent('Venha comemorar conosco o Chá de Bebê da nossa amada Maitê! Esperamos por você com muito carinho. Leonardo & Isabella.')}&location=${encodeURIComponent('Espaço LC Eventos, Goiânia - GO')}`;
+
+  const handleDownloadICS = () => {
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Cha de Bebe da Maite//PT-BR',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'BEGIN:VEVENT',
+      'SUMMARY:Chá de Bebê da Maitê 🌸',
+      'DESCRIPTION:Venha comemorar conosco o Chá de Bebê da nossa amada Maitê! Esperamos por você com muito carinho. Leonardo & Isabella.',
+      'LOCATION:Espaço LC Eventos, Goiânia - GO',
+      'DTSTART:20261017T183000Z',
+      'DTEND:20261017T230000Z',
+      'STATUS:CONFIRMED',
+      'SEQUENCE:0',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'cha-de-bebe-da-maite.ics');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   };
 
   return (
@@ -49,9 +81,35 @@ export default function EventDetails({ config, onOpenPixModal }) {
                 <span>{config.displayTime}</span>
               </div>
             </div>
-            <p className="text-xs text-slate-400 mt-6 border-t border-slate-100 pt-3">
-              Chegue no horário para não perder as brincadeiras e o jantar! 🌭
-            </p>
+
+            {/* Adicionar à Agenda Buttons */}
+            <div className="mt-6 pt-3 border-t border-slate-100">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2">
+                Adicionar à Minha Agenda
+              </span>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <a
+                  href={googleCalendarUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-blush-50 hover:bg-blush-100 text-blush-700 transition"
+                  title="Adicionar ao Google Agenda"
+                >
+                  <CalendarPlus className="w-3.5 h-3.5" />
+                  <span>Google Agenda</span>
+                </a>
+
+                <button
+                  type="button"
+                  onClick={handleDownloadICS}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+                  title="Baixar arquivo de agenda para Apple / Outlook (.ics)"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Apple / Outlook (.ics)</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Card 2: Localização & Endereço */}

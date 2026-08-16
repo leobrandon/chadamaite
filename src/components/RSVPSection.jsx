@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CalendarCheck, Users, Heart, Sparkles, Send, CheckCircle2, UserPlus, Trash2, Smile } from 'lucide-react';
+import { CalendarCheck, Users, Heart, Sparkles, Send, CheckCircle2, Smile } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function RSVPSection({ config, onSaveRSVP }) {
@@ -180,11 +180,12 @@ export default function RSVPSection({ config, onSaveRSVP }) {
                 </label>
                 <input
                   type="text"
+                  maxLength={80}
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ex: Ana Clara Santos"
-                  className="w-full px-4 py-3 rounded-2xl bg-white border border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 outline-none text-sm shadow-sm transition"
+                  className="w-full px-4 py-3 rounded-2xl bg-white border border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 outline-none text-base sm:text-sm shadow-sm transition"
                 />
               </div>
 
@@ -199,20 +200,22 @@ export default function RSVPSection({ config, onSaveRSVP }) {
                         <span className="block font-bold text-slate-800 text-sm">Adultos</span>
                         <span className="text-[11px] text-slate-500">Incluindo você</span>
                       </div>
-                      <div className="flex items-center gap-3 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+                      <div className="flex items-center gap-2 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
                         <button
                           type="button"
                           onClick={() => handleAdultsChange(-1)}
                           disabled={adultsCount <= 1}
-                          className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 font-bold flex items-center justify-center transition"
+                          className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 font-bold flex items-center justify-center transition active:scale-95 text-base"
+                          aria-label="Diminuir adultos"
                         >
                           -
                         </button>
-                        <span className="w-6 text-center font-bold text-slate-800 text-sm">{adultsCount}</span>
+                        <span className="w-7 text-center font-bold text-slate-800 text-base">{adultsCount}</span>
                         <button
                           type="button"
                           onClick={() => handleAdultsChange(1)}
-                          className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center transition"
+                          className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center transition active:scale-95 text-base"
+                          aria-label="Aumentar adultos"
                         >
                           +
                         </button>
@@ -225,20 +228,22 @@ export default function RSVPSection({ config, onSaveRSVP }) {
                         <span className="block font-bold text-slate-800 text-sm">Crianças</span>
                         <span className="text-[11px] text-slate-500">Até 10 anos</span>
                       </div>
-                      <div className="flex items-center gap-3 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+                      <div className="flex items-center gap-2 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
                         <button
                           type="button"
                           onClick={() => handleChildrenChange(-1)}
                           disabled={childrenCount <= 0}
-                          className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 font-bold flex items-center justify-center transition"
+                          className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 font-bold flex items-center justify-center transition active:scale-95 text-base"
+                          aria-label="Diminuir crianças"
                         >
                           -
                         </button>
-                        <span className="w-6 text-center font-bold text-slate-800 text-sm">{childrenCount}</span>
+                        <span className="w-7 text-center font-bold text-slate-800 text-base">{childrenCount}</span>
                         <button
                           type="button"
                           onClick={() => handleChildrenChange(1)}
-                          className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center transition"
+                          className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center transition active:scale-95 text-base"
+                          aria-label="Aumentar crianças"
                         >
                           +
                         </button>
@@ -259,10 +264,11 @@ export default function RSVPSection({ config, onSaveRSVP }) {
                           <input
                             key={idx}
                             type="text"
+                            maxLength={80}
                             value={companionName}
                             onChange={(e) => handleCompanionNameChange(idx, e.target.value)}
                             placeholder={`Nome do acompanhante ${idx + 1}`}
-                            className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 outline-none text-sm transition"
+                            className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 outline-none text-base sm:text-sm transition"
                           />
                         ))}
                       </div>
@@ -276,10 +282,11 @@ export default function RSVPSection({ config, onSaveRSVP }) {
                     </label>
                     <input
                       type="tel"
+                      maxLength={25}
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="(11) 99999-9999"
-                      className="w-full px-4 py-3 rounded-2xl bg-white border border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 outline-none text-sm shadow-sm transition"
+                      className="w-full px-4 py-3 rounded-2xl bg-white border border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 outline-none text-base sm:text-sm shadow-sm transition"
                     />
                   </div>
                 </>
@@ -292,10 +299,11 @@ export default function RSVPSection({ config, onSaveRSVP }) {
                 </label>
                 <textarea
                   rows="3"
+                  maxLength={500}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Escreva seus votos de amor, saúde e bênçãos para essa nova fase..."
-                  className="w-full px-4 py-3 rounded-2xl bg-white border border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 outline-none text-sm shadow-sm transition resize-none"
+                  className="w-full px-4 py-3 rounded-2xl bg-white border border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 outline-none text-base sm:text-sm shadow-sm transition resize-none"
                 />
               </div>
 
@@ -303,7 +311,7 @@ export default function RSVPSection({ config, onSaveRSVP }) {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-4 px-6 rounded-2xl bg-blush-500 hover:bg-blush-600 active:scale-[0.98] text-white font-bold text-base shadow-lg shadow-blush-500/25 transition flex items-center justify-center gap-2"
+                className="w-full py-4 px-6 rounded-2xl bg-blush-500 hover:bg-blush-600 active:scale-[0.98] text-white font-bold text-sm sm:text-base shadow-lg shadow-blush-500/25 transition flex items-center justify-center gap-2"
               >
                 <Send className="w-5 h-5" />
                 <span>{isSubmitting ? 'Enviando confirmação...' : 'Confirmar Minha Resposta'}</span>

@@ -9,6 +9,18 @@ const KEYS = {
   PLEDGES: 'cha_maite_pledges_v1',
 };
 
+// Robust ID Generator using crypto.randomUUID with standard fallback
+export function generateUniqueId(prefix = 'id') {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+  return `${prefix}-xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 // Helper: map DB column names to camelCase and vice-versa
 function mapConfigFromDB(row) {
   if (!row) return INITIAL_EVENT_CONFIG;
@@ -142,7 +154,7 @@ function mapMessageToDB(m) {
 export const storageService = {
   isCloudConnected: isSupabaseConfigured,
 
-  // Inicialização e sincronização em tempo real
+  // Inicialização e sincronização em tempo real otimizada
   initRealtimeSync: async (onDataUpdate) => {
     if (!isSupabaseConfigured || !supabase) {
       console.log('ℹ️ Operando no modo local (localStorage).');
@@ -171,25 +183,91 @@ export const storageService = {
         });
       }
 
+      // Batching & Debounce state for realtime postgres changes
+      const pendingTables = new Set();
+      let debounceTimer = null;
+
+      const processBatchedUpdates = async () => {
+        const tablesToFetch = Array.from(pendingTables);
+        pendingTables.clear();
+        debounceTimer = null;
+
+        if (tablesToFetch.length === 0) return;
+
+        const updatePayload = {};
+
+        await Promise.all(
+          tablesToFetch.map(async (table) => {
+            try {
+              switch (table) {
+                case 'gifts': {
+                  updatePayload.gifts = await storageService.fetchGiftsFromCloud();
+                  break;
+                }
+                case 'rsvps': {
+                  updatePayload.rsvps = await storageService.fetchRSVPsFromCloud();
+                  break;
+                }
+                case 'messages': {
+                  updatePayload.messages = await storageService.fetchMessagesFromCloud();
+                  break;
+                }
+                case 'gift_pledges': {
+                  updatePayload.pledges = await storageService.fetchPledgesFromCloud();
+                  break;
+                }
+                case 'event_config': {
+                  updatePayload.config = await storageService.fetchConfigFromCloud();
+                  break;
+                }
+                default: {
+                  const [cfg, gft, rsv, msg, pld] = await Promise.all([
+                    storageService.fetchConfigFromCloud(),
+                    storageService.fetchGiftsFromCloud(),
+                    storageService.fetchRSVPsFromCloud(),
+                    storageService.fetchMessagesFromCloud(),
+                    storageService.fetchPledgesFromCloud(),
+                  ]);
+                  updatePayload.config = cfg;
+                  updatePayload.gifts = gft;
+                  updatePayload.rsvps = rsv;
+                  updatePayload.messages = msg;
+                  updatePayload.pledges = pld;
+                  break;
+                }
+              }
+            } catch (fetchErr) {
+              console.error(`Erro ao sincronizar tabela ${table}:`, fetchErr);
+            }
+          })
+        );
+
+        if (onDataUpdate && Object.keys(updatePayload).length > 0) {
+          onDataUpdate(updatePayload);
+        }
+      };
+
       // Canal de escuta em tempo real (Realtime Postgres Changes)
       const channel = supabase
         .channel('cha_maite_realtime_channel')
-        .on('postgres_changes', { event: '*', schema: 'public' }, async () => {
-          console.log('🔄 Atualização recebida do banco em tempo real!');
-          const [cfg, gft, rsv, msg, pld] = await Promise.all([
-            storageService.fetchConfigFromCloud(),
-            storageService.fetchGiftsFromCloud(),
-            storageService.fetchRSVPsFromCloud(),
-            storageService.fetchMessagesFromCloud(),
-            storageService.fetchPledgesFromCloud(),
-          ]);
-          if (onDataUpdate) {
-            onDataUpdate({ config: cfg, gifts: gft, rsvps: rsv, messages: msg, pledges: pld });
+        .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
+          const tableName = payload?.table || '*';
+          console.log(`🔄 Atualização em tempo real recebida para a tabela: ${tableName}`);
+          pendingTables.add(tableName);
+
+          if (debounceTimer) {
+            clearTimeout(debounceTimer);
           }
+          debounceTimer = setTimeout(() => {
+            processBatchedUpdates();
+          }, 300);
         })
         .subscribe();
 
       return () => {
+        if (debounceTimer) {
+          clearTimeout(debounceTimer);
+        }
         supabase.removeChannel(channel);
       };
     } catch (err) {
@@ -359,7 +437,7 @@ export const storageService = {
     const gift = {
       ...newGift,
       targetQuantity: Number(newGift.targetQuantity || 5),
-      id: `gift-${Date.now()}`,
+      id: generateUniqueId('gift'),
       status: 'available',
       reservedBy: '',
       reservedAt: null,
@@ -450,7 +528,7 @@ export const storageService = {
   saveRSVP: async (rsvpData) => {
     const rsvps = storageService.getRSVPs();
     const newEntry = {
-      id: `rsvp-${Date.now()}`,
+      id: generateUniqueId('rsvp'),
       createdAt: new Date().toISOString(),
       ...rsvpData,
     };
@@ -529,7 +607,7 @@ export const storageService = {
   addMessage: async (msgData, autoApprove = false) => {
     const messages = storageService.getMessages();
     const newMsg = {
-      id: `msg-${Date.now()}`,
+      id: generateUniqueId('msg'),
       author: msgData.author || 'Amigo com carinho',
       text: msgData.text,
       date: 'Agora mesmo',
@@ -678,7 +756,7 @@ export const storageService = {
   addPledge: async (giftId, giverName, quantity) => {
     const pledges = storageService.getPledges();
     const newPledge = {
-      id: `pledge-${Date.now()}`,
+      id: generateUniqueId('pledge'),
       giftId,
       giverName,
       quantity,

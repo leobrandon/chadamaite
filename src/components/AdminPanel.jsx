@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { INITIAL_CATEGORIES, BABY_EMOJIS } from '../data/initialGifts';
 import { storageService } from '../services/storageService';
+import ConfirmModal from './ConfirmModal';
 
 export default function AdminPanel({ 
   isOpen, 
@@ -61,11 +62,48 @@ export default function AdminPanel({
   // Accordion state for pledges
   const [expandedGiftId, setExpandedGiftId] = useState(null);
 
+  // In-app Confirmation Modal state
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: 'Confirmar',
+    cancelText: 'Cancelar',
+    isDestructive: false,
+    onConfirm: null,
+  });
+
+  const requestConfirm = ({
+    title,
+    message,
+    confirmText = 'Confirmar',
+    cancelText = 'Cancelar',
+    isDestructive = true,
+    onConfirm,
+  }) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      confirmText,
+      cancelText,
+      isDestructive,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+      },
+    });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+  };
+
   if (!isOpen) return null;
 
   const handleLogin = (e) => {
     e.preventDefault();
-    const correctPin = String(config.adminPin || '16101928').trim();
+    const correctPin = String(config?.adminPin || '16101928').trim();
     if (pinInput.trim() === correctPin) {
       setIsAuthenticated(true);
       setPinError(false);
@@ -193,7 +231,7 @@ export default function AdminPanel({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto flex flex-col max-h-[90vh]">
+      <div className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto flex flex-col max-h-[90dvh] overscroll-contain">
         
         {/* Header */}
         <div className="bg-slate-900 p-5 sm:p-6 text-white flex items-center justify-between shrink-0">
@@ -211,13 +249,31 @@ export default function AdminPanel({
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
-            aria-label="Fechar"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {isAuthenticated && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAuthenticated(false);
+                  setPinInput('');
+                  setPinError(false);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition"
+                title="Bloquear Painel com Senha"
+              >
+                <Lock className="w-3.5 h-3.5 text-blush-400" />
+                <span className="hidden sm:inline">Bloquear</span>
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+              aria-label="Fechar"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Auth Barrier */}
@@ -498,9 +554,14 @@ export default function AdminPanel({
                                             <button
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                if (confirm(`Excluir a contribuição de ${pledge.giverName}?`)) {
-                                                  onDeletePledge(pledge.id);
-                                                }
+                                                requestConfirm({
+                                                  title: 'Excluir Contribuição',
+                                                  message: `Tem certeza que deseja excluir a contribuição de ${pledge.giverName}?`,
+                                                  confirmText: 'Sim, Excluir',
+                                                  cancelText: 'Cancelar',
+                                                  isDestructive: true,
+                                                  onConfirm: () => onDeletePledge(pledge.id),
+                                                });
                                               }}
                                               className="p-1.5 rounded-lg hover:bg-rose-100 text-rose-500 hover:text-rose-700 transition"
                                               title="Excluir contribuição"
@@ -600,9 +661,14 @@ export default function AdminPanel({
                                 <td className="p-3 text-right">
                                   <button
                                     onClick={() => {
-                                      if (confirm(`Excluir a confirmação de ${rsvp.name}?`)) {
-                                        onDeleteRSVP(rsvp.id);
-                                      }
+                                      requestConfirm({
+                                        title: 'Excluir Confirmação',
+                                        message: `Tem certeza que deseja excluir a confirmação de presença de ${rsvp.name}?`,
+                                        confirmText: 'Sim, Excluir',
+                                        cancelText: 'Cancelar',
+                                        isDestructive: true,
+                                        onConfirm: () => onDeleteRSVP(rsvp.id),
+                                      });
                                     }}
                                     className="p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition"
                                     title="Excluir resposta"
@@ -732,9 +798,14 @@ export default function AdminPanel({
                       </span>
                       <button
                         onClick={() => {
-                          if (confirm('Tem certeza que deseja restaurar a lista padrão de presentes?')) {
-                            onResetGifts();
-                          }
+                          requestConfirm({
+                            title: 'Restaurar Lista Padrão',
+                            message: 'Tem certeza que deseja restaurar a lista padrão de presentes? Todas as adições e edições manuais serão redefinidas para o modelo inicial.',
+                            confirmText: 'Sim, Restaurar',
+                            cancelText: 'Cancelar',
+                            isDestructive: true,
+                            onConfirm: () => onResetGifts(),
+                          });
                         }}
                         className="text-[11px] text-slate-400 hover:text-slate-600 flex items-center gap-1 transition"
                       >
@@ -1029,9 +1100,14 @@ export default function AdminPanel({
                                 </button>
                                 <button
                                   onClick={() => {
-                                    if (confirm('Recusar e excluir este recado?')) {
-                                      onDeleteMessage(msg.id);
-                                    }
+                                    requestConfirm({
+                                      title: 'Recusar Recado',
+                                      message: `Tem certeza que deseja recusar e excluir o recado de ${msg.author}?`,
+                                      confirmText: 'Sim, Recusar',
+                                      cancelText: 'Cancelar',
+                                      isDestructive: true,
+                                      onConfirm: () => onDeleteMessage(msg.id),
+                                    });
                                   }}
                                   className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold transition"
                                   title="Recusar recado"
@@ -1071,9 +1147,14 @@ export default function AdminPanel({
                               <span className="text-[10px] text-slate-400">{msg.date}</span>
                               <button
                                 onClick={() => {
-                                  if (confirm('Excluir este recado do mural?')) {
-                                    onDeleteMessage(msg.id);
-                                  }
+                                  requestConfirm({
+                                    title: 'Remover Recado do Mural',
+                                    message: `Tem certeza que deseja remover o recado de ${msg.author} do mural público?`,
+                                    confirmText: 'Sim, Remover',
+                                    cancelText: 'Cancelar',
+                                    isDestructive: true,
+                                    onConfirm: () => onDeleteMessage(msg.id),
+                                  });
                                 }}
                                 className="text-xs text-rose-500 hover:text-rose-700 font-semibold"
                               >
@@ -1102,7 +1183,7 @@ export default function AdminPanel({
       {/* Edit Gift Modal */}
       {editingGift && (
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden">
+          <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90dvh] overflow-y-auto overscroll-contain">
             
             {/* Modal Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
@@ -1216,10 +1297,17 @@ export default function AdminPanel({
                 <button
                   type="button"
                   onClick={() => {
-                    if (confirm(`Excluir "${editingGift.title}" permanentemente?`)) {
-                      onDeleteGift(editingGift.id);
-                      setEditingGift(null);
-                    }
+                    requestConfirm({
+                      title: 'Excluir Presente',
+                      message: `Tem certeza que deseja excluir o presente "${editingGift.title}" permanentemente da lista?`,
+                      confirmText: 'Sim, Excluir Presente',
+                      cancelText: 'Cancelar',
+                      isDestructive: true,
+                      onConfirm: () => {
+                        onDeleteGift(editingGift.id);
+                        setEditingGift(null);
+                      },
+                    });
                   }}
                   className="w-full py-2.5 rounded-2xl border border-rose-200 text-rose-600 hover:bg-rose-50 active:scale-[0.98] font-semibold text-sm transition flex items-center justify-center gap-1.5"
                 >
@@ -1232,6 +1320,18 @@ export default function AdminPanel({
           </div>
         </div>
       )}
+
+      {/* In-App Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        cancelText={confirmModal.cancelText}
+        isDestructive={confirmModal.isDestructive}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={closeConfirmModal}
+      />
 
     </div>
   );
