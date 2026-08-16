@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, Shield, Lock, Users, Gift, MessageCircleHeart, Settings, Download, 
   Trash2, Plus, Edit2, Check, RefreshCw, Eye, EyeOff, CheckCircle2, XCircle
@@ -38,6 +38,13 @@ export default function AdminPanel({
   // Config Form state
   const [tempConfig, setTempConfig] = useState(config);
   const [configSaved, setConfigSaved] = useState(false);
+
+  // Sync tempConfig whenever remote config updates
+  useEffect(() => {
+    if (config) {
+      setTempConfig(config);
+    }
+  }, [config]);
 
   // Edit Gift modal state
   const [editingGift, setEditingGift] = useState(null);
