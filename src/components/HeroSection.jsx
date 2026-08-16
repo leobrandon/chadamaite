@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Gift, CalendarCheck, Heart, Sparkles, MapPin, Calendar, Clock } from 'lucide-react';
+import { Gift, CalendarCheck, Heart, Sparkles, MapPin, Calendar, Clock, Share2 } from 'lucide-react';
 
 export default function HeroSection({ config, onNavigateToGifts, onNavigateToRSVP }) {
   const [timeLeft, setTimeLeft] = useState({
@@ -33,6 +33,12 @@ export default function HeroSection({ config, onNavigateToGifts, onNavigateToRSV
     const timer = setInterval(calculateTime, 1000);
     return () => clearInterval(timer);
   }, [config.date, config.time]);
+
+  const getShareUrl = () => {
+    const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+    const shareText = `Olá! Veja o convite e lista de presentes do Chá de Bebê da Maitê: ${currentUrl}`;
+    return `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
+  };
 
   return (
     <section id="inicio" className="relative overflow-hidden pt-8 pb-16 md:pt-14 md:pb-24">
@@ -125,7 +131,7 @@ export default function HeroSection({ config, onNavigateToGifts, onNavigateToRSV
         )}
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-md mx-auto">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-lg mx-auto">
           <button
             onClick={onNavigateToGifts}
             className="w-full sm:w-auto px-7 py-3.5 rounded-full bg-blush-500 hover:bg-blush-600 text-white font-semibold text-sm sm:text-base shadow-lg shadow-blush-500/25 hover:shadow-blush-500/35 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
@@ -141,6 +147,17 @@ export default function HeroSection({ config, onNavigateToGifts, onNavigateToRSV
             <CalendarCheck className="w-5 h-5 text-blush-500" />
             <span>Confirmar Presença</span>
           </button>
+
+          <a
+            href={getShareUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-sm sm:text-base border border-emerald-200 shadow-sm hover:shadow hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+            title="Compartilhar convite no WhatsApp"
+          >
+            <Share2 className="w-4 h-4 text-emerald-600" />
+            <span>Compartilhar</span>
+          </a>
         </div>
 
       </div>

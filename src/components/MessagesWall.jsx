@@ -61,25 +61,27 @@ export default function MessagesWall({ messages, onAddMessage, onLikeMessage }) 
             <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
+                maxLength={80}
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
                 placeholder="Seu nome (ex: Titia Jéssica)"
-                className="flex-1 px-4 py-2.5 rounded-xl bg-white border border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 outline-none text-sm transition"
+                className="flex-1 px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 outline-none text-base sm:text-sm transition"
               />
             </div>
             <textarea
               rows="3"
+              maxLength={500}
               required
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Escreva seu recadinho de carinho..."
-              className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 outline-none text-sm transition resize-none"
+              className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 outline-none text-base sm:text-sm transition resize-none"
             />
             <div className="flex justify-end">
               <button
                 type="submit"
                 disabled={isSubmitting || !text.trim()}
-                className="px-6 py-2.5 rounded-full bg-blush-500 hover:bg-blush-600 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-md shadow-blush-500/20 disabled:opacity-50 transition flex items-center gap-2"
+                className="px-6 py-3 rounded-full bg-blush-500 hover:bg-blush-600 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-md shadow-blush-500/20 disabled:opacity-50 transition flex items-center gap-2"
               >
                 <Send className="w-4 h-4" />
                 <span>{isSubmitting ? 'Publicando...' : 'Publicar Recado'}</span>

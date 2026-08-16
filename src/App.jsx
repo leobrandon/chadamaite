@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
+import './App.css';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import EventDetails from './components/EventDetails';
@@ -6,11 +7,13 @@ import GiftList from './components/GiftList';
 import GiftModal from './components/GiftModal';
 import RSVPSection from './components/RSVPSection';
 import MessagesWall from './components/MessagesWall';
-import AdminPanel from './components/AdminPanel';
 import PixModal from './components/PixModal';
 import ScrollButtons from './components/ScrollButtons';
 import Footer from './components/Footer';
 import { storageService } from './services/storageService';
+
+// Lazy load AdminPanel to dramatically reduce initial guest bundle size
+const AdminPanel = lazy(() => import('./components/AdminPanel'));
 
 export default function App() {
   const [config, setConfig] = useState(storageService.getConfig());
@@ -18,6 +21,7 @@ export default function App() {
   const [rsvps, setRsvps] = useState(storageService.getRSVPs());
   const [messages, setMessages] = useState(storageService.getMessages());
   const [pledges, setPledges] = useState(storageService.getPledges?.() || []);
+  const [isInitialLoading, setIsInitialLoading] = useState(storageService.isCloudConnected);
   
   const [activeTab, setActiveTab] = useState('inicio');
   
@@ -48,8 +52,13 @@ export default function App() {
       if (cloudData.rsvps) setRsvps(cloudData.rsvps);
       if (cloudData.messages) setMessages(cloudData.messages);
       if (cloudData.pledges) setPledges(cloudData.pledges);
+      setIsInitialLoading(false);
     }).then(unsub => {
       unsubscribeRealtime = unsub;
+      // End initial loading if sync completed or local
+      setIsInitialLoading(false);
+    }).catch(() => {
+      setIsInitialLoading(false);
     });
 
     return () => {
@@ -190,6 +199,7 @@ export default function App() {
         <GiftList
           gifts={gifts}
           pledges={pledges}
+          isLoading={isInitialLoading}
           onSelectGift={handleSelectGift}
           onOpenAdmin={() => setIsAdminOpen(true)}
         />
@@ -224,25 +234,43 @@ export default function App() {
         config={config}
       />
 
-      <AdminPanel
-        isOpen={isAdminOpen}
-        onClose={() => setIsAdminOpen(false)}
-        config={config}
-        onSaveConfig={handleSaveConfig}
-        gifts={gifts}
-        pledges={pledges}
-        onAddGift={handleAddGift}
-        onUpdateGift={handleUpdateGift}
-        onDeleteGift={handleDeleteGift}
-        onCancelReservation={handleCancelReservation}
-        onResetGifts={handleResetGifts}
-        onDeletePledge={handleDeletePledge}
-        rsvps={rsvps}
-        onDeleteRSVP={handleDeleteRSVP}
-        messages={messages}
-        onApproveMessage={handleApproveMessage}
-        onDeleteMessage={handleDeleteMessage}
-      />
+      {isAdminOpen && (
+        <Suspense
+          fallback={
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-fade-in">
+              <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-slate-100 space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-blush-100 text-blush-600 mx-auto flex items-center justify-center animate-spin">
+                  <div className="w-6 h-6 border-2 border-blush-600 border-t-transparent rounded-full" />
+                </div>
+                <div>
+                  <h4 className="font-serif text-lg font-bold text-slate-800">Carregando Painel</h4>
+                  <p className="text-xs text-slate-500 mt-1">Preparando o painel de administração...</p>
+                </div>
+              </div>
+            </div>
+          }
+        >
+          <AdminPanel
+            isOpen={isAdminOpen}
+            onClose={() => setIsAdminOpen(false)}
+            config={config}
+            onSaveConfig={handleSaveConfig}
+            gifts={gifts}
+            pledges={pledges}
+            onAddGift={handleAddGift}
+            onUpdateGift={handleUpdateGift}
+            onDeleteGift={handleDeleteGift}
+            onCancelReservation={handleCancelReservation}
+            onResetGifts={handleResetGifts}
+            onDeletePledge={handleDeletePledge}
+            rsvps={rsvps}
+            onDeleteRSVP={handleDeleteRSVP}
+            messages={messages}
+            onApproveMessage={handleApproveMessage}
+            onDeleteMessage={handleDeleteMessage}
+          />
+        </Suspense>
+      )}
 
       {/* Floating Quick Scroll Buttons */}
       <ScrollButtons />

@@ -19,14 +19,14 @@ export default function PixModal({ isOpen, onClose, config }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
       <div 
-        className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-blush-200 overflow-hidden relative animate-slide-up"
+        className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-blush-200 overflow-hidden relative animate-slide-up max-h-[90dvh] overflow-y-auto overscroll-contain flex flex-col"
         role="dialog"
         aria-modal="true"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-gold-400 to-gold-500 p-6 text-slate-900 text-center relative">
+        <div className="bg-gradient-to-r from-gold-400 to-gold-500 p-6 text-slate-900 text-center relative shrink-0">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 p-1.5 rounded-full bg-black/10 hover:bg-black/20 text-slate-800 transition focus:outline-none"
@@ -47,7 +47,7 @@ export default function PixModal({ isOpen, onClose, config }) {
         </div>
 
         {/* Content */}
-        <div className="p-6 sm:p-7 space-y-5">
+        <div className="p-6 sm:p-7 space-y-5 flex-1">
           
           {/* Key Info */}
           <div className="bg-gold-50 border border-gold-200 rounded-2xl p-4 text-center">
@@ -61,6 +61,7 @@ export default function PixModal({ isOpen, onClose, config }) {
 
           {/* Copy Button */}
           <button
+            type="button"
             onClick={handleCopy}
             className="w-full py-3.5 px-6 rounded-2xl bg-gold-400 hover:bg-gold-500 active:scale-[0.98] text-slate-950 font-bold text-sm shadow-md transition flex items-center justify-center gap-2"
           >
@@ -83,6 +84,7 @@ export default function PixModal({ isOpen, onClose, config }) {
 
           <div className="pt-2">
             <button
+              type="button"
               onClick={onClose}
               className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-xs transition"
             >
