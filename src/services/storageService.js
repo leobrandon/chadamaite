@@ -131,8 +131,8 @@ function mapGiftToDB(g) {
   };
 }
 
-// Helper to detect missing target_quantity column in Supabase
-function isTargetQuantityColumnError(error) {
+// Helper to detect missing schema columns in Supabase
+function isSchemaColumnError(error) {
   if (!error) return false;
   const msg = String(error.message || '').toLowerCase();
   const details = String(error.details || '').toLowerCase();
@@ -140,9 +140,20 @@ function isTargetQuantityColumnError(error) {
   return (
     error.code === 'PGRST204' ||
     msg.includes('target_quantity') ||
+    msg.includes('display_order') ||
+    msg.includes('position') ||
     details.includes('target_quantity') ||
-    hint.includes('target_quantity')
+    details.includes('display_order') ||
+    details.includes('position') ||
+    hint.includes('target_quantity') ||
+    hint.includes('display_order') ||
+    hint.includes('position')
   );
+}
+
+function stripSchemaExtendedColumns(payload) {
+  const { target_quantity, display_order, position, targetQuantity, displayOrder, ...safePayload } = payload;
+  return safePayload;
 }
 
 function mapRSVPFromDB(row) {
@@ -394,8 +405,8 @@ export const storageService = {
         // Inicializa o banco com a lista completa inicial
         const dbGifts = INITIAL_GIFTS.map(mapGiftToDB);
         const { error: insertErr } = await supabase.from('gifts').insert(dbGifts);
-        if (insertErr && isTargetQuantityColumnError(insertErr)) {
-          const fallbackGifts = dbGifts.map(({ target_quantity, ...rest }) => rest);
+        if (insertErr && isSchemaColumnError(insertErr)) {
+          const fallbackGifts = dbGifts.map(stripSchemaExtendedColumns);
           await supabase.from('gifts').insert(fallbackGifts);
         }
         return INITIAL_GIFTS;
@@ -508,11 +519,11 @@ export const storageService = {
         const payload = mapGiftToDB(gift);
         const { error } = await supabase.from('gifts').insert([payload]);
         if (error) {
-          if (isTargetQuantityColumnError(error)) {
-            const { target_quantity, ...payloadWithoutTarget } = payload;
-            const retryRes = await supabase.from('gifts').insert([payloadWithoutTarget]);
+          if (isSchemaColumnError(error)) {
+            const fallbackPayload = stripSchemaExtendedColumns(payload);
+            const retryRes = await supabase.from('gifts').insert([fallbackPayload]);
             if (retryRes.error) {
-              console.error('Erro ao adicionar presente no Supabase (retry sem target_quantity):', retryRes.error);
+              console.error('Erro ao adicionar presente no Supabase (retry seguro):', retryRes.error);
             }
           } else {
             console.error('Erro ao adicionar presente no Supabase:', error);
@@ -537,11 +548,11 @@ export const storageService = {
           const payload = mapGiftToDB(gift);
           const { error } = await supabase.from('gifts').update(payload).eq('id', giftId);
           if (error) {
-            if (isTargetQuantityColumnError(error)) {
-              const { target_quantity, ...payloadWithoutTarget } = payload;
-              const retryRes = await supabase.from('gifts').update(payloadWithoutTarget).eq('id', giftId);
+            if (isSchemaColumnError(error)) {
+              const fallbackPayload = stripSchemaExtendedColumns(payload);
+              const retryRes = await supabase.from('gifts').update(fallbackPayload).eq('id', giftId);
               if (retryRes.error) {
-                console.error('Erro ao atualizar presente no Supabase (retry sem target_quantity):', retryRes.error);
+                console.error('Erro ao atualizar presente no Supabase (retry seguro):', retryRes.error);
               }
             } else {
               console.error('Erro ao atualizar presente no Supabase:', error);
@@ -593,11 +604,11 @@ export const storageService = {
         const dbGifts = INITIAL_GIFTS.map(mapGiftToDB);
         const { error } = await supabase.from('gifts').insert(dbGifts);
         if (error) {
-          if (isTargetQuantityColumnError(error)) {
-            const fallbackGifts = dbGifts.map(({ target_quantity, ...rest }) => rest);
+          if (isSchemaColumnError(error)) {
+            const fallbackGifts = dbGifts.map(stripSchemaExtendedColumns);
             const retryRes = await supabase.from('gifts').insert(fallbackGifts);
             if (retryRes.error) {
-              console.error('Erro ao resetar presentes no Supabase (retry sem target_quantity):', retryRes.error);
+              console.error('Erro ao resetar presentes no Supabase (retry seguro):', retryRes.error);
             }
           } else {
             console.error('Erro ao resetar presentes no Supabase:', error);
