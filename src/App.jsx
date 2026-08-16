@@ -211,6 +211,7 @@ export default function App() {
       {/* Modals */}
       <GiftModal
         gift={selectedGiftForModal}
+        pledges={pledges}
         isOpen={Boolean(selectedGiftForModal)}
         onClose={() => setSelectedGiftForModal(null)}
         onConfirm={handleConfirmReservation}

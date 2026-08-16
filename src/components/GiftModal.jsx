@@ -1,12 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, Check, X, Gift, Sparkles, AlertCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-export default function GiftModal({ gift, isOpen, onClose, onConfirm, onAddPledge }) {
+export default function GiftModal({ gift, pledges = [], isOpen, onClose, onConfirm, onAddPledge }) {
   const [guestName, setGuestName] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [nameError, setNameError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Compute quotas
+  const giftPledges = (pledges || []).filter(p => p.giftId === gift?.id);
+  const totalPledged = giftPledges.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
+  const targetQty = Number(gift?.targetQuantity) || 5;
+  const remainingQty = Math.max(0, targetQty - totalPledged);
+  const isCompleted = totalPledged >= targetQty;
+  const maxSelectable = remainingQty > 0 ? remainingQty : 5;
+
+  useEffect(() => {
+    if (isOpen) {
+      setQuantity(1);
+      setGuestName('');
+      setNameError(false);
+    }
+  }, [isOpen, gift?.id]);
 
   if (!isOpen || !gift) return null;
 
@@ -27,9 +43,11 @@ export default function GiftModal({ gift, isOpen, onClose, onConfirm, onAddPledg
       colors: ['#f7799e', '#eed86a', '#7fa382', '#ffd6e1']
     });
 
+    const safeQty = Math.min(maxSelectable, Math.max(1, quantity));
+
     setTimeout(() => {
       if (onAddPledge) {
-        onAddPledge(gift.id, guestName.trim(), quantity);
+        onAddPledge(gift.id, guestName.trim(), safeQty);
       } else {
         onConfirm(gift.id, guestName.trim());
       }
@@ -89,12 +107,23 @@ export default function GiftModal({ gift, isOpen, onClose, onConfirm, onAddPledg
             )}
           </div>
 
-          {/* Important Notice */}
-          <div className="flex items-start gap-3 p-3.5 bg-blush-50 rounded-2xl border border-blush-200/80 text-blush-900 text-xs sm:text-sm">
-            <Heart className="w-5 h-5 text-blush-500 shrink-0 mt-0.5" />
-            <p className="leading-relaxed">
-              <strong>Você pode contribuir com quantas unidades quiser!</strong> Outros convidados também poderão escolher este mesmo item.
-            </p>
+          {/* Meta & Quota Status Pill */}
+          <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-blush-50/80 rounded-2xl border border-blush-200 text-xs text-slate-700">
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-blush-500 shrink-0" />
+              <span>Meta do Item: <strong>{targetQty} {targetQty === 1 ? 'unidade' : 'unidades'}</strong></span>
+            </div>
+            <div>
+              {isCompleted ? (
+                <span className="font-bold text-emerald-700 bg-emerald-100/90 px-2.5 py-0.5 rounded-full">
+                  Meta Atingida! 🎉 ({totalPledged} recebidos)
+                </span>
+              ) : (
+                <span className="font-semibold text-blush-700">
+                  Recebidos: {totalPledged} • Restam: <strong>{remainingQty} {remainingQty === 1 ? 'un.' : 'un.'}</strong>
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Mandatory Name Input */}
@@ -130,19 +159,66 @@ export default function GiftModal({ gift, isOpen, onClose, onConfirm, onAddPledg
             )}
           </div>
 
-          {/* Quantity Input */}
+          {/* Quantity Input with Stepper */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              Quantas unidades você vai dar?
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="99"
-              value={quantity}
-              onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-              className="w-full px-4 py-3 rounded-2xl border outline-none text-sm transition border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-200"
-            />
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                Quantas unidades você vai dar?
+              </label>
+              <span className="text-[11px] text-slate-500 font-medium">
+                {remainingQty > 0 ? `Máx: ${remainingQty} un.` : 'Meta atingida'}
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex items-center border border-slate-200 rounded-2xl bg-white p-1 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                  className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center transition active:scale-95 text-base"
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  min="1"
+                  max={maxSelectable}
+                  value={quantity}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || 1;
+                    setQuantity(Math.min(maxSelectable, Math.max(1, val)));
+                  }}
+                  className="w-14 text-center font-bold text-slate-800 text-base outline-none bg-transparent"
+                />
+                <button
+                  type="button"
+                  onClick={() => setQuantity(q => Math.min(maxSelectable, q + 1))}
+                  className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center transition active:scale-95 text-base"
+                >
+                  +
+                </button>
+              </div>
+
+              {/* Quick selection chips */}
+              {maxSelectable > 1 && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {Array.from({ length: Math.min(maxSelectable, 5) }, (_, i) => i + 1).map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setQuantity(n)}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold transition ${
+                        quantity === n
+                          ? 'bg-blush-500 text-white shadow-sm'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {n} {n === 1 ? 'un.' : 'un.'}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Actions */}

@@ -36,6 +36,7 @@ export default function AdminPanel({
   const [newDesc, setNewDesc] = useState('');
   const [newIcon, setNewIcon] = useState('🎁');
   const [newPriority, setNewPriority] = useState('medium');
+  const [newTargetQuantity, setNewTargetQuantity] = useState(5);
 
   // Config Form state
   const [tempConfig, setTempConfig] = useState(config);
@@ -83,10 +84,12 @@ export default function AdminPanel({
       description: newDesc.trim(),
       icon: newIcon || '🎁',
       priority: newPriority,
+      targetQuantity: Number(newTargetQuantity) || 5,
     });
 
     setNewTitle('');
     setNewDesc('');
+    setNewTargetQuantity(5);
   };
 
   const handleSaveEditedGift = (e) => {
@@ -99,6 +102,7 @@ export default function AdminPanel({
       description: editingGift.description,
       icon: editingGift.icon,
       priority: editingGift.priority,
+      targetQuantity: Number(editingGift.targetQuantity) || 5,
     });
     setEditingGift(null);
   };
@@ -427,7 +431,10 @@ export default function AdminPanel({
                         })
                         .map((gift) => {
                           const giftPledges = pledges.filter(p => p.giftId === gift.id);
-                          const totalUnits = giftPledges.reduce((sum, p) => sum + p.quantity, 0);
+                          const totalUnits = giftPledges.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
+                          const targetQty = Number(gift.targetQuantity) || 5;
+                          const isCompleted = totalUnits >= targetQty;
+                          const progressPercent = Math.min(100, Math.round((totalUnits / targetQty) * 100));
                           const isExpanded = expandedGiftId === gift.id;
 
                           return (
@@ -442,9 +449,16 @@ export default function AdminPanel({
                                     {gift.icon || '🎁'}
                                   </div>
                                   <div>
-                                    <h5 className="font-bold text-slate-800 text-sm">{gift.title}</h5>
-                                    <p className="text-xs text-slate-500">
-                                      {gift.category} • <span className="font-semibold text-blush-600">{giftPledges.length} contribuidor(es)</span> • <span className="font-semibold">{totalUnits} un. total</span>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <h5 className="font-bold text-slate-800 text-sm">{gift.title}</h5>
+                                      {isCompleted && (
+                                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200">
+                                          Meta Atingida! 🎉
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-slate-500 mt-0.5">
+                                      {gift.category} • <span className="font-semibold text-blush-600">{giftPledges.length} contribuidor(es)</span> • <span className="font-semibold text-slate-700">{totalUnits} de {targetQty} un. recebidas ({progressPercent}%)</span>
                                     </p>
                                   </div>
                                 </div>
@@ -622,7 +636,7 @@ export default function AdminPanel({
                     </h5>
 
                     <form onSubmit={handleCreateGift} className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                      <div className="sm:col-span-3">
+                      <div className="sm:col-span-2">
                         <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Ícone (Emoji)</label>
                         <select
                           value={newIcon}
@@ -649,7 +663,7 @@ export default function AdminPanel({
                         />
                       </div>
 
-                      <div className="sm:col-span-3">
+                      <div className="sm:col-span-2">
                         <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Categoria</label>
                         <select
                           value={newCategory}
@@ -662,7 +676,7 @@ export default function AdminPanel({
                         </select>
                       </div>
 
-                      <div className="sm:col-span-3">
+                      <div className="sm:col-span-2">
                         <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Prioridade</label>
                         <select
                           value={newPriority}
@@ -673,6 +687,19 @@ export default function AdminPanel({
                           <option value="medium">Média (Normal)</option>
                           <option value="low">Baixa (Opcional)</option>
                         </select>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Meta Desejada</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="999"
+                          required
+                          value={newTargetQuantity}
+                          onChange={(e) => setNewTargetQuantity(e.target.value)}
+                          className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400"
+                        />
                       </div>
 
                       <div className="sm:col-span-10">
@@ -723,6 +750,10 @@ export default function AdminPanel({
                     <div className="divide-y divide-slate-100">
                       {gifts.map((gift) => {
                         const giftPledges = pledges.filter(p => p.giftId === gift.id);
+                        const totalUnits = giftPledges.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
+                        const targetQty = Number(gift.targetQuantity) || 5;
+                        const isCompleted = totalUnits >= targetQty;
+
                         return (
                           <button
                             key={gift.id}
@@ -747,11 +778,15 @@ export default function AdminPanel({
                                   <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold text-[10px]">★ Alta</span>
                                 )}
                                 {giftPledges.length > 0 ? (
-                                  <span className="px-2 py-0.5 rounded-full bg-blush-100 text-blush-700 font-bold text-[10px]">
-                                    💝 {giftPledges.length} contrib.
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    isCompleted ? 'bg-emerald-100 text-emerald-800' : 'bg-blush-100 text-blush-700'
+                                  }`}>
+                                    {isCompleted ? '🎉 ' : '💝 '}{totalUnits}/{targetQty} un. ({giftPledges.length} contrib.)
                                   </span>
                                 ) : (
-                                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">Disponível</span>
+                                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium text-[10px]">
+                                    0/{targetQty} un.
+                                  </span>
                                 )}
                               </div>
                             </div>
@@ -1109,13 +1144,13 @@ export default function AdminPanel({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Categoria</label>
                   <select
                     value={editingGift.category}
                     onChange={(e) => setEditingGift({ ...editingGift, category: e.target.value })}
-                    className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl bg-white outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition"
+                    className="w-full px-2.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl bg-white outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition"
                   >
                     {INITIAL_CATEGORIES.filter(c => c !== 'Todas').map(c => (
                       <option key={c} value={c}>{c}</option>
@@ -1127,12 +1162,24 @@ export default function AdminPanel({
                   <select
                     value={editingGift.priority || 'medium'}
                     onChange={(e) => setEditingGift({ ...editingGift, priority: e.target.value })}
-                    className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl bg-white outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition"
+                    className="w-full px-2.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl bg-white outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition"
                   >
                     <option value="high">★ Alta</option>
                     <option value="medium">Média</option>
                     <option value="low">Baixa</option>
                   </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Meta (Qtd)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="999"
+                    required
+                    value={editingGift.targetQuantity ?? 5}
+                    onChange={(e) => setEditingGift({ ...editingGift, targetQuantity: parseInt(e.target.value) || 1 })}
+                    className="w-full px-2.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition"
+                  />
                 </div>
               </div>
 

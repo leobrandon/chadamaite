@@ -61,6 +61,7 @@ function mapGiftFromDB(row) {
     reservedBy: row.reserved_by || '',
     reservedAt: row.reserved_at || null,
     priority: row.priority || 'medium',
+    targetQuantity: Number(row.target_quantity ?? (row.targetQuantity ?? 5)),
   };
 }
 
@@ -75,6 +76,7 @@ function mapGiftToDB(g) {
     reserved_by: g.reservedBy || '',
     reserved_at: g.reservedAt || null,
     priority: g.priority || 'medium',
+    target_quantity: Number(g.targetQuantity || 5),
   };
 }
 
@@ -110,6 +112,31 @@ function mapPledgeFromDB(row) {
 }
 function mapPledgeToDB(p) {
   return { id: p.id, gift_id: p.giftId, giver_name: p.giverName, quantity: p.quantity };
+}
+
+function mapMessageFromDB(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    author: row.author,
+    text: row.text,
+    date: row.date || 'Recente',
+    likes: Number(row.likes) || 0,
+    status: row.status || 'approved',
+    createdAt: row.created_at,
+  };
+}
+
+function mapMessageToDB(m) {
+  return {
+    id: m.id,
+    author: m.author || 'Amigo com carinho',
+    text: m.text || '',
+    date: m.date || 'Agora mesmo',
+    likes: Number(m.likes) || 0,
+    status: m.status || 'pending',
+    created_at: m.createdAt || new Date().toISOString(),
+  };
 }
 
 export const storageService = {
@@ -331,6 +358,7 @@ export const storageService = {
     const gifts = storageService.getGifts();
     const gift = {
       ...newGift,
+      targetQuantity: Number(newGift.targetQuantity || 5),
       id: `gift-${Date.now()}`,
       status: 'available',
       reservedBy: '',
@@ -441,7 +469,7 @@ export const storageService = {
 
     // Se deixou recado, salva no mural
     if (rsvpData.message && rsvpData.message.trim()) {
-      storageService.addMessage({
+      await storageService.addMessage({
         author: rsvpData.name,
         text: rsvpData.message.trim(),
       });
@@ -476,7 +504,7 @@ export const storageService = {
       const { data, error } = await supabase.from('messages').select('*').order('created_at', { ascending: false });
       if (error) throw error;
 
-      const mapped = (data || []).map(m => ({ ...m, status: m.status || 'approved' }));
+      const mapped = (data || []).map(mapMessageFromDB).filter(Boolean);
       localStorage.setItem(KEYS.MESSAGES, JSON.stringify(mapped));
       return mapped;
     } catch (err) {
@@ -502,7 +530,7 @@ export const storageService = {
     const messages = storageService.getMessages();
     const newMsg = {
       id: `msg-${Date.now()}`,
-      author: msgData.author || 'Amigo da Família',
+      author: msgData.author || 'Amigo com carinho',
       text: msgData.text,
       date: 'Agora mesmo',
       createdAt: new Date().toISOString(),
@@ -512,7 +540,8 @@ export const storageService = {
 
     if (isSupabaseConfigured && supabase) {
       try {
-        const { error } = await supabase.from('messages').insert([newMsg]);
+        const payload = mapMessageToDB(newMsg);
+        const { error } = await supabase.from('messages').insert([payload]);
         if (error) throw error;
       } catch (err) {
         console.error('Erro ao adicionar mensagem no Supabase:', err);
@@ -551,7 +580,8 @@ export const storageService = {
     
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('messages').update({ likes: newLikes }).eq('id', msgId);
+        const { error } = await supabase.from('messages').update({ likes: newLikes }).eq('id', msgId);
+        if (error) throw error;
       } catch (err) {
         console.error('Erro ao curtir mensagem no Supabase:', err);
       }
