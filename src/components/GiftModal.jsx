@@ -4,12 +4,19 @@ import confetti from 'canvas-confetti';
 
 export default function GiftModal({ gift, isOpen, onClose, onConfirm }) {
   const [guestName, setGuestName] = useState('');
+  const [nameError, setNameError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen || !gift) return null;
 
   const handleConfirm = () => {
+    if (!guestName.trim()) {
+      setNameError(true);
+      return;
+    }
+
     setIsSubmitting(true);
+    setNameError(false);
     
     // Confetti celebration effect
     confetti({
@@ -20,9 +27,10 @@ export default function GiftModal({ gift, isOpen, onClose, onConfirm }) {
     });
 
     setTimeout(() => {
-      onConfirm(gift.id, guestName);
+      onConfirm(gift.id, guestName.trim());
       setIsSubmitting(false);
       setGuestName('');
+      setNameError(false);
       onClose();
     }, 400);
   };
@@ -37,7 +45,10 @@ export default function GiftModal({ gift, isOpen, onClose, onConfirm }) {
         {/* Top decorative header */}
         <div className="bg-gradient-to-r from-blush-400 via-blush-500 to-blush-400 p-6 text-white text-center relative">
           <button
-            onClick={onClose}
+            onClick={() => {
+              setNameError(false);
+              onClose();
+            }}
             className="absolute top-4 right-4 p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition focus:outline-none"
             aria-label="Fechar"
           >
@@ -76,25 +87,41 @@ export default function GiftModal({ gift, isOpen, onClose, onConfirm }) {
           <div className="flex items-start gap-3 p-3.5 bg-amber-50 rounded-2xl border border-amber-200/80 text-amber-900 text-xs sm:text-sm">
             <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <p className="leading-relaxed">
-              <strong>Tem certeza que deseja escolher este item?</strong> Ao confirmar, este presente ficará reservado para você e será retirado da lista para que outro convidado não dê repetido.
+              <strong>Tem certeza que deseja escolher este item?</strong> Ao confirmar, este presente ficará reservado em seu nome e será retirado da lista para que outro convidado não compre repetido.
             </p>
           </div>
 
-          {/* Optional Name Input */}
+          {/* Mandatory Name Input */}
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-              Seu nome ou de quem está presenteando <span className="text-slate-400 font-normal">(opcional)</span>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              Seu nome ou de quem está presenteando <span className="text-rose-500 font-bold">* (Obrigatório)</span>
             </label>
             <input
               type="text"
+              required
+              autoFocus
               value={guestName}
-              onChange={(e) => setGuestName(e.target.value)}
-              placeholder="Ex: Titia Ana / Família Souza (pode deixar em branco)"
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-200 outline-none text-sm transition"
+              onChange={(e) => {
+                setGuestName(e.target.value);
+                if (nameError) setNameError(false);
+              }}
+              placeholder="Ex: Titia Ana / Leonardo e Família"
+              className={`w-full px-4 py-3 rounded-2xl border outline-none text-sm transition ${
+                nameError
+                  ? 'border-rose-500 bg-rose-50/30 focus:ring-2 focus:ring-rose-200'
+                  : 'border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-200'
+              }`}
             />
-            <p className="text-[11px] text-slate-400 mt-1">
-              Não é obrigatório colocar o nome, você pode confirmar anonimamente se preferir.
-            </p>
+            {nameError ? (
+              <p className="text-xs text-rose-600 font-bold mt-1.5 flex items-center gap-1">
+                <span>⚠️</span>
+                <span>Por favor, informe seu nome para que os papais saibam quem presenteou!</span>
+              </p>
+            ) : (
+              <p className="text-[11px] text-slate-400 mt-1">
+                Informe seu nome para que os papais possam agradecer com carinho.
+              </p>
+            )}
           </div>
 
           {/* Actions */}

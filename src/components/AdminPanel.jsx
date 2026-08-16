@@ -26,7 +26,7 @@ export default function AdminPanel({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
-  const [activeTab, setActiveTab] = useState('rsvps'); // 'rsvps' | 'gifts' | 'config' | 'messages'
+  const [activeTab, setActiveTab] = useState('gifts-report'); // 'gifts-report' | 'rsvps' | 'gifts' | 'config' | 'messages'
 
   // New Gift Form state
   const [newTitle, setNewTitle] = useState('');
@@ -44,6 +44,9 @@ export default function AdminPanel({
 
   // Message moderation filter state
   const [messageFilter, setMessageFilter] = useState('pending'); // 'pending' | 'approved'
+
+  // Gift report search state
+  const [giftReportSearch, setGiftReportSearch] = useState('');
 
   if (!isOpen) return null;
 
@@ -103,6 +106,20 @@ export default function AdminPanel({
     const link = document.createElement('a');
     link.setAttribute('href', csvUri);
     link.setAttribute('download', `confirmacoes_cha_maite_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportGiftsCSV = () => {
+    const csvUri = storageService.exportGiftsToCSV();
+    if (!csvUri) {
+      alert('Ainda não há presentes para exportar.');
+      return;
+    }
+    const link = document.createElement('a');
+    link.setAttribute('href', csvUri);
+    link.setAttribute('download', `relatorio_presentes_cha_maite_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -234,6 +251,18 @@ export default function AdminPanel({
               {/* Navigation Tabs */}
               <div className="flex items-center gap-2 mt-4 overflow-x-auto pb-1 scrollbar-none">
                 <button
+                  onClick={() => setActiveTab('gifts-report')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                    activeTab === 'gifts-report'
+                      ? 'bg-slate-900 text-white shadow-sm'
+                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  <Gift className="w-3.5 h-3.5 text-blush-500" />
+                  <span>🎁 Quem vai dar o quê? ({reservedGiftsCount})</span>
+                </button>
+
+                <button
                   onClick={() => setActiveTab('rsvps')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
                     activeTab === 'rsvps'
@@ -253,20 +282,8 @@ export default function AdminPanel({
                       : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
                   }`}
                 >
-                  <Gift className="w-3.5 h-3.5" />
-                  <span>Gerenciar Presentes ({gifts.length})</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('config')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-                    activeTab === 'config'
-                      ? 'bg-slate-900 text-white shadow-sm'
-                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  <Settings className="w-3.5 h-3.5" />
-                  <span>Configurações do Evento</span>
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Cadastrar/Editar Itens ({gifts.length})</span>
                 </button>
 
                 <button
@@ -287,11 +304,150 @@ export default function AdminPanel({
                     <span className="text-slate-400 text-[11px]">({approvedMessages.length})</span>
                   )}
                 </button>
+
+                <button
+                  onClick={() => setActiveTab('config')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                    activeTab === 'config'
+                      ? 'bg-slate-900 text-white shadow-sm'
+                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                  <span>Configurações</span>
+                </button>
               </div>
             </div>
 
             {/* Tab Body */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/50">
+              
+              {/* TAB 0: RELATÓRIO QUEM VAI DAR O QUÊ */}
+              {activeTab === 'gifts-report' && (
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h4 className="font-bold text-slate-800 text-base sm:text-lg flex items-center gap-2">
+                        <span>Relatório: Quem vai dar cada presente</span>
+                        <span className="text-xs px-2.5 py-0.5 rounded-full bg-blush-100 text-blush-700 font-bold">
+                          {reservedGiftsCount} presentes reservados
+                        </span>
+                      </h4>
+                      <p className="text-xs text-slate-500">
+                        Acompanhe o nome de cada convidado e o presente que ele escolheu dar para a Maitê
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleExportGiftsCSV}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Exportar Relatório (Excel/CSV)</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Search filter */}
+                  {reservedGiftsCount > 0 && (
+                    <div className="max-w-md">
+                      <input
+                        type="text"
+                        value={giftReportSearch}
+                        onChange={(e) => setGiftReportSearch(e.target.value)}
+                        placeholder="Buscar por nome do convidado ou presente..."
+                        className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 focus:border-blush-400 outline-none text-xs shadow-sm transition"
+                      />
+                    </div>
+                  )}
+
+                  {/* Reserved Gifts Table */}
+                  {reservedGiftsCount > 0 ? (
+                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs text-slate-600">
+                          <thead className="bg-blush-50/70 text-slate-700 font-bold uppercase text-[10px] tracking-wider border-b border-blush-100">
+                            <tr>
+                              <th className="p-3.5 text-blush-900 font-bold">Quem vai dar (Convidado)</th>
+                              <th className="p-3.5">Presente Escolhido</th>
+                              <th className="p-3.5">Categoria</th>
+                              <th className="p-3.5">Data da Reserva</th>
+                              <th className="p-3.5 text-right">Ação</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {gifts
+                              .filter(g => g.status === 'reserved')
+                              .filter(g => {
+                                const q = giftReportSearch.toLowerCase();
+                                return (
+                                  (g.reservedBy && g.reservedBy.toLowerCase().includes(q)) ||
+                                  g.title.toLowerCase().includes(q) ||
+                                  g.category.toLowerCase().includes(q)
+                                );
+                              })
+                              .map((gift) => (
+                                <tr key={gift.id} className="hover:bg-slate-50/80 transition">
+                                  <td className="p-3.5 font-bold text-slate-900 text-sm">
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-7 h-7 rounded-full bg-blush-100 text-blush-700 flex items-center justify-center text-xs font-bold shrink-0">
+                                        {(gift.reservedBy || 'C').charAt(0).toUpperCase()}
+                                      </span>
+                                      <span>{gift.reservedBy || 'Nome não informado'}</span>
+                                    </div>
+                                  </td>
+                                  <td className="p-3.5 font-semibold text-slate-800">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-lg">{gift.icon || '🎁'}</span>
+                                      <div>
+                                        <span>{gift.title}</span>
+                                        {gift.description && (
+                                          <span className="block text-[11px] text-slate-400 font-normal">
+                                            {gift.description}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="p-3.5">
+                                    <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-medium text-[10px]">
+                                      {gift.category}
+                                    </span>
+                                  </td>
+                                  <td className="p-3.5 text-slate-500 font-medium">
+                                    {gift.reservedAt ? new Date(gift.reservedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recentemente'}
+                                  </td>
+                                  <td className="p-3.5 text-right">
+                                    <button
+                                      onClick={() => {
+                                        if (confirm(`Liberar este presente (${gift.title}) para que fique disponível novamente?`)) {
+                                          onCancelReservation(gift.id);
+                                        }
+                                      }}
+                                      className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-bold border border-amber-200 transition"
+                                      title="Desmarcar reserva"
+                                    >
+                                      Liberar Presente
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-white p-12 rounded-2xl text-center border border-slate-200 text-slate-400 text-sm space-y-2">
+                      <div className="w-12 h-12 rounded-full bg-blush-50 text-blush-400 mx-auto flex items-center justify-center text-xl">
+                        🎁
+                      </div>
+                      <p className="font-bold text-slate-700 text-base">Nenhum presente foi reservado ainda.</p>
+                      <p className="text-xs text-slate-400">Assim que os convidados escolherem os presentes no site, a lista com o nome de cada um aparecerá aqui!</p>
+                    </div>
+                  )}
+                </div>
+              )}
               
               {/* TAB 1: RSVPs */}
               {activeTab === 'rsvps' && (

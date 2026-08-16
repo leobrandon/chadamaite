@@ -231,5 +231,23 @@ export const storageService = {
 
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(';'), ...rows.map(e => e.join(';'))].join('\n');
     return encodeURI(csvContent);
+  },
+
+  exportGiftsToCSV: () => {
+    const gifts = storageService.getGifts();
+    if (!gifts.length) return null;
+
+    const headers = ['Presente', 'Categoria', 'Status', 'Quem vai dar (Presenteador)', 'Data da Reserva', 'Detalhes/Tamanho'];
+    const rows = gifts.map(g => [
+      `"${g.title.replace(/"/g, '""')}"`,
+      `"${g.category.replace(/"/g, '""')}"`,
+      g.status === 'reserved' ? 'RESERVADO' : 'DISPONÍVEL',
+      `"${(g.reservedBy || '-').replace(/"/g, '""')}"`,
+      g.reservedAt ? new Date(g.reservedAt).toLocaleDateString('pt-BR') : '-',
+      `"${(g.description || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(';'), ...rows.map(e => e.join(';'))].join('\n');
+    return encodeURI(csvContent);
   }
 };
