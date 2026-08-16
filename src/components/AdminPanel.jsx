@@ -1324,8 +1324,8 @@ export default function AdminPanel({
                       confirmText: 'Sim, Excluir Presente',
                       cancelText: 'Cancelar',
                       isDestructive: true,
-                      onConfirm: () => {
-                        onDeleteGift(editingGift.id);
+                      onConfirm: async () => {
+                        await onDeleteGift(editingGift.id);
                         setEditingGift(null);
                       },
                     });
