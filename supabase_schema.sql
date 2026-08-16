@@ -91,9 +91,10 @@ create policy "Presentes inserção pública" on public.gifts for insert with ch
 create policy "Presentes atualização pública" on public.gifts for update using (true);
 create policy "Presentes deleção pública" on public.gifts for delete using (true);
 
--- Políticas para rsvps (Leitura, Inserção e Deleção)
+-- Políticas para rsvps (Leitura, Inserção, Atualização e Deleção)
 create policy "RSVPs leitura pública" on public.rsvps for select using (true);
 create policy "RSVPs inserção pública" on public.rsvps for insert with check (true);
+create policy "RSVPs atualização pública" on public.rsvps for update using (true);
 create policy "RSVPs deleção pública" on public.rsvps for delete using (true);
 
 -- Políticas para messages (Leitura, Inserção, Atualização e Deleção)
