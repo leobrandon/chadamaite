@@ -41,6 +41,7 @@ create table if not exists public.gifts (
   reserved_by text default '',
   reserved_at text,
   priority text default 'medium',
+  target_quantity integer default 5,
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 

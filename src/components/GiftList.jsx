@@ -117,6 +117,11 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {filteredGifts.map((gift) => {
               const giftPledges = pledges.filter(p => p.giftId === gift.id);
+              const totalPledged = giftPledges.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
+              const targetQty = Number(gift.targetQuantity) || 5;
+              const isCompleted = totalPledged >= targetQty;
+              const remainingQty = Math.max(0, targetQty - totalPledged);
+              const progressPercent = Math.min(100, Math.round((totalPledged / targetQty) * 100));
 
               return (
                 <div
@@ -140,6 +145,16 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
                             ★ Preferência
                           </span>
                         )}
+
+                        {isCompleted ? (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Meta Atingida! 🎉
+                          </span>
+                        ) : totalPledged > 0 ? (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                            {totalPledged}/{targetQty} recebidos
+                          </span>
+                        ) : null}
                       </div>
                     </div>
 
@@ -154,15 +169,49 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
                     )}
                   </div>
 
-                  {/* Bottom Action Area */}
-                  <div className="pt-4 border-t border-slate-100/80">
-                    <button
-                      onClick={() => onSelectGift(gift)}
-                      className="w-full py-3 px-4 rounded-2xl bg-blush-500 hover:bg-blush-600 active:scale-[0.98] text-white font-bold text-xs sm:text-sm shadow-md shadow-blush-500/20 hover:shadow-blush-500/30 transition flex items-center justify-center gap-2 group"
-                    >
-                      <Heart className="w-4 h-4 group-hover:scale-125 transition-transform fill-white" />
-                      <span>Vou dar este presente 💖</span>
-                    </button>
+                  {/* Quota Progress & Bottom Action Area */}
+                  <div>
+                    <div className="my-3 pt-2 border-t border-slate-100/60">
+                      <div className="flex justify-between items-center text-[11px] font-medium text-slate-500 mb-1.5">
+                        <span>
+                          {isCompleted ? (
+                            <strong className="text-emerald-700 font-bold">Meta Concluída ({totalPledged}/{targetQty} un.)</strong>
+                          ) : (
+                            <>Meta: <strong className="text-slate-700">{targetQty} un.</strong> • Restam: <strong className="text-blush-600">{remainingQty} un.</strong></>
+                          )}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-bold">{progressPercent}%</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-500 ${isCompleted ? 'bg-emerald-500' : 'bg-blush-500'}`}
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <button
+                        onClick={() => onSelectGift(gift)}
+                        className={`w-full py-3 px-4 rounded-2xl active:scale-[0.98] font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2 group ${
+                          isCompleted
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 hover:shadow-emerald-600/30'
+                            : 'bg-blush-500 hover:bg-blush-600 text-white shadow-blush-500/20 hover:shadow-blush-500/30'
+                        }`}
+                      >
+                        {isCompleted ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 text-white" />
+                            <span>Meta Atingida 🎉 (Presentear mais)</span>
+                          </>
+                        ) : (
+                          <>
+                            <Heart className="w-4 h-4 group-hover:scale-125 transition-transform fill-white" />
+                            <span>Vou dar este presente 💖</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
