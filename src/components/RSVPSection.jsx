@@ -47,6 +47,14 @@ export default function RSVPSection({ config, onSaveRSVP }) {
     e.preventDefault();
     if (!name.trim()) return;
 
+    if (attending) {
+      const isAnyCompanionEmpty = companionNames.some(n => !n.trim());
+      if (isAnyCompanionEmpty) {
+        alert('Por favor, preencha o nome de todos os acompanhantes e crianças.');
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     const rsvpData = {
@@ -54,7 +62,7 @@ export default function RSVPSection({ config, onSaveRSVP }) {
       attending,
       adultsCount: attending ? adultsCount : 0,
       childrenCount: attending ? childrenCount : 0,
-      companionNames: attending ? companionNames.filter(n => n.trim()) : [],
+      companionNames: attending ? companionNames.map(n => n.trim()) : [],
       phone: phone.trim(),
       message: message.trim(),
     };
@@ -257,7 +265,7 @@ export default function RSVPSection({ config, onSaveRSVP }) {
                     <div className="space-y-3">
                       <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
                         <Users className="w-3.5 h-3.5 text-blush-500" />
-                        <span>Nome dos Acompanhantes ({companionNames.length})</span>
+                        <span>Nome dos Acompanhantes e Crianças * (Obrigatório)</span>
                       </div>
                       <div className="space-y-2">
                         {companionNames.map((companionName, idx) => (
@@ -265,9 +273,10 @@ export default function RSVPSection({ config, onSaveRSVP }) {
                             key={idx}
                             type="text"
                             maxLength={80}
+                            required={true}
                             value={companionName}
                             onChange={(e) => handleCompanionNameChange(idx, e.target.value)}
-                            placeholder={`Nome do acompanhante ${idx + 1}`}
+                            placeholder={`Nome do acompanhante / criança ${idx + 1} *`}
                             className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 outline-none text-base sm:text-sm transition"
                           />
                         ))}
