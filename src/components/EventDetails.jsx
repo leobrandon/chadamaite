@@ -50,7 +50,7 @@ export default function EventDetails({ config, onOpenPixModal }) {
               </div>
             </div>
             <p className="text-xs text-slate-400 mt-6 border-t border-slate-100 pt-3">
-              Chegue no horário para não perder as brincadeiras e o lanche! 🍰
+              Chegue no horário para não perder as brincadeiras e o jantar! 🌭
             </p>
           </div>
 
