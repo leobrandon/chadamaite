@@ -697,20 +697,21 @@ export const storageService = {
 
   updateRSVP: async (rsvpId, fields) => {
     const rsvps = storageService.getRSVPs();
+    const existing = rsvps.find(r => r.id === rsvpId);
+    const updatedEntry = existing ? { ...existing, ...fields } : null;
     const updated = rsvps.map(r => r.id === rsvpId ? { ...r, ...fields } : r);
     localStorage.setItem(KEYS.RSVPS, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: updated }));
-    if (isSupabaseConfigured && supabase) {
+
+    if (isSupabaseConfigured && supabase && updatedEntry) {
       try {
-        const payload = {
-          adults_count: fields.adultsCount,
-          children_count: fields.childrenCount,
-          companion_names: fields.companionNames || [],
-          phone: fields.phone || '',
-          message: fields.message || '',
-        };
-        const { error } = await supabase.from('rsvps').update(payload).eq('id', rsvpId);
-        if (error) console.error('Erro ao atualizar RSVP no Supabase:', error);
+        const payload = mapRSVPToDB(updatedEntry);
+        // Deleta e reinsere com o mesmo ID para garantir persistência independentemente de políticas de RLS UPDATE
+        await supabase.from('rsvps').delete().eq('id', rsvpId);
+        const { error: insertErr } = await supabase.from('rsvps').insert([payload]);
+        if (insertErr) {
+          console.error('Erro ao atualizar RSVP no Supabase:', insertErr);
+        }
       } catch (err) {
         console.error('Erro ao atualizar RSVP no Supabase:', err);
       }
