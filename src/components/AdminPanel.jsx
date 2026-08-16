@@ -26,7 +26,13 @@ export default function AdminPanel({
   onApproveMessage,
   onDeleteMessage 
 }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    try {
+      return sessionStorage.getItem('cha_maite_admin_auth') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
   const [activeTab, setActiveTab] = useState('gifts-report'); // 'gifts-report' | 'rsvps' | 'gifts' | 'config' | 'messages'
@@ -105,6 +111,11 @@ export default function AdminPanel({
     e.preventDefault();
     const correctPin = String(config?.adminPin || '16101928').trim();
     if (pinInput.trim() === correctPin) {
+      try {
+        sessionStorage.setItem('cha_maite_admin_auth', 'true');
+      } catch {
+        // ignore sessionStorage errors
+      }
       setIsAuthenticated(true);
       setPinError(false);
     } else {
@@ -179,6 +190,11 @@ export default function AdminPanel({
   const handleSaveConfig = (e) => {
     e.preventDefault();
     onSaveConfig(tempConfig);
+    try {
+      sessionStorage.setItem('cha_maite_admin_auth', 'true');
+    } catch {
+      // ignore
+    }
     setConfigSaved(true);
     setTimeout(() => setConfigSaved(false), 2500);
   };
@@ -254,6 +270,11 @@ export default function AdminPanel({
               <button
                 type="button"
                 onClick={() => {
+                  try {
+                    sessionStorage.removeItem('cha_maite_admin_auth');
+                  } catch {
+                    // ignore
+                  }
                   setIsAuthenticated(false);
                   setPinInput('');
                   setPinError(false);
