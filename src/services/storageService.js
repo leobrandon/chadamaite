@@ -652,12 +652,34 @@ export const storageService = {
       createdAt: new Date().toISOString(),
       ...rsvpData,
     };
-    
+
+    const hasMessage = Boolean(rsvpData.message && rsvpData.message.trim());
+    const newMsg = hasMessage ? {
+      id: generateUniqueId('msg'),
+      author: rsvpData.name || 'Amigo com carinho',
+      text: rsvpData.message.trim(),
+      date: 'Agora mesmo',
+      createdAt: new Date().toISOString(),
+      likes: 0,
+      status: 'pending',
+    } : null;
+
     if (isSupabaseConfigured && supabase) {
+      const promises = [
+        supabase.from('rsvps').insert([mapRSVPToDB(newEntry)]),
+      ];
+      if (newMsg) {
+        promises.push(supabase.from('messages').insert([mapMessageToDB(newMsg)]));
+      }
       try {
-        await supabase.from('rsvps').insert([mapRSVPToDB(newEntry)]);
+        const results = await Promise.all(promises);
+        results.forEach((res, i) => {
+          if (res?.error) {
+            console.error(`Erro ao salvar item ${i === 0 ? 'RSVP' : 'Mensagem'} no Supabase:`, res.error);
+          }
+        });
       } catch (err) {
-        console.error('Erro ao salvar RSVP no Supabase:', err);
+        console.error('Erro ao salvar RSVP/Recado no Supabase:', err);
       }
     }
 
@@ -665,12 +687,11 @@ export const storageService = {
     localStorage.setItem(KEYS.RSVPS, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: updated }));
 
-    // Se deixou recado, salva no mural
-    if (rsvpData.message && rsvpData.message.trim()) {
-      await storageService.addMessage({
-        author: rsvpData.name,
-        text: rsvpData.message.trim(),
-      });
+    if (newMsg) {
+      const currentMsgs = storageService.getMessages();
+      const updatedMsgs = [newMsg, ...currentMsgs.filter(m => m.id !== newMsg.id)];
+      localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updatedMsgs));
+      window.dispatchEvent(new CustomEvent('messages_updated', { detail: updatedMsgs }));
     }
 
     return newEntry;
