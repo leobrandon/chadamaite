@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, Shield, Lock, Users, Gift, MessageCircleHeart, Settings, Download, 
-  Trash2, Plus, Edit2, Check, RefreshCw, Eye, EyeOff, CheckCircle2, XCircle
+  Trash2, Plus, Edit2, Check, RefreshCw, Eye, EyeOff, CheckCircle2, XCircle, Search
 } from 'lucide-react';
 import { INITIAL_CATEGORIES, BABY_EMOJIS } from '../data/initialGifts';
 import { storageService } from '../services/storageService';
@@ -64,6 +64,9 @@ export default function AdminPanel({
 
   // Gift report search state
   const [giftReportSearch, setGiftReportSearch] = useState('');
+  
+  // Gift manage tab search state
+  const [giftManageSearch, setGiftManageSearch] = useState('');
   
   // Accordion state for pledges
   const [expandedGiftId, setExpandedGiftId] = useState(null);
@@ -835,12 +838,42 @@ export default function AdminPanel({
                       </button>
                     </div>
 
-                    <p className="px-4 py-2.5 text-[11px] text-slate-400 bg-slate-50/60 border-b border-slate-100">
-                      Toque em qualquer item para editar
-                    </p>
+                    {/* Search bar for gifts list */}
+                    <div className="p-3 bg-slate-50 border-b border-slate-100">
+                      <div className="relative">
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          value={giftManageSearch}
+                          onChange={(e) => setGiftManageSearch(e.target.value)}
+                          placeholder="Buscar item por nome, categoria ou marca..."
+                          className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 bg-white outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition"
+                        />
+                        {giftManageSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setGiftManageSearch('')}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 p-1"
+                            title="Limpar busca"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
 
                     <div className="divide-y divide-slate-100">
-                      {gifts.map((gift) => {
+                      {gifts
+                        .filter((gift) => {
+                          if (!giftManageSearch.trim()) return true;
+                          const q = giftManageSearch.toLowerCase();
+                          return (
+                            (gift.title || '').toLowerCase().includes(q) ||
+                            (gift.category || '').toLowerCase().includes(q) ||
+                            (gift.description || '').toLowerCase().includes(q)
+                          );
+                        })
+                        .map((gift) => {
                         const giftPledges = pledges.filter(p => p.giftId === gift.id);
                         const totalUnits = giftPledges.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
                         const targetQty = Number(gift.targetQuantity) || 5;
@@ -888,6 +921,19 @@ export default function AdminPanel({
                           </button>
                         );
                       })}
+                      {gifts.filter((gift) => {
+                        if (!giftManageSearch.trim()) return true;
+                        const q = giftManageSearch.toLowerCase();
+                        return (
+                          (gift.title || '').toLowerCase().includes(q) ||
+                          (gift.category || '').toLowerCase().includes(q) ||
+                          (gift.description || '').toLowerCase().includes(q)
+                        );
+                      }).length === 0 && (
+                        <div className="p-8 text-center text-slate-400 text-xs">
+                          Nenhum presente encontrado para "{giftManageSearch}".
+                        </div>
+                      )}
                     </div>
                   </div>
 

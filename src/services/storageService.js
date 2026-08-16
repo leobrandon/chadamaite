@@ -63,32 +63,52 @@ function mapConfigToDB(cfg) {
 }
 
 function mapGiftFromDB(row) {
+  let targetQuantity = 5;
+  let cleanDescription = row.description || '';
+
+  // 1. Extrair tag de metadados [meta:X] da descrição se presente
+  const metaMatch = cleanDescription.match(/\[meta:(\d+)\]/);
+  if (metaMatch) {
+    targetQuantity = parseInt(metaMatch[1], 10) || 5;
+    cleanDescription = cleanDescription.replace(/\s*\[meta:\d+\]/, '').trim();
+  }
+
+  // 2. Se a coluna nativa do Supabase existir e tiver valor, ela tem precedência
+  if (row.target_quantity !== undefined && row.target_quantity !== null) {
+    targetQuantity = Number(row.target_quantity);
+  }
+
   return {
     id: row.id,
     title: row.title,
     category: row.category,
-    description: row.description || '',
+    description: cleanDescription,
     icon: row.icon || '🎁',
     status: row.status || 'available',
     reservedBy: row.reserved_by || '',
     reservedAt: row.reserved_at || null,
     priority: row.priority || 'medium',
-    targetQuantity: Number(row.target_quantity ?? (row.targetQuantity ?? 5)),
+    targetQuantity: targetQuantity,
   };
 }
 
 function mapGiftToDB(g) {
+  const targetQty = Number(g.targetQuantity || 5);
+  let desc = (g.description || '').replace(/\s*\[meta:\d+\]/, '').trim();
+  // Inclui tag de metadados para persistência garantida em qualquer ambiente
+  const descWithMeta = desc ? `${desc} [meta:${targetQty}]` : `[meta:${targetQty}]`;
+
   return {
     id: g.id,
     title: g.title,
     category: g.category,
-    description: g.description || '',
+    description: descWithMeta,
     icon: g.icon || '🎁',
     status: g.status || 'available',
     reserved_by: g.reservedBy || '',
     reserved_at: g.reservedAt || null,
     priority: g.priority || 'medium',
-    target_quantity: Number(g.targetQuantity || 5),
+    target_quantity: targetQty,
   };
 }
 
