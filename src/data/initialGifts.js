@@ -410,3 +410,40 @@ export const INITIAL_MESSAGES = [
     likes: 3
   }
 ];
+
+export const BABY_EMOJIS = [
+  { emoji: '🎁', label: '🎁 Presente' },
+  { emoji: '🍼', label: '🍼 Mamadeira' },
+  { emoji: '👶', label: '👶 Bebê' },
+  { emoji: '🧸', label: '🧸 Ursinho' },
+  { emoji: '🧷', label: '🧷 Fralda / Alfinete' },
+  { emoji: '🛁', label: '🛁 Banho / Banheira' },
+  { emoji: '🧼', label: '🧼 Sabonete / Higiene' },
+  { emoji: '🧴', label: '🧴 Loção / Pomada' },
+  { emoji: '🪥', label: '🪥 Escova Dental' },
+  { emoji: '👗', label: '👗 Vestidinho' },
+  { emoji: '👚', label: '👚 Roupinha / Body' },
+  { emoji: '🧦', label: '🧦 Meias / Sapatinho' },
+  { emoji: '🧢', label: '🧢 Touca / Chapéu' },
+  { emoji: '🎀', label: '🎀 Laço / Tiara' },
+  { emoji: '🌸', label: '🌸 Florzinha' },
+  { emoji: '🛌', label: '🛌 Berço / Enxoval' },
+  { emoji: '🧺', label: '🧺 Cesto de Roupas' },
+  { emoji: '🎒', label: '🎒 Bolsa Maternidade' },
+  { emoji: '🚼', label: '🚼 Símbolo Bebê' },
+  { emoji: '🪞', label: '🪞 Espelho' },
+  { emoji: '🎠', label: '🎠 Móbile / Brinquedo' },
+  { emoji: '📖', label: '📖 Livrinho' },
+  { emoji: '🌡️', label: '🌡️ Termômetro' },
+  { emoji: '✂️', label: '✂️ Tesourinha' },
+  { emoji: '🎵', label: '🎵 Música / Nana Nenê' },
+  { emoji: '🌟', label: '🌟 Estrela' },
+  { emoji: '💖', label: '💖 Coração' },
+  { emoji: '👑', label: '👑 Coroa Princesa' },
+  { emoji: '🥣', label: '🥣 Pratinho / Tigela' },
+  { emoji: '🥄', label: '🥄 Colherzinha' },
+  { emoji: '🥤', label: '🥤 Copinho' },
+  { emoji: '🦷', label: '🦷 Mordedor' },
+  { emoji: '🚗', label: '🚗 Passeio / Carro' },
+];
+
