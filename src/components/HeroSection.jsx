@@ -131,20 +131,20 @@ export default function HeroSection({ config, onNavigateToGifts, onNavigateToRSV
         )}
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-lg mx-auto">
+        <div className="flex flex-wrap items-center justify-center gap-3 max-w-3xl mx-auto">
           <button
             onClick={onNavigateToGifts}
-            className="w-full sm:w-auto px-7 py-3.5 rounded-full bg-blush-500 hover:bg-blush-600 text-white font-semibold text-sm sm:text-base shadow-lg shadow-blush-500/25 hover:shadow-blush-500/35 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+            className="h-12 px-6 rounded-full bg-blush-500 hover:bg-blush-600 active:scale-95 text-white font-bold text-sm shadow-md shadow-blush-500/25 hover:shadow-lg hover:shadow-blush-500/35 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
           >
-            <Gift className="w-5 h-5" />
+            <Gift className="w-4 h-4 shrink-0" />
             <span>Ver Lista de Presentes</span>
           </button>
           
           <button
             onClick={onNavigateToRSVP}
-            className="w-full sm:w-auto px-7 py-3.5 rounded-full bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm sm:text-base border border-slate-200 shadow-sm hover:shadow hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+            className="h-12 px-6 rounded-full bg-white hover:bg-slate-50 active:scale-95 text-slate-700 font-bold text-sm border border-slate-200 shadow-sm hover:shadow hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
           >
-            <CalendarCheck className="w-5 h-5 text-blush-500" />
+            <CalendarCheck className="w-4 h-4 text-blush-500 shrink-0" />
             <span>Confirmar Presença</span>
           </button>
 
@@ -152,10 +152,10 @@ export default function HeroSection({ config, onNavigateToGifts, onNavigateToRSV
             href={getShareUrl()}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-sm sm:text-base border border-emerald-200 shadow-sm hover:shadow hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+            className="h-12 px-5 rounded-full bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 font-bold text-sm border border-emerald-200 shadow-sm hover:shadow hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
             title="Compartilhar convite no WhatsApp"
           >
-            <Share2 className="w-4 h-4 text-emerald-600" />
+            <Share2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>Compartilhar</span>
           </a>
         </div>

@@ -34,23 +34,23 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, totalGift
           {/* Logo / Title */}
           <button 
             onClick={() => handleNavClick('inicio')}
-            className="flex items-center gap-2.5 text-left group transition"
+            className="flex items-center gap-2.5 text-left group transition shrink-0 py-1"
           >
-            <div className="w-10 h-10 rounded-full bg-blush-100 flex items-center justify-center text-blush-600 group-hover:scale-110 transition shadow-inner">
+            <div className="w-10 h-10 rounded-full bg-blush-100 flex items-center justify-center text-blush-600 group-hover:scale-105 transition shadow-inner shrink-0">
               <span className="text-xl">🌸</span>
             </div>
-            <div>
-              <span className="font-handwriting text-2xl sm:text-3xl text-blush-600 tracking-wide block leading-none">
-                Chá da Maitê
+            <div className="flex flex-col justify-center">
+              <span className="font-serif text-lg sm:text-xl font-bold text-slate-800 tracking-tight leading-tight flex items-center gap-1">
+                Chá da <span className="font-handwriting text-2xl sm:text-3xl text-blush-600 font-normal">Maitê</span>
               </span>
-              <span className="text-[11px] uppercase tracking-wider text-slate-400 font-medium block mt-0.5">
+              <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold leading-none mt-0.5">
                 Leonardo & Isabella
               </span>
             </div>
           </button>
 
           {/* Desktop Nav Items */}
-          <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+          <nav className="hidden md:flex items-center gap-1 lg:gap-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -58,17 +58,17 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, totalGift
                 <button
                   key={item.id}
                   onClick={() => handleNavClick(item.id)}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-sm font-medium transition-all ${
+                  className={`flex items-center gap-1.5 lg:gap-2 px-3 lg:px-3.5 py-2 rounded-full text-xs lg:text-sm font-medium transition-all whitespace-nowrap ${
                     isActive
                       ? 'bg-blush-500 text-white shadow-md shadow-blush-500/20'
                       : 'text-slate-600 hover:text-blush-600 hover:bg-blush-50'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-blush-400'}`} />
+                  <Icon className={`w-3.5 h-3.5 lg:w-4 lg:h-4 ${isActive ? 'text-white' : 'text-blush-400'}`} />
                   <span>{item.label}</span>
                   {item.badge !== undefined && item.badge > 0 && (
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                      isActive ? 'bg-white text-blush-600' : 'bg-blush-100 text-blush-700'
+                    <span className={`text-[10px] lg:text-xs px-1.5 lg:px-2 py-0.5 rounded-full font-bold ${
+                       isActive ? 'bg-white text-blush-600' : 'bg-blush-100 text-blush-700'
                     }`}>
                       {item.badge}
                     </span>
@@ -77,7 +77,7 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, totalGift
               );
             })}
 
-            <div className="h-6 w-px bg-slate-200 mx-1.5" />
+            <div className="h-5 w-px bg-slate-200 mx-1" />
 
             {/* Social Share WhatsApp Button */}
             <a
@@ -85,7 +85,7 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, totalGift
               target="_blank"
               rel="noopener noreferrer"
               title="Compartilhar Convite no WhatsApp"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition whitespace-nowrap"
             >
               <Share2 className="w-3.5 h-3.5" />
               <span>Compartilhar</span>
@@ -95,7 +95,7 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, totalGift
             <button
               onClick={onOpenAdmin}
               title="Área dos Papais (Leonardo & Isabella)"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition border border-slate-200"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition border border-slate-200 whitespace-nowrap"
             >
               <Shield className="w-3.5 h-3.5 text-slate-400" />
               <span>Papais</span>
