@@ -45,6 +45,7 @@ export default function AdminPanel({
   const [newIcon, setNewIcon] = useState('🎁');
   const [newPriority, setNewPriority] = useState('medium');
   const [newTargetQuantity, setNewTargetQuantity] = useState(5);
+  const [newDisplayOrder, setNewDisplayOrder] = useState('');
 
   // Config Form state
   const [tempConfig, setTempConfig] = useState(config);
@@ -141,11 +142,13 @@ export default function AdminPanel({
       icon: newIcon || '🎁',
       priority: newPriority,
       targetQuantity: Number(newTargetQuantity) || 5,
+      displayOrder: Number(newDisplayOrder) || (gifts.length + 1),
     });
 
     setNewTitle('');
     setNewDesc('');
     setNewTargetQuantity(5);
+    setNewDisplayOrder('');
   };
 
   const handleSaveEditedGift = async (e) => {
@@ -159,6 +162,7 @@ export default function AdminPanel({
       icon: editingGift.icon,
       priority: editingGift.priority,
       targetQuantity: Number(editingGift.targetQuantity) || 5,
+      displayOrder: Number(editingGift.displayOrder) || 999,
     });
     setEditingGift(null);
   };
@@ -968,6 +972,19 @@ export default function AdminPanel({
                         />
                       </div>
 
+                      <div className="sm:col-span-2">
+                        <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1" title="Ordem de exibição da esquerda para a direita, de cima para baixo">Posição na Lista</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="999"
+                          value={newDisplayOrder}
+                          onChange={(e) => setNewDisplayOrder(e.target.value)}
+                          placeholder={String(gifts.length + 1)}
+                          className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400"
+                        />
+                      </div>
+
                       <div className="sm:col-span-10">
                         <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Descrição / Tamanho / Sugestão de Marca</label>
                         <input
@@ -1049,6 +1066,7 @@ export default function AdminPanel({
                             (gift.description || '').toLowerCase().includes(q)
                           );
                         })
+                        .sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999))
                         .map((gift) => {
                         const giftPledges = pledges.filter(p => p.giftId === gift.id);
                         const totalUnits = giftPledges.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
@@ -1061,8 +1079,10 @@ export default function AdminPanel({
                             onClick={() => setEditingGift(gift)}
                             className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 active:bg-blush-50/50 transition text-left group"
                           >
-                            {/* Emoji */}
-                            <div className="w-10 h-10 rounded-xl bg-blush-50 border border-blush-100 flex items-center justify-center text-xl shrink-0">
+                            <div className="w-10 h-10 rounded-xl bg-blush-50 border border-blush-100 flex items-center justify-center text-xl shrink-0 relative">
+                              <span className="absolute -top-2 -left-2 bg-slate-800 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
+                                #{gift.displayOrder || '-'}
+                              </span>
                               {gift.icon || '🎁'}
                             </div>
 

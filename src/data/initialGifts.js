@@ -22,6 +22,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'high',
     targetQuantity: 3,
+    displayOrder: 1
   },
   {
     id: 'gift-2',
@@ -34,6 +35,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'high',
     targetQuantity: 5,
+    displayOrder: 2
   },
   {
     id: 'gift-3',
@@ -46,6 +48,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'high',
     targetQuantity: 5,
+    displayOrder: 3
   },
   {
     id: 'gift-4',
@@ -58,6 +61,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'medium',
     targetQuantity: 5,
+    displayOrder: 4
   },
   {
     id: 'gift-5',
@@ -70,6 +74,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'high',
     targetQuantity: 3,
+    displayOrder: 5
   },
 
   // Higiene & Banho
@@ -84,6 +89,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'high',
     targetQuantity: 2,
+    displayOrder: 6
   },
   {
     id: 'gift-7',
@@ -96,6 +102,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'high',
     targetQuantity: 3,
+    displayOrder: 7
   },
   {
     id: 'gift-8',
@@ -108,6 +115,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'medium',
     targetQuantity: 2,
+    displayOrder: 8
   },
   {
     id: 'gift-9',
@@ -120,6 +128,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'medium',
     targetQuantity: 1,
+    displayOrder: 9
   },
   {
     id: 'gift-10',
@@ -132,6 +141,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'medium',
     targetQuantity: 1,
+    displayOrder: 10
   },
   {
     id: 'gift-11',
@@ -144,6 +154,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'medium',
     targetQuantity: 1,
+    displayOrder: 11
   },
 
   // Alimentação
@@ -158,6 +169,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'medium',
     targetQuantity: 2,
+    displayOrder: 12
   },
   {
     id: 'gift-13',
@@ -170,6 +182,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'medium',
     targetQuantity: 2,
+    displayOrder: 13
   },
   {
     id: 'gift-14',
@@ -182,6 +195,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'low',
     targetQuantity: 2,
+    displayOrder: 14
   },
   {
     id: 'gift-15',
@@ -194,6 +208,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'high',
     targetQuantity: 1,
+    displayOrder: 15
   },
 
   // Quarto & Enxoval
@@ -208,6 +223,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'high',
     targetQuantity: 2,
+    displayOrder: 16
   },
   {
     id: 'gift-17',
@@ -220,6 +236,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'high',
     targetQuantity: 3,
+    displayOrder: 17
   },
   {
     id: 'gift-18',
@@ -232,6 +249,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'high',
     targetQuantity: 2,
+    displayOrder: 18
   },
   {
     id: 'gift-19',
@@ -244,6 +262,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'medium',
     targetQuantity: 1,
+    displayOrder: 19
   },
   {
     id: 'gift-20',
@@ -256,6 +275,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'medium',
     targetQuantity: 1,
+    displayOrder: 20
   },
 
   // Passeio & Segurança
@@ -270,6 +290,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'high',
     targetQuantity: 1,
+    displayOrder: 21
   },
   {
     id: 'gift-22',
@@ -282,6 +303,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'medium',
     targetQuantity: 1,
+    displayOrder: 22
   },
   {
     id: 'gift-23',
@@ -294,6 +316,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'medium',
     targetQuantity: 1,
+    displayOrder: 23
   },
   {
     id: 'gift-24',
@@ -306,6 +329,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'medium',
     targetQuantity: 1,
+    displayOrder: 24
   },
 
   // Roupas & Acessórios
@@ -320,6 +344,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'high',
     targetQuantity: 3,
+    displayOrder: 25
   },
   {
     id: 'gift-26',
@@ -332,6 +357,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'high',
     targetQuantity: 3,
+    displayOrder: 26
   },
   {
     id: 'gift-27',
@@ -344,6 +370,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'medium',
     targetQuantity: 3,
+    displayOrder: 27
   },
   {
     id: 'gift-28',
@@ -356,6 +383,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'medium',
     targetQuantity: 1,
+    displayOrder: 28
   },
 
   // Brinquedos & Mimos
@@ -370,6 +398,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'medium',
     targetQuantity: 2,
+    displayOrder: 29
   },
   {
     id: 'gift-30',
@@ -382,6 +411,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'low',
     targetQuantity: 2,
+    displayOrder: 30
   },
   {
     id: 'gift-31',
@@ -394,6 +424,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'medium',
     targetQuantity: 1,
+    displayOrder: 31
   },
   {
     id: 'gift-32',
@@ -406,6 +437,7 @@ export const INITIAL_GIFTS = [
     reservedAt: null,
     priority: 'low',
     targetQuantity: 2,
+    displayOrder: 32
   }
 ];
 

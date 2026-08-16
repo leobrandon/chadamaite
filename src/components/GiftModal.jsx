@@ -29,12 +29,18 @@ export default function GiftModal({ gift, gifts = [], pledges = [], isOpen, onCl
   
   // Available Mimos (all non-diaper gifts with remaining quota)
   const availableMimos = useMemo(() => {
+    const pWeight = { high: 1, medium: 2, low: 3 };
     return (gifts || []).filter(g => {
       if (g.category === 'Fraldas' || g.id === gift?.id) return false;
       const pList = (pledges || []).filter(p => p.giftId === g.id);
       const pledgedTotal = pList.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
       const target = Number(g.targetQuantity) || 5;
       return pledgedTotal < target;
+    }).sort((a, b) => {
+      const pA = pWeight[a.priority || 'medium'] || 2;
+      const pB = pWeight[b.priority || 'medium'] || 2;
+      if (pA !== pB) return pA - pB;
+      return (a.displayOrder || 999) - (b.displayOrder || 999);
     });
   }, [gifts, pledges, gift?.id]);
 
@@ -391,11 +397,18 @@ export default function GiftModal({ gift, gifts = [], pledges = [], isOpen, onCl
                                   <span className="w-8 h-8 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-lg shadow-2xs shrink-0">
                                     {m.icon || '🎁'}
                                   </span>
-                                  <div className="min-w-0">
-                                    <h5 className="font-bold text-slate-800 text-xs sm:text-sm truncate">
-                                      {m.title}
-                                    </h5>
-                                    <p className="text-[10px] text-slate-500 truncate">
+                                  <div className="min-w-0 flex flex-col items-start gap-0.5">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <h5 className="font-bold text-slate-800 text-xs sm:text-sm truncate max-w-[200px]">
+                                        {m.title}
+                                      </h5>
+                                      {m.priority === 'high' && (
+                                        <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-bold rounded-full whitespace-nowrap">
+                                          ★ Preferência
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 truncate w-full">
                                       {m.category} {m.description ? `• ${m.description}` : ''}
                                     </p>
                                   </div>
