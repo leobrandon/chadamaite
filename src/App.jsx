@@ -25,7 +25,7 @@ export default function App() {
   const [isPixModalOpen, setIsPixModalOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
 
-  // Sync with localStorage / custom events
+  // Sync with localStorage, Supabase and custom events
   useEffect(() => {
     const handleConfigUpdate = (e) => setConfig(e.detail);
     const handleGiftsUpdate = (e) => setGifts(e.detail);
@@ -37,11 +37,25 @@ export default function App() {
     window.addEventListener('rsvps_updated', handleRSVPsUpdate);
     window.addEventListener('messages_updated', handleMessagesUpdate);
 
+    // Conectar ao Supabase em tempo real se configurado
+    let unsubscribeRealtime = null;
+    storageService.initRealtimeSync((cloudData) => {
+      if (cloudData.config) setConfig(cloudData.config);
+      if (cloudData.gifts) setGifts(cloudData.gifts);
+      if (cloudData.rsvps) setRsvps(cloudData.rsvps);
+      if (cloudData.messages) setMessages(cloudData.messages);
+    }).then(unsub => {
+      unsubscribeRealtime = unsub;
+    });
+
     return () => {
       window.removeEventListener('config_updated', handleConfigUpdate);
       window.removeEventListener('gifts_updated', handleGiftsUpdate);
       window.removeEventListener('rsvps_updated', handleRSVPsUpdate);
       window.removeEventListener('messages_updated', handleMessagesUpdate);
+      if (typeof unsubscribeRealtime === 'function') {
+        unsubscribeRealtime();
+      }
     };
   }, []);
 
