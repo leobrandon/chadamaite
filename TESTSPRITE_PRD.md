@@ -3,6 +3,26 @@
 
 ---
 
+## 🔑 CREDENCIAIS E CONFIGURAÇÕES DE TESTE (Para Robô / TestSprite AI)
+
+| Parâmetro de Teste | Valor para Automação | Descrição / Instrução para IA |
+| :--- | :--- | :--- |
+| **URL Base da Aplicação** | `https://chadamaite.vercel.app` | URL de produção hospedada na Vercel |
+| **PIN / Senha do Painel Admin** | `16101928` | **Senha oficial do Painel dos Pais** |
+| **Gatilho de Abertura do Admin** | `header button:has-text("Papais")` | Botão no canto superior direito do Navbar |
+| **Campo de Entrada da Senha** | `input[type="password"]` | Placeholder: *"Digite a senha do painel"* |
+| **Botão de Submissão da Senha** | `button[type="submit"]:has-text("Acessar Painel")` | Pressionar ou submeter o formulário |
+| **Validação de Sucesso do Login** | Visualizar abas `Quem vai dar o que`, `Confirmações`, `Cadastrar/Editar Itens` | Indica autenticação aprovada e sessão iniciada |
+
+> ⚠️ **Instrução Especial para a IA do TestSprite:**  
+> Quando o robô de testes for executar fluxos administrativos:
+> 1. Clicar no botão **"Papais"** no Navbar (`header button:has-text("Papais")`).
+> 2. No modal que abrir (*"Área Restrita aos Pais"*), preencher o campo `input[type="password"]` com **`16101928`**.
+> 3. Clicar em **"Acessar Painel"** (`button:has-text("Acessar Painel")`).
+> 4. O modal passará para a visualização completa do painel administrativo. A sessão permanecerá salva no `sessionStorage` durante todo o ciclo de testes da aba.
+
+---
+
 ## 1. Visão Geral do Produto e Arquitetura
 
 ### 1.1 Identificação do Produto
@@ -31,7 +51,7 @@ src/
 │   ├── RSVPSection.jsx       # Formulário de confirmação de presença com contadores táteis
 │   ├── MessagesWall.jsx      # Mural de recados com likes e fluxo de moderação
 │   ├── PixModal.jsx          # Modal com chave Pix e botão Copia e Cola
-│   ├── AdminPanel.jsx        # Painel protegido dos pais (relatórios, CRUD, moderação e config)
+│   ├── AdminPanel.jsx        # Painel protegido dos pais (relatórios, CRUD com busca, moderação e config)
 │   ├── ConfirmModal.jsx      # Modal in-app de confirmação para ações destrutivas (substitui alert/confirm)
 │   ├── ScrollButtons.jsx     # Botões flutuantes de rolagem rápida (topo/rodapé)
 │   └── Footer.jsx            # Rodapé com créditos afetivos e botão de compartilhamento
@@ -134,10 +154,10 @@ src/
    - Clica no botão `"Papais"` no Navbar ou no rodapé.
    - O componente `AdminPanel` é carregado sob demanda via `React.lazy()` / `Suspense`.
    - Se já autenticado na sessão atual (`sessionStorage.getItem('cha_maite_admin_auth') === 'true'`), abre direto no painel.
-   - Caso contrário, exibe barreira de PIN (PIN padrão: `16101928`). Ao validar o PIN correto, grava a sessão no `sessionStorage` e libera o acesso.
+   - Caso contrário, exibe barreira de PIN. Digitar **`16101928`** e clicar em `"Acessar Painel"`. Ao validar o PIN correto, grava a sessão no `sessionStorage` e libera o acesso.
 2. **Navegação nas Abas Administrativas:**
    - **Aba 1 - Relatório de Presentes (`gifts-report`):**
-     - Lista todos os presentes cadastrados.
+     - Lista todos os presentes cadastrados com campo de busca.
      - Exibe barra de progresso, porcentagem de conclusão e selo `"Meta Atingida! 🎉"` quando a cota estiver preenchida.
      - Accordion interativo: ao clicar em um presente, expande a lista de todos os convidados que contribuíram (Nome, Quantidade, Data e botão de lixeira para excluir contribuição com modal de confirmação).
      - Botão `"Exportar Relatório (CSV / Excel)"`.
@@ -148,8 +168,9 @@ src/
      - Botão `"Exportar Lista (CSV / Excel)"`.
    - **Aba 3 - Cadastrar / Editar Itens (`gifts`):**
      - Formulário de cadastro de novo presente: Ícone (Emoji), Título, Categoria, Prioridade, **Meta Desejada (Quantidade)** e Descrição.
+     - **Campo de Busca:** Filtro em tempo real no topo da lista de presentes para localizar itens por nome, categoria ou marca.
      - Lista de cards verticais clicáveis (mobile-friendly). Ao tocar em qualquer card, abre o modal de edição.
-     - Modal de edição: Permite alterar todos os dados (incluindo a meta) e possui botão de exclusão direta com confirmação.
+     - Modal de edição: Permite alterar todos os dados (incluindo a meta numérica desejada) e possui botão de exclusão direta com confirmação.
      - Botão `"Restaurar Lista Padrão"` para resetar os presentes para o modelo inicial.
    - **Aba 4 - Moderação do Mural (`messages`):**
      - Filtro entre `"Aguardando Aprovação"` e `"Aprovados no Mural"`.
@@ -173,7 +194,7 @@ src/
 | **BR-005** | **Compartilhamento WhatsApp sem Telefone Fixo** | O botão de avisar no WhatsApp deve gerar URL iniciando com `https://api.whatsapp.com/send?text=` sem o parâmetro `phone=`. |
 | **BR-006** | **Moderação Obrigatória de Recados** | Recados enviados por convidados entram com `status: 'pending'` e NÃO aparecem no mural público até que o admin clique em "Aprovar". |
 | **BR-007** | **Persistência de Mensagens Excluídas** | Ao excluir recados padrão no painel, a tabela vazia do Supabase NÃO deve re-inserir recados mock ao recarregar a página. |
-| **BR-008** | **Persistência de Sessão Admin** | Fechar o modal Admin no botão "X" e reabrir na mesma aba do navegador NÃO deve solicitar o PIN novamente. |
+| **BR-008** | **Autenticação com Senha Admin (16101928)** | Inserir `16101928` no campo de senha desbloqueia o painel administrativo e persiste a sessão no `sessionStorage`. |
 | **BR-009** | **Expiração de Sessão Admin** | Fechar a aba/navegador ou clicar no botão "Bloquear" deve limpar o `sessionStorage` e exigir o PIN no próximo acesso. |
 | **BR-010** | **Formatação Dinâmica de Acompanhantes** | Se o convidado selecionar 3 adultos e 1 criança (total 4), devem ser exibidos exatamente 3 campos para nomes de acompanhantes adicionais. |
 | **BR-011** | **Prevenção de Zoom no iOS** | Todos os inputs, textareas e selects devem possuir tamanho de fonte de pelo menos 16px no mobile (`text-base sm:text-sm`). |
@@ -256,9 +277,9 @@ src/
 - **Botão Curtir (Like):** `section#recados button:has(svg.lucide-heart)`
 
 #### G. Painel Administrativo (`AdminPanel.jsx`)
-- **Container do Modal Admin:** `div.fixed:has-text("Painel Administrativo dos Pais")`
-- **Input de Senha (PIN):** `input[type="password"][placeholder*="Digite a senha"]`
-- **Botão Entrar no Admin:** `button:has-text("Acessar Painel")`
+- **Container do Modal Admin:** `div.fixed:has-text("Área Restrita aos Pais")` ou `div.fixed:has-text("Painel Administrativo dos Pais")`
+- **Input de Senha (PIN):** `input[type="password"]` (Placeholder: *"Digite a senha do painel"*) — **Valor: `16101928`**
+- **Botão Entrar no Admin:** `button[type="submit"]:has-text("Acessar Painel")`
 - **Botão Bloquear Sessão:** `button[title="Bloquear Painel com Senha"]`
 - **Botão Fechar Admin:** `button[aria-label="Fechar"]`
 - **Abas do Painel:**
@@ -270,9 +291,10 @@ src/
 - **Accordion de Presentes:** `div.divide-y button:has-text("un. recebidas")`
 - **Botão Exportar CSV (RSVP / Presentes):** `button:has-text("Exportar")`
 - **Formulário Novo Presente:**
-  - Input Nome: `input[placeholder*="Ex: Fralda Pampers"]`
+  - Input Nome: `input[placeholder*="Ex: Banheira"]`
   - Input Meta: `input[type="number"]`
-  - Botão Adicionar: `button[type="submit"]:has-text("Adicionar Presente à Lista")`
+  - Botão Adicionar: `button[type="submit"]:has-text("Adicionar")`
+- **Busca de Presentes na Gestão:** `input[placeholder*="Buscar item por nome, categoria ou marca"]`
 - **Modal de Confirmação In-App:** `div[role="alertdialog"]:has-text("Tem certeza")`
   - Botão Confirmar Ação: `div[role="alertdialog"] button:has-text("Sim")`
   - Botão Cancelar: `div[role="alertdialog"] button:has-text("Cancelar")`
@@ -294,7 +316,7 @@ src/
 
 3. **Testes de Moderação e Administração:**
    - [ ] PIN incorreto bloqueia o acesso e exibe mensagem de erro.
-   - [ ] PIN correto concede acesso e mantém a sessão ativa no `sessionStorage`.
+   - [ ] PIN correto (`16101928`) concede acesso e mantém a sessão ativa no `sessionStorage`.
    - [ ] Moderação de recados reflete instantaneamente no mural público após aprovação.
    - [ ] Relatórios de presentes exibem as metas e porcentagens com precisão matemática.
    - [ ] Exclusões disparam o modal `ConfirmModal` in-app antes de deletar registros.
