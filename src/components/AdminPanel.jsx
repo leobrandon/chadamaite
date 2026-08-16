@@ -393,9 +393,9 @@ export default function AdminPanel({
   const handleSaveEditedRsvp = async () => {
     if (!editingRsvp) return;
     await onUpdateRSVP(editingRsvp.id, {
-      adultsCount: editingRsvp.adultsCount,
-      childrenCount: editingRsvp.childrenCount,
-      companionNames: editingRsvp.companionNames || [],
+      adultsCount: Number(editingRsvp.adultsCount) || 1,
+      childrenCount: Number(editingRsvp.childrenCount) || 0,
+      companionNames: (editingRsvp.companionNames || []).map(n => n.trim()),
       phone: editingRsvp.phone || '',
       message: editingRsvp.message || ''
     });
@@ -1644,10 +1644,10 @@ export default function AdminPanel({
               {/* Companions */}
               {(editingRsvp.companionNames||[]).length > 0 && (
                 <div>
-                  <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Nomes dos Acompanhantes</label>
+                  <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Nome dos Acompanhantes e Crianças * (Obrigatório)</label>
                   <div className="space-y-2">
                     {(editingRsvp.companionNames||[]).map((name, i) => (
-                      <input key={i} type="text" value={name} onChange={(e) => { const next = [...(editingRsvp.companionNames||[])]; next[i] = e.target.value; setEditingRsvp(prev => ({...prev, companionNames: next})); }} placeholder={`Nome do acompanhante ${i+1}`} className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition" />
+                      <input key={i} type="text" required={true} value={name} onChange={(e) => { const next = [...(editingRsvp.companionNames||[])]; next[i] = e.target.value; setEditingRsvp(prev => ({...prev, companionNames: next})); }} placeholder={`Nome do acompanhante / criança ${i+1} *`} className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition" />
                     ))}
                   </div>
                 </div>
