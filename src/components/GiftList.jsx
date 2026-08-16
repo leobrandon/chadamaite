@@ -125,12 +125,28 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
                     const isMimoCompleted = mimoPledgedTotal >= mimoTarget;
                     
                     return (
-                      <div key={mimo.id} className={`whitespace-nowrap px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 border transition-all ${isMimoCompleted ? 'bg-slate-50 text-slate-400 border-slate-200 opacity-60' : 'bg-blush-50 text-blush-700 border-blush-100 hover:bg-blush-100/70'}`}>
-                        <span className="text-base">{mimo.icon || '🎁'}</span>
-                        <div className="flex flex-col">
-                          <span className="truncate max-w-[150px]">{mimo.title}</span>
-                          {mimo.priority === 'high' && !isMimoCompleted && (
-                            <span className="text-[9px] text-amber-600 font-bold tracking-tight">★ Preferência</span>
+                      <div 
+                        key={mimo.id} 
+                        className={`px-3 py-2 rounded-xl text-xs font-medium flex items-start gap-2 border transition-all shrink-0 ${
+                          mimosExpanded ? 'w-full sm:w-[calc(50%-5px)] lg:w-[calc(33.333%-7px)]' : 'max-w-[240px]'
+                        } ${isMimoCompleted ? 'bg-slate-50 text-slate-400 border-slate-200 opacity-60' : 'bg-blush-50/70 text-slate-800 border-blush-100 hover:bg-blush-100/70'}`}
+                      >
+                        <span className="text-base shrink-0 mt-0.5">{mimo.icon || '🎁'}</span>
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="font-semibold text-slate-800 text-xs leading-snug break-words">{mimo.title}</span>
+                          {!isMimoCompleted && (
+                            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                              {mimo.priority === 'high' && (
+                                <span className="text-[9px] text-amber-800 font-bold bg-amber-100/90 px-1.5 py-0.5 rounded-full">★ Preferência</span>
+                              )}
+                              {mimo.priority === 'medium' && (
+                                <span className="text-[9px] text-blush-700 font-bold bg-blush-100/80 px-1.5 py-0.5 rounded-full">Desejável</span>
+                              )}
+                              {mimo.priority === 'low' && (
+                                <span className="text-[9px] text-slate-600 font-medium bg-slate-100 px-1.5 py-0.5 rounded-full">Opcional</span>
+                              )}
+                              <span className="text-[9px] text-slate-400 font-normal">{mimo.category}</span>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -196,8 +212,18 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
                         </span>
 
                         {gift.priority === 'high' && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blush-100 text-blush-700">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
                             ★ Preferência
+                          </span>
+                        )}
+                        {gift.priority === 'medium' && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blush-100 text-blush-700">
+                            Desejável
+                          </span>
+                        )}
+                        {gift.priority === 'low' && (
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                            Opcional
                           </span>
                         )}
 

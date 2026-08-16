@@ -393,22 +393,32 @@ export default function GiftModal({ gift, gifts = [], pledges = [], isOpen, onCl
                                     : 'bg-white border-slate-200 hover:border-blush-300 hover:bg-slate-50/80'
                                 }`}
                               >
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                  <span className="w-8 h-8 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-lg shadow-2xs shrink-0">
+                                <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                                  <span className="w-9 h-9 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-lg shadow-2xs shrink-0 mt-0.5">
                                     {m.icon || '🎁'}
                                   </span>
-                                  <div className="min-w-0 flex flex-col items-start gap-0.5">
+                                  <div className="min-w-0 flex flex-col items-start gap-1 flex-1">
                                     <div className="flex items-center gap-1.5 flex-wrap">
-                                      <h5 className="font-bold text-slate-800 text-xs sm:text-sm truncate max-w-[200px]">
+                                      <h5 className="font-bold text-slate-800 text-xs sm:text-sm leading-snug break-words">
                                         {m.title}
                                       </h5>
                                       {m.priority === 'high' && (
-                                        <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-bold rounded-full whitespace-nowrap">
+                                        <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[9px] font-bold rounded-full whitespace-nowrap">
                                           ★ Preferência
                                         </span>
                                       )}
+                                      {m.priority === 'medium' && (
+                                        <span className="px-1.5 py-0.5 bg-blush-100 text-blush-700 text-[9px] font-bold rounded-full whitespace-nowrap">
+                                          Desejável
+                                        </span>
+                                      )}
+                                      {m.priority === 'low' && (
+                                        <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[9px] font-medium rounded-full whitespace-nowrap">
+                                          Opcional
+                                        </span>
+                                      )}
                                     </div>
-                                    <p className="text-[10px] text-slate-500 truncate w-full">
+                                    <p className="text-[11px] text-slate-500 leading-relaxed break-words">
                                       {m.category} {m.description ? `• ${m.description}` : ''}
                                     </p>
                                   </div>
