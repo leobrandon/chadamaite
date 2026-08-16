@@ -133,17 +133,22 @@ export default function AdminPanel({
     document.body.removeChild(link);
   };
 
+  // Safe Array Defensive Guards
+  const safeGifts = Array.isArray(gifts) ? gifts : [];
+  const safeRsvps = Array.isArray(rsvps) ? rsvps : [];
+  const safeMessages = Array.isArray(messages) ? messages : [];
+
   // Metrics
-  const attendingRSVPs = rsvps.filter(r => r.attending);
+  const attendingRSVPs = safeRsvps.filter(r => r && r.attending);
   const totalAdults = attendingRSVPs.reduce((acc, curr) => acc + (curr.adultsCount || 1), 0);
   const totalChildren = attendingRSVPs.reduce((acc, curr) => acc + (curr.childrenCount || 0), 0);
   const totalGuests = totalAdults + totalChildren;
 
-  const reservedGiftsCount = gifts.filter(g => g.status === 'reserved').length;
-  const availableGiftsCount = gifts.length - reservedGiftsCount;
+  const reservedGiftsCount = safeGifts.filter(g => g && g.status === 'reserved').length;
+  const availableGiftsCount = safeGifts.length - reservedGiftsCount;
 
-  const pendingMessages = messages.filter(m => m.status === 'pending');
-  const approvedMessages = messages.filter(m => m.status === 'approved');
+  const pendingMessages = safeMessages.filter(m => m && m.status === 'pending');
+  const approvedMessages = safeMessages.filter(m => m && m.status === 'approved');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-md animate-fade-in overflow-y-auto">

@@ -64,73 +64,77 @@ export default function App() {
     setSelectedGiftForModal(gift);
   };
 
-  const handleConfirmReservation = (giftId, guestName) => {
-    const updated = storageService.reserveGift(giftId, guestName);
-    setGifts(updated);
+  const handleConfirmReservation = async (giftId, guestName) => {
+    const updated = await storageService.reserveGift(giftId, guestName);
+    if (Array.isArray(updated)) setGifts(updated);
   };
 
-  const handleCancelReservation = (giftId) => {
-    const updated = storageService.cancelReservation(giftId);
-    setGifts(updated);
+  const handleCancelReservation = async (giftId) => {
+    const updated = await storageService.cancelReservation(giftId);
+    if (Array.isArray(updated)) setGifts(updated);
   };
 
-  const handleAddGift = (newGift) => {
-    const updated = storageService.addGift(newGift);
-    setGifts(updated);
+  const handleAddGift = async (newGift) => {
+    const updated = await storageService.addGift(newGift);
+    if (Array.isArray(updated)) setGifts(updated);
   };
 
-  const handleUpdateGift = (giftId, fields) => {
-    const updated = storageService.updateGift(giftId, fields);
-    setGifts(updated);
+  const handleUpdateGift = async (giftId, fields) => {
+    const updated = await storageService.updateGift(giftId, fields);
+    if (Array.isArray(updated)) setGifts(updated);
   };
 
-  const handleDeleteGift = (giftId) => {
-    const updated = storageService.deleteGift(giftId);
-    setGifts(updated);
+  const handleDeleteGift = async (giftId) => {
+    const updated = await storageService.deleteGift(giftId);
+    if (Array.isArray(updated)) setGifts(updated);
   };
 
-  const handleResetGifts = () => {
-    const updated = storageService.resetGiftsToDefault();
-    setGifts(updated);
+  const handleResetGifts = async () => {
+    const updated = await storageService.resetGiftsToDefault();
+    if (Array.isArray(updated)) setGifts(updated);
   };
 
   // RSVP actions
-  const handleSaveRSVP = (rsvpData) => {
-    storageService.saveRSVP(rsvpData);
+  const handleSaveRSVP = async (rsvpData) => {
+    await storageService.saveRSVP(rsvpData);
   };
 
-  const handleDeleteRSVP = (rsvpId) => {
-    const updated = storageService.deleteRSVP(rsvpId);
-    setRsvps(updated);
+  const handleDeleteRSVP = async (rsvpId) => {
+    const updated = await storageService.deleteRSVP(rsvpId);
+    if (Array.isArray(updated)) setRsvps(updated);
   };
 
   // Messages actions
-  const handleAddMessage = (msgData) => {
-    storageService.addMessage(msgData);
+  const handleAddMessage = async (msgData) => {
+    await storageService.addMessage(msgData);
   };
 
-  const handleApproveMessage = (msgId) => {
-    const updated = storageService.approveMessage(msgId);
-    setMessages(updated);
+  const handleApproveMessage = async (msgId) => {
+    const updated = await storageService.approveMessage(msgId);
+    if (Array.isArray(updated)) setMessages(updated);
   };
 
-  const handleLikeMessage = (msgId) => {
-    const updated = storageService.likeMessage(msgId);
-    setMessages(updated);
+  const handleLikeMessage = async (msgId) => {
+    const updated = await storageService.likeMessage(msgId);
+    if (Array.isArray(updated)) setMessages(updated);
   };
 
-  const handleDeleteMessage = (msgId) => {
-    const updated = storageService.deleteMessage(msgId);
-    setMessages(updated);
+  const handleDeleteMessage = async (msgId) => {
+    const updated = await storageService.deleteMessage(msgId);
+    if (Array.isArray(updated)) setMessages(updated);
   };
 
   // Config actions
-  const handleSaveConfig = (newConfig) => {
-    storageService.saveConfig(newConfig);
-    setConfig(newConfig);
+  const handleSaveConfig = async (newConfig) => {
+    const updated = await storageService.saveConfig(newConfig);
+    if (updated) setConfig(updated);
   };
 
-  const availableGiftsCount = gifts.filter(g => g.status === 'available').length;
+  const safeGifts = Array.isArray(gifts) ? gifts : [];
+  const safeRsvps = Array.isArray(rsvps) ? rsvps : [];
+  const safeMessages = Array.isArray(messages) ? messages : [];
+
+  const availableGiftsCount = safeGifts.filter(g => g.status === 'available').length;
 
   const scrollToSection = (id) => {
     setActiveTab(id);
