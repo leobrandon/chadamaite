@@ -520,9 +520,24 @@ export const storageService = {
     const updated = gifts.filter(g => g.id !== giftId);
     storageService.saveGifts(updated);
 
+    // Limpar pledges associados a este presente localmente
+    const pledges = storageService.getPledges();
+    const updatedPledges = pledges.filter(p => p.giftId !== giftId);
+    localStorage.setItem(KEYS.PLEDGES, JSON.stringify(updatedPledges));
+    window.dispatchEvent(new CustomEvent('pledges_updated', { detail: updatedPledges }));
+
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('gifts').delete().eq('id', giftId);
+        const [giftRes, pledgeRes] = await Promise.all([
+          supabase.from('gifts').delete().eq('id', giftId),
+          supabase.from('gift_pledges').delete().eq('gift_id', giftId),
+        ]);
+        if (giftRes.error) {
+          console.error('Erro ao deletar presente no Supabase:', giftRes.error);
+        }
+        if (pledgeRes.error) {
+          console.error('Erro ao limpar pledges associados no Supabase:', pledgeRes.error);
+        }
       } catch (err) {
         console.error('Erro ao deletar presente no Supabase:', err);
       }
