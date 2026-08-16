@@ -42,6 +42,9 @@ export default function AdminPanel({
   // Edit Gift modal state
   const [editingGift, setEditingGift] = useState(null);
 
+  // Message moderation filter state
+  const [messageFilter, setMessageFilter] = useState('pending'); // 'pending' | 'approved'
+
   if (!isOpen) return null;
 
   const handleLogin = (e) => {
@@ -116,7 +119,6 @@ export default function AdminPanel({
 
   const pendingMessages = messages.filter(m => m.status === 'pending');
   const approvedMessages = messages.filter(m => m.status === 'approved');
-  const [messageFilter, setMessageFilter] = useState('pending'); // 'pending' | 'approved'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-md animate-fade-in overflow-y-auto">
