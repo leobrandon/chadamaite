@@ -954,7 +954,7 @@ export default function AdminPanel({
                           className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400 bg-white"
                         >
                           <option value="high">★ Alta (Preferência)</option>
-                          <option value="medium">Média (Normal)</option>
+                          <option value="medium">Média (Desejável)</option>
                           <option value="low">Baixa (Opcional)</option>
                         </select>
                       </div>
@@ -1096,7 +1096,13 @@ export default function AdminPanel({
                                   {gift.category}
                                 </span>
                                 {gift.priority === 'high' && (
-                                  <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold text-[10px]">★ Alta</span>
+                                  <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[10px]">★ Preferência</span>
+                                )}
+                                {gift.priority === 'medium' && (
+                                  <span className="px-2 py-0.5 rounded-full bg-blush-100 text-blush-700 font-bold text-[10px]">Desejável</span>
+                                )}
+                                {gift.priority === 'low' && (
+                                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium text-[10px]">Opcional</span>
                                 )}
                                 {giftPledges.length > 0 ? (
                                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -1508,9 +1514,9 @@ export default function AdminPanel({
                     onChange={(e) => setEditingGift({ ...editingGift, priority: e.target.value })}
                     className="w-full px-2.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl bg-white outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition"
                   >
-                    <option value="high">★ Alta</option>
-                    <option value="medium">Média</option>
-                    <option value="low">Baixa</option>
+                    <option value="high">★ Alta (Preferência)</option>
+                    <option value="medium">Média (Desejável)</option>
+                    <option value="low">Baixa (Opcional)</option>
                   </select>
                 </div>
                 <div>
