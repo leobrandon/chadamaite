@@ -43,7 +43,7 @@ export default function RSVPSection({ config, onSaveRSVP }) {
     setCompanionNames(next);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) return;
 
@@ -68,19 +68,26 @@ export default function RSVPSection({ config, onSaveRSVP }) {
     };
 
     if (attending) {
-      confetti({
-        particleCount: 100,
-        spread: 80,
-        origin: { y: 0.6 },
-        colors: ['#f7799e', '#eed86a', '#7fa382', '#a7c3a9', '#fcaec4']
-      });
+      try {
+        confetti({
+          particleCount: 100,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#f7799e', '#eed86a', '#7fa382', '#a7c3a9', '#fcaec4']
+        });
+      } catch {
+        // ignore confetti errors
+      }
     }
 
-    setTimeout(() => {
-      onSaveRSVP(rsvpData);
+    try {
+      await onSaveRSVP(rsvpData);
+    } catch (err) {
+      console.error('Erro ao enviar RSVP:', err);
+    } finally {
       setIsSubmitting(false);
       setIsSubmitted(true);
-    }, 450);
+    }
   };
 
   const handleReset = () => {
