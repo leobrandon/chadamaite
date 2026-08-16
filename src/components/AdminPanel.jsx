@@ -3,7 +3,7 @@ import {
   X, Shield, Lock, Users, Gift, MessageCircleHeart, Settings, Download, 
   Trash2, Plus, Edit2, Check, RefreshCw, Eye, EyeOff, CheckCircle2, XCircle
 } from 'lucide-react';
-import { INITIAL_CATEGORIES } from '../data/initialGifts';
+import { INITIAL_CATEGORIES, BABY_EMOJIS } from '../data/initialGifts';
 import { storageService } from '../services/storageService';
 
 export default function AdminPanel({ 
@@ -572,15 +572,19 @@ export default function AdminPanel({
                     </h5>
 
                     <form onSubmit={handleCreateGift} className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                      <div className="sm:col-span-2">
-                        <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Ícone</label>
-                        <input
-                          type="text"
+                      <div className="sm:col-span-3">
+                        <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Ícone (Emoji)</label>
+                        <select
                           value={newIcon}
                           onChange={(e) => setNewIcon(e.target.value)}
-                          placeholder="Ex: 🎁"
-                          className="w-full px-3 py-2 text-center text-lg rounded-xl border border-slate-200 outline-none focus:border-blush-400"
-                        />
+                          className="w-full px-2.5 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400 bg-white"
+                        >
+                          {BABY_EMOJIS.map((item) => (
+                            <option key={item.emoji} value={item.emoji}>
+                              {item.label}
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
                       <div className="sm:col-span-4">
@@ -1039,13 +1043,18 @@ export default function AdminPanel({
             <h4 className="font-bold text-slate-800 text-base">Editar Presente</h4>
             
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1">Ícone</label>
-              <input
-                type="text"
-                value={editingGift.icon}
+              <label className="block text-xs font-bold text-slate-600 mb-1">Ícone (Emoji)</label>
+              <select
+                value={editingGift.icon || '🎁'}
                 onChange={(e) => setEditingGift({ ...editingGift, icon: e.target.value })}
-                className="w-full px-3 py-2 text-sm border rounded-xl"
-              />
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white outline-none focus:border-blush-400"
+              >
+                {BABY_EMOJIS.map((item) => (
+                  <option key={item.emoji} value={item.emoji}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
