@@ -2,19 +2,17 @@ import React, { useState, useMemo } from 'react';
 import { Gift, Search, Sparkles, Filter, CheckCircle2, Lock, Heart, PlusCircle } from 'lucide-react';
 import { INITIAL_CATEGORIES } from '../data/initialGifts';
 
-export default function GiftList({ gifts, onSelectGift, onOpenAdmin }) {
+export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmin }) {
   const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'available' | 'reserved'
 
   const categories = INITIAL_CATEGORIES;
   const safeGifts = Array.isArray(gifts) ? gifts : [];
 
   // Stats calculation
-  const totalCount = safeGifts.length;
-  const reservedCount = safeGifts.filter(g => g && g.status === 'reserved').length;
-  const availableCount = totalCount - reservedCount;
-  const percentageReserved = totalCount > 0 ? Math.round((reservedCount / totalCount) * 100) : 0;
+  const totalPledgesCount = pledges.length;
+  const uniqueContributors = new Set(pledges.map(p => p.giverName)).size;
+  const giftsWithPledges = new Set(pledges.map(p => p.giftId)).size;
 
   // Filtered gifts
   const filteredGifts = useMemo(() => {
@@ -29,15 +27,9 @@ export default function GiftList({ gifts, onSelectGift, onOpenAdmin }) {
         (gift.description && gift.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (gift.category && gift.category.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      // Status match
-      const matchStatus = 
-        statusFilter === 'all' ||
-        (statusFilter === 'available' && gift.status === 'available') ||
-        (statusFilter === 'reserved' && gift.status === 'reserved');
-
-      return matchCategory && matchSearch && matchStatus;
+      return matchCategory && matchSearch;
     });
-  }, [safeGifts, selectedCategory, searchQuery, statusFilter]);
+  }, [safeGifts, selectedCategory, searchQuery]);
 
   return (
     <section id="presentes" className="py-16 md:py-20 relative">
@@ -53,40 +45,23 @@ export default function GiftList({ gifts, onSelectGift, onOpenAdmin }) {
             Escolha o que gostaria de dar
           </h2>
           <p className="text-slate-600 text-sm sm:text-base mt-3 leading-relaxed">
-            Selecione o presente desejado. Ao clicar em <strong>"Vou dar este presente"</strong>, ele ficará reservado para você.
+            Selecione o presente desejado. Ao clicar em <strong>"Vou dar este presente"</strong>, você pode escolher a quantidade que deseja contribuir.
           </p>
         </div>
 
         {/* Progress Bar / Summary Card */}
-        <div className="glass-card max-w-3xl mx-auto p-5 sm:p-6 rounded-3xl mb-10 shadow-sm border border-blush-200/70">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-3">
-            <div>
-              <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold">
-                Status da Lista
-              </span>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="font-serif text-2xl font-bold text-blush-600">
-                  {reservedCount} de {totalCount}
-                </span>
-                <span className="text-xs text-slate-500">presentes já foram escolhidos</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 text-xs font-semibold">
-              <span className="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
-                🟢 {availableCount} Disponíveis
-              </span>
-              <span className="px-3 py-1.5 rounded-xl bg-blush-50 text-blush-700 border border-blush-200">
-                💖 {reservedCount} Reservados
-              </span>
-            </div>
+        <div className="glass-card max-w-3xl mx-auto p-5 sm:p-6 rounded-3xl mb-10 shadow-sm border border-blush-200/70 text-center">
+          <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold block mb-2">
+            Status da Lista
+          </span>
+          <div className="flex justify-center items-center gap-2">
+            <span className="font-serif text-2xl font-bold text-blush-600">
+              {giftsWithPledges} presentes
+            </span>
+            <span className="text-sm text-slate-500">já têm contribuições confirmadas!</span>
           </div>
-
-          {/* Bar */}
-          <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden p-0.5">
-            <div 
-              className="h-full bg-gradient-to-r from-blush-400 to-blush-500 rounded-full transition-all duration-700"
-              style={{ width: `${percentageReserved}%` }}
-            />
+          <div className="mt-3 text-xs text-slate-400 font-medium">
+            {totalPledgesCount} contribuições totais feitas por {uniqueContributors} pessoas.
           </div>
         </div>
 
@@ -112,40 +87,6 @@ export default function GiftList({ gifts, onSelectGift, onOpenAdmin }) {
                   Limpar
                 </button>
               )}
-            </div>
-
-            {/* Status Segmented Control */}
-            <div className="flex items-center bg-white border border-slate-200 p-1 rounded-2xl shadow-sm self-stretch sm:self-auto">
-              <button
-                onClick={() => setStatusFilter('all')}
-                className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-xl text-xs font-semibold transition ${
-                  statusFilter === 'all'
-                    ? 'bg-blush-500 text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Todos ({totalCount})
-              </button>
-              <button
-                onClick={() => setStatusFilter('available')}
-                className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-xl text-xs font-semibold transition ${
-                  statusFilter === 'available'
-                    ? 'bg-emerald-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Disponíveis ({availableCount})
-              </button>
-              <button
-                onClick={() => setStatusFilter('reserved')}
-                className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-xl text-xs font-semibold transition ${
-                  statusFilter === 'reserved'
-                    ? 'bg-slate-700 text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Reservados ({reservedCount})
-              </button>
             </div>
           </div>
 
@@ -175,23 +116,17 @@ export default function GiftList({ gifts, onSelectGift, onOpenAdmin }) {
         {filteredGifts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {filteredGifts.map((gift) => {
-              const isReserved = gift.status === 'reserved';
+              const giftPledges = pledges.filter(p => p.giftId === gift.id);
 
               return (
                 <div
                   key={gift.id}
-                  className={`glass-card rounded-3xl p-5 sm:p-6 flex flex-col justify-between transition-all duration-300 relative overflow-hidden ${
-                    isReserved
-                      ? 'opacity-75 bg-slate-50/90 border-slate-200'
-                      : 'glass-card-hover border-blush-100/90'
-                  }`}
+                  className="glass-card rounded-3xl p-5 sm:p-6 flex flex-col justify-between transition-all duration-300 relative overflow-hidden glass-card-hover border-blush-100/90"
                 >
                   {/* Top card row */}
                   <div>
                     <div className="flex items-start justify-between gap-3 mb-4">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-sm ${
-                        isReserved ? 'bg-slate-200 text-slate-400' : 'bg-blush-50 text-blush-600 border border-blush-100'
-                      }`}>
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-sm bg-blush-50 text-blush-600 border border-blush-100">
                         {gift.icon || '🎁'}
                       </div>
 
@@ -200,7 +135,7 @@ export default function GiftList({ gifts, onSelectGift, onOpenAdmin }) {
                           {gift.category}
                         </span>
 
-                        {gift.priority === 'high' && !isReserved && (
+                        {gift.priority === 'high' && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blush-100 text-blush-700">
                             ★ Preferência
                           </span>
@@ -221,23 +156,13 @@ export default function GiftList({ gifts, onSelectGift, onOpenAdmin }) {
 
                   {/* Bottom Action Area */}
                   <div className="pt-4 border-t border-slate-100/80">
-                    {isReserved ? (
-                      <div className="flex items-center justify-between bg-slate-100 px-4 py-2.5 rounded-2xl text-slate-500 text-xs font-semibold">
-                        <div className="flex items-center gap-1.5">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          <span>Já foi reservado! 💖</span>
-                        </div>
-                        <span className="text-[10px] text-slate-400">Obrigado!</span>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => onSelectGift(gift)}
-                        className="w-full py-3 px-4 rounded-2xl bg-blush-500 hover:bg-blush-600 active:scale-[0.98] text-white font-bold text-xs sm:text-sm shadow-md shadow-blush-500/20 hover:shadow-blush-500/30 transition flex items-center justify-center gap-2 group"
-                      >
-                        <Heart className="w-4 h-4 group-hover:scale-125 transition-transform fill-white" />
-                        <span>Vou dar este presente</span>
-                      </button>
-                    )}
+                    <button
+                      onClick={() => onSelectGift(gift)}
+                      className="w-full py-3 px-4 rounded-2xl bg-blush-500 hover:bg-blush-600 active:scale-[0.98] text-white font-bold text-xs sm:text-sm shadow-md shadow-blush-500/20 hover:shadow-blush-500/30 transition flex items-center justify-center gap-2 group"
+                    >
+                      <Heart className="w-4 h-4 group-hover:scale-125 transition-transform fill-white" />
+                      <span>Vou dar este presente 💖</span>
+                    </button>
                   </div>
                 </div>
               );
@@ -258,7 +183,6 @@ export default function GiftList({ gifts, onSelectGift, onOpenAdmin }) {
               onClick={() => {
                 setSelectedCategory('Todas');
                 setSearchQuery('');
-                setStatusFilter('all');
               }}
               className="px-4 py-2 rounded-xl bg-blush-500 text-white text-xs font-semibold hover:bg-blush-600 transition"
             >

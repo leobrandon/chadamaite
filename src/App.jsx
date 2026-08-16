@@ -17,6 +17,7 @@ export default function App() {
   const [gifts, setGifts] = useState(storageService.getGifts());
   const [rsvps, setRsvps] = useState(storageService.getRSVPs());
   const [messages, setMessages] = useState(storageService.getMessages());
+  const [pledges, setPledges] = useState(storageService.getPledges?.() || []);
   
   const [activeTab, setActiveTab] = useState('inicio');
   
@@ -31,11 +32,13 @@ export default function App() {
     const handleGiftsUpdate = (e) => setGifts(e.detail);
     const handleRSVPsUpdate = (e) => setRsvps(e.detail);
     const handleMessagesUpdate = (e) => setMessages(e.detail);
+    const handlePledgesUpdate = (e) => setPledges(e.detail);
 
     window.addEventListener('config_updated', handleConfigUpdate);
     window.addEventListener('gifts_updated', handleGiftsUpdate);
     window.addEventListener('rsvps_updated', handleRSVPsUpdate);
     window.addEventListener('messages_updated', handleMessagesUpdate);
+    window.addEventListener('pledges_updated', handlePledgesUpdate);
 
     // Conectar ao Supabase em tempo real se configurado
     let unsubscribeRealtime = null;
@@ -44,6 +47,7 @@ export default function App() {
       if (cloudData.gifts) setGifts(cloudData.gifts);
       if (cloudData.rsvps) setRsvps(cloudData.rsvps);
       if (cloudData.messages) setMessages(cloudData.messages);
+      if (cloudData.pledges) setPledges(cloudData.pledges);
     }).then(unsub => {
       unsubscribeRealtime = unsub;
     });
@@ -53,6 +57,7 @@ export default function App() {
       window.removeEventListener('gifts_updated', handleGiftsUpdate);
       window.removeEventListener('rsvps_updated', handleRSVPsUpdate);
       window.removeEventListener('messages_updated', handleMessagesUpdate);
+      window.removeEventListener('pledges_updated', handlePledgesUpdate);
       if (typeof unsubscribeRealtime === 'function') {
         unsubscribeRealtime();
       }
@@ -67,6 +72,19 @@ export default function App() {
   const handleConfirmReservation = async (giftId, guestName) => {
     const updated = await storageService.reserveGift(giftId, guestName);
     if (Array.isArray(updated)) setGifts(updated);
+  };
+
+  const handleAddPledge = async (giftId, giverName, quantity) => {
+    const pledge = await storageService.addPledge(giftId, giverName, quantity);
+    if (pledge) {
+      const updated = await storageService.fetchPledgesFromCloud();
+      setPledges(updated);
+    }
+  };
+
+  const handleDeletePledge = async (pledgeId) => {
+    const updated = await storageService.deletePledge(pledgeId);
+    if (Array.isArray(updated)) setPledges(updated);
   };
 
   const handleCancelReservation = async (giftId) => {
@@ -133,8 +151,9 @@ export default function App() {
   const safeGifts = Array.isArray(gifts) ? gifts : [];
   const safeRsvps = Array.isArray(rsvps) ? rsvps : [];
   const safeMessages = Array.isArray(messages) ? messages : [];
+  const safePledges = Array.isArray(pledges) ? pledges : [];
 
-  const availableGiftsCount = safeGifts.filter(g => g.status === 'available').length;
+  const availableGiftsCount = safeGifts.length;
 
   const scrollToSection = (id) => {
     setActiveTab(id);
@@ -170,6 +189,7 @@ export default function App() {
         {/* Gift Registry Section */}
         <GiftList
           gifts={gifts}
+          pledges={pledges}
           onSelectGift={handleSelectGift}
           onOpenAdmin={() => setIsAdminOpen(true)}
         />
@@ -194,6 +214,7 @@ export default function App() {
         isOpen={Boolean(selectedGiftForModal)}
         onClose={() => setSelectedGiftForModal(null)}
         onConfirm={handleConfirmReservation}
+        onAddPledge={handleAddPledge}
       />
 
       <PixModal
@@ -208,11 +229,13 @@ export default function App() {
         config={config}
         onSaveConfig={handleSaveConfig}
         gifts={gifts}
+        pledges={pledges}
         onAddGift={handleAddGift}
         onUpdateGift={handleUpdateGift}
         onDeleteGift={handleDeleteGift}
         onCancelReservation={handleCancelReservation}
         onResetGifts={handleResetGifts}
+        onDeletePledge={handleDeletePledge}
         rsvps={rsvps}
         onDeleteRSVP={handleDeleteRSVP}
         messages={messages}
