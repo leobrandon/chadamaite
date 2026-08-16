@@ -252,6 +252,90 @@ export default function AdminPanel({
   const pendingMessages = safeMessages.filter(m => m && m.status === 'pending');
   const approvedMessages = safeMessages.filter(m => m && m.status === 'approved');
 
+  const handleExportGiftsPDF = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const giftsWithPledges = safeGifts.filter(g => pledges.some(p => p.giftId === g.id));
+    const totalPledges = pledges.length;
+    const totalUnitsPledged = pledges.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
+
+    const giftBlocks = giftsWithPledges.map(gift => {
+      const giftPledges = pledges.filter(p => p.giftId === gift.id);
+      const totalUnits = giftPledges.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
+      const targetQty = Number(gift.targetQuantity) || 5;
+      const isCompleted = totalUnits >= targetQty;
+      const progressPercent = Math.min(100, Math.round((totalUnits / targetQty) * 100));
+
+      const pledgeRows = giftPledges.map(p => `
+        <tr>
+          <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; font-weight: 600;">${p.giverName || 'Convidado'}</td>
+          <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; text-align: center;">${p.quantity} un.</td>
+          <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; text-align: right; color: #64748b;">
+            ${p.createdAt ? new Date(p.createdAt).toLocaleDateString('pt-BR') : '-'}
+          </td>
+        </tr>
+      `).join('');
+
+      return `
+        <div style="margin-bottom: 18px; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; background: #ffffff; page-break-inside: avoid;">
+          <div style="background: #fdf2f8; padding: 10px 14px; border-bottom: 1px solid #fbcfe8; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span style="font-size: 14px; font-weight: bold; color: #1e293b;">${gift.icon || '🎁'} ${gift.title}</span>
+              <span style="font-size: 11px; color: #831843; margin-left: 8px;">(${gift.category})</span>
+            </div>
+            <div>
+              <span style="font-size: 11px; font-weight: bold; color: #be185d;">
+                ${totalUnits} de ${targetQty} un. (${progressPercent}%)
+              </span>
+              ${isCompleted ? '<span style="font-size: 10px; font-weight: bold; background: #d1fae5; color: #065f46; padding: 2px 6px; border-radius: 10px; margin-left: 6px;">Meta Atingida! 🎉</span>' : ''}
+            </div>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+            <thead>
+              <tr style="background: #f8fafc;">
+                <th style="padding: 6px 10px; text-align: left; font-size: 10px; text-transform: uppercase; color: #64748b; border-bottom: 1px solid #e2e8f0;">Convidado</th>
+                <th style="padding: 6px 10px; text-align: center; font-size: 10px; text-transform: uppercase; color: #64748b; border-bottom: 1px solid #e2e8f0;">Quantidade</th>
+                <th style="padding: 6px 10px; text-align: right; font-size: 10px; text-transform: uppercase; color: #64748b; border-bottom: 1px solid #e2e8f0;">Data</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${pledgeRows}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }).join('');
+
+    printWindow.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
+      <meta charset="UTF-8">
+      <title>Relatório de Presentes - Chá da Maitê</title>
+      <style>
+        @media print { body { -webkit-print-color-adjust: exact; color-adjust: exact; } }
+        body { font-family: Arial, sans-serif; padding: 24px; color: #1e293b; }
+        h1 { color: #f472b6; font-size: 22px; margin-bottom: 4px; }
+        .subtitle { color: #64748b; font-size: 13px; margin-bottom: 20px; }
+        .summary { display: flex; gap: 16px; margin-bottom: 20px; }
+        .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 20px; text-align: center; }
+        .card .num { font-size: 24px; font-weight: bold; color: #f472b6; }
+        .card .label { font-size: 11px; color: #64748b; text-transform: uppercase; }
+        .footer { margin-top: 24px; font-size: 10px; color: #94a3b8; text-align: right; }
+      </style></head><body>
+      <h1>🌸 Chá de Bebê da Maitê</h1>
+      <p class="subtitle">Relatório: Contribuições por Presente • Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+      <div class="summary">
+        <div class="card"><div class="num">${safeGifts.length}</div><div class="label">Total Itens</div></div>
+        <div class="card"><div class="num">${giftsWithPledges.length}</div><div class="label">Itens Escolhidos</div></div>
+        <div class="card"><div class="num">${totalPledges}</div><div class="label">Contribuições</div></div>
+        <div class="card"><div class="num">${totalUnitsPledged}</div><div class="label">Unidades Dadas</div></div>
+      </div>
+      <div>${giftBlocks || '<p style="color: #64748b; font-size: 13px;">Nenhuma contribuição registrada ainda.</p>'}</div>
+      <p class="footer">Chá da Maitê • Leonardo & Isabella • ${new Date().toLocaleDateString('pt-BR')}</p>
+      </body></html>`);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
   const handleExportPDF = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -544,8 +628,17 @@ export default function AdminPanel({
 
                     <div className="flex items-center gap-2">
                       <button
+                        onClick={handleExportGiftsPDF}
+                        disabled={giftsWithPledgesCount === 0}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white text-xs font-bold shadow-sm transition"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        <span>Exportar PDF</span>
+                      </button>
+                      <button
                         onClick={handleExportGiftsCSV}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition"
+                        disabled={giftsWithPledgesCount === 0}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold shadow-sm transition"
                       >
                         <Download className="w-3.5 h-3.5" />
                         <span>Exportar Relatório (Excel/CSV)</span>
