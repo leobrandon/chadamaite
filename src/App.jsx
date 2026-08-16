@@ -8,6 +8,7 @@ import RSVPSection from './components/RSVPSection';
 import MessagesWall from './components/MessagesWall';
 import AdminPanel from './components/AdminPanel';
 import PixModal from './components/PixModal';
+import ScrollButtons from './components/ScrollButtons';
 import Footer from './components/Footer';
 import { storageService } from './services/storageService';
 
@@ -92,6 +93,11 @@ export default function App() {
   // Messages actions
   const handleAddMessage = (msgData) => {
     storageService.addMessage(msgData);
+  };
+
+  const handleApproveMessage = (msgId) => {
+    const updated = storageService.approveMessage(msgId);
+    setMessages(updated);
   };
 
   const handleLikeMessage = (msgId) => {
@@ -192,8 +198,12 @@ export default function App() {
         rsvps={rsvps}
         onDeleteRSVP={handleDeleteRSVP}
         messages={messages}
+        onApproveMessage={handleApproveMessage}
         onDeleteMessage={handleDeleteMessage}
       />
+
+      {/* Floating Quick Scroll Buttons */}
+      <ScrollButtons />
 
       {/* Footer */}
       <Footer

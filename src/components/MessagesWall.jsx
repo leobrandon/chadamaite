@@ -6,6 +6,9 @@ export default function MessagesWall({ messages, onAddMessage, onLikeMessage }) 
   const [author, setAuthor] = useState('');
   const [text, setText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPendingAlert, setShowPendingAlert] = useState(false);
+
+  const approvedMessages = messages.filter(m => m.status === 'approved');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -28,6 +31,8 @@ export default function MessagesWall({ messages, onAddMessage, onLikeMessage }) 
       setAuthor('');
       setText('');
       setIsSubmitting(false);
+      setShowPendingAlert(true);
+      setTimeout(() => setShowPendingAlert(false), 6000);
     }, 300);
   };
 
@@ -82,10 +87,18 @@ export default function MessagesWall({ messages, onAddMessage, onLikeMessage }) 
           </form>
         </div>
 
+        {/* Feedback Alert for Pending Approval */}
+        {showPendingAlert && (
+          <div className="max-w-2xl mx-auto mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm text-center animate-fade-in shadow-sm flex items-center justify-center gap-2">
+            <span>✨</span>
+            <span><strong>Obrigado pelo carinho!</strong> Seu recado foi enviado e será exibido no mural assim que os papais aprovarem. 💖</span>
+          </div>
+        )}
+
         {/* Messages Masonry/Grid */}
-        {messages.length > 0 ? (
+        {approvedMessages.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-            {messages.map((msg) => (
+            {approvedMessages.map((msg) => (
               <div
                 key={msg.id}
                 className="glass-card p-5 rounded-3xl border border-blush-100/90 shadow-sm flex flex-col justify-between hover:shadow-md transition"

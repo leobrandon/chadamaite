@@ -147,17 +147,27 @@ export const storageService = {
     return updated;
   },
 
-  // Mensagens / Mural de Carinho
+  // Mensagens / Mural de Carinho (com moderação)
   getMessages: () => {
     try {
       const saved = localStorage.getItem(KEYS.MESSAGES);
-      return saved ? JSON.parse(saved) : INITIAL_MESSAGES;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Ensure status field exists
+        return parsed.map(m => ({ ...m, status: m.status || 'approved' }));
+      }
+      return INITIAL_MESSAGES.map(m => ({ ...m, status: 'approved' }));
     } catch {
-      return INITIAL_MESSAGES;
+      return INITIAL_MESSAGES.map(m => ({ ...m, status: 'approved' }));
     }
   },
 
-  addMessage: (msgData) => {
+  getApprovedMessages: () => {
+    const messages = storageService.getMessages();
+    return messages.filter(m => m.status === 'approved');
+  },
+
+  addMessage: (msgData, autoApprove = false) => {
     const messages = storageService.getMessages();
     const newMsg = {
       id: `msg-${Date.now()}`,
@@ -166,11 +176,24 @@ export const storageService = {
       date: 'Agora mesmo',
       createdAt: new Date().toISOString(),
       likes: 0,
+      status: autoApprove ? 'approved' : 'pending', // Requer aprovação por padrão
     };
     const updated = [newMsg, ...messages];
     localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent('messages_updated', { detail: updated }));
     return newMsg;
+  },
+
+  approveMessage: (msgId) => {
+    const messages = storageService.getMessages();
+    const updated = messages.map(m => m.id === msgId ? { ...m, status: 'approved' } : m);
+    localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent('messages_updated', { detail: updated }));
+    return updated;
+  },
+
+  rejectMessage: (msgId) => {
+    return storageService.deleteMessage(msgId);
   },
 
   likeMessage: (msgId) => {
