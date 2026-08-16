@@ -664,6 +664,29 @@ export const storageService = {
     return updated;
   },
 
+  updateRSVP: async (rsvpId, fields) => {
+    const rsvps = storageService.getRSVPs();
+    const updated = rsvps.map(r => r.id === rsvpId ? { ...r, ...fields } : r);
+    localStorage.setItem(KEYS.RSVPS, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: updated }));
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const payload = {
+          adults_count: fields.adultsCount,
+          children_count: fields.childrenCount,
+          companion_names: fields.companionNames || [],
+          phone: fields.phone || '',
+          message: fields.message || '',
+        };
+        const { error } = await supabase.from('rsvps').update(payload).eq('id', rsvpId);
+        if (error) console.error('Erro ao atualizar RSVP no Supabase:', error);
+      } catch (err) {
+        console.error('Erro ao atualizar RSVP no Supabase:', err);
+      }
+    }
+    return updated;
+  },
+
   // MENSAGENS / MURAL DE CARINHO
   fetchMessagesFromCloud: async () => {
     if (!isSupabaseConfigured || !supabase) return storageService.getMessages();

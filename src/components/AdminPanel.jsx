@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, Shield, Lock, Users, Gift, MessageCircleHeart, Settings, Download, 
-  Trash2, Plus, Edit2, Check, RefreshCw, Eye, EyeOff, CheckCircle2, XCircle, Search
+  Trash2, Plus, Edit2, Check, RefreshCw, Eye, EyeOff, CheckCircle2, XCircle, Search, FileText
 } from 'lucide-react';
 import { INITIAL_CATEGORIES, BABY_EMOJIS } from '../data/initialGifts';
 import { storageService } from '../services/storageService';
@@ -22,6 +22,7 @@ export default function AdminPanel({
   onDeletePledge,
   rsvps, 
   onDeleteRSVP, 
+  onUpdateRSVP,
   messages, 
   onApproveMessage,
   onDeleteMessage 
@@ -58,6 +59,9 @@ export default function AdminPanel({
 
   // Edit Gift modal state
   const [editingGift, setEditingGift] = useState(null);
+
+  // Edit RSVP modal state
+  const [editingRsvp, setEditingRsvp] = useState(null);
 
   // Message moderation filter state
   const [messageFilter, setMessageFilter] = useState('pending'); // 'pending' | 'approved'
@@ -247,6 +251,68 @@ export default function AdminPanel({
 
   const pendingMessages = safeMessages.filter(m => m && m.status === 'pending');
   const approvedMessages = safeMessages.filter(m => m && m.status === 'approved');
+
+  const handleExportPDF = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    const totalAttending = attendingRSVPs.length;
+    const notAttending = safeRsvps.filter(r => !r.attending).length;
+    const rows = safeRsvps.map(r => `
+      <tr>
+        <td>${r.name}</td>
+        <td style="text-align:center;">${r.attending ? '✅ Sim' : '❌ Não'}</td>
+        <td style="text-align:center;">${r.attending ? (r.adultsCount||0) : '-'}</td>
+        <td style="text-align:center;">${r.attending ? (r.childrenCount||0) : '-'}</td>
+        <td>${(r.companionNames||[]).join(', ') || '-'}</td>
+        <td>${r.phone||'-'}</td>
+        <td>${r.message||'-'}</td>
+      </tr>
+    `).join('');
+    printWindow.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
+      <meta charset="UTF-8">
+      <title>Lista de Presenças - Chá da Maitê</title>
+      <style>
+        @media print { body { -webkit-print-color-adjust: exact; color-adjust: exact; } }
+        body { font-family: Arial, sans-serif; padding: 24px; color: #1e293b; }
+        h1 { color: #f472b6; font-size: 22px; margin-bottom: 4px; }
+        .subtitle { color: #64748b; font-size: 13px; margin-bottom: 20px; }
+        .summary { display: flex; gap: 16px; margin-bottom: 20px; }
+        .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 20px; text-align: center; }
+        .card .num { font-size: 24px; font-weight: bold; color: #f472b6; }
+        .card .label { font-size: 11px; color: #64748b; text-transform: uppercase; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th { background: #f1f5f9; color: #475569; text-transform: uppercase; font-size: 10px; padding: 8px; border-bottom: 2px solid #e2e8f0; text-align: left; }
+        td { padding: 8px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+        tr:nth-child(even) { background: #fafafa; }
+        .footer { margin-top: 20px; font-size: 10px; color: #94a3b8; text-align: right; }
+      </style></head><body>
+      <h1>🌸 Chá de Bebê da Maitê</h1>
+      <p class="subtitle">Lista de Confirmações de Presença • Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+      <div class="summary">
+        <div class="card"><div class="num">${safeRsvps.length}</div><div class="label">Respostas</div></div>
+        <div class="card"><div class="num">${totalAttending}</div><div class="label">Confirmados</div></div>
+        <div class="card"><div class="num">${totalAdults}</div><div class="label">Adultos</div></div>
+        <div class="card"><div class="num">${totalChildren}</div><div class="label">Crianças</div></div>
+        <div class="card"><div class="num">${notAttending}</div><div class="label">Não vêm</div></div>
+      </div>
+      <table><thead><tr><th>Convidado</th><th>Presença</th><th>Adultos</th><th>Crianças</th><th>Acompanhantes</th><th>WhatsApp</th><th>Recado</th></tr></thead><tbody>${rows}</tbody></table>
+      <p class="footer">Chá da Maitê • Leonardo & Isabella • ${new Date().toLocaleDateString('pt-BR')}</p>
+      </body></html>`);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
+  const handleSaveEditedRsvp = async () => {
+    if (!editingRsvp) return;
+    await onUpdateRSVP(editingRsvp.id, {
+      adultsCount: editingRsvp.adultsCount,
+      childrenCount: editingRsvp.childrenCount,
+      companionNames: editingRsvp.companionNames || [],
+      phone: editingRsvp.phone || '',
+      message: editingRsvp.message || ''
+    });
+    setEditingRsvp(null);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-md animate-fade-in overflow-y-auto">
@@ -628,14 +694,24 @@ export default function AdminPanel({
                       </p>
                     </div>
 
-                    <button
-                      onClick={handleExportCSV}
-                      disabled={rsvps.length === 0}
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold shadow-sm transition"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Exportar Relatório (Excel/CSV)</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleExportPDF}
+                        disabled={rsvps.length === 0}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white text-xs font-bold shadow-sm transition"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        <span>Exportar PDF</span>
+                      </button>
+                      <button
+                        onClick={handleExportCSV}
+                        disabled={rsvps.length === 0}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold shadow-sm transition"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Exportar Relatório (Excel/CSV)</span>
+                      </button>
+                    </div>
                   </div>
 
                   {rsvps.length > 0 ? (
@@ -682,7 +758,14 @@ export default function AdminPanel({
                                 <td className="p-3 text-slate-500 max-w-[200px] truncate" title={rsvp.message}>
                                   {rsvp.message || '-'}
                                 </td>
-                                <td className="p-3 text-right">
+                                <td className="p-3 text-right whitespace-nowrap">
+                                  <button
+                                    onClick={() => setEditingRsvp({...rsvp, companionNames: rsvp.companionNames || []})}
+                                    className="p-1.5 rounded-lg hover:bg-blush-50 text-slate-400 hover:text-blush-600 transition"
+                                    title="Editar confirmação"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
                                   <button
                                     onClick={() => {
                                       requestConfirm({
@@ -1384,6 +1467,78 @@ export default function AdminPanel({
               </div>
             </form>
 
+          </div>
+        </div>
+      )}
+
+      {/* Edit RSVP Modal */}
+      {editingRsvp && (
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90dvh] overflow-y-auto overscroll-contain">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">✏️</span>
+                <h4 className="font-bold text-slate-800 text-base">Editar Confirmação</h4>
+              </div>
+              <button onClick={() => setEditingRsvp(null)} className="p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {/* Form */}
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveEditedRsvp(); }} className="p-5 space-y-4">
+              {/* Name (read-only) */}
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Convidado</label>
+                <p className="font-semibold text-slate-800 text-sm">{editingRsvp.name}</p>
+              </div>
+              {/* Adults */}
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Adultos</label>
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={() => { const v = Math.max(1, (editingRsvp.adultsCount||1) - 1); setEditingRsvp(prev => { const companions = [...(prev.companionNames||[])]; const total = v + (prev.childrenCount||0); const needed = Math.max(0, total-1); while(companions.length < needed) companions.push(''); return {...prev, adultsCount: v, companionNames: companions.slice(0, needed)}; }); }} className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 transition">-</button>
+                  <span className="w-8 text-center font-bold text-slate-800">{editingRsvp.adultsCount||1}</span>
+                  <button type="button" onClick={() => { setEditingRsvp(prev => { const v = (prev.adultsCount||1) + 1; const companions = [...(prev.companionNames||[])]; const total = v + (prev.childrenCount||0); const needed = Math.max(0, total-1); while(companions.length < needed) companions.push(''); return {...prev, adultsCount: v, companionNames: companions.slice(0, needed)}; }); }} className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 transition">+</button>
+                </div>
+              </div>
+              {/* Children */}
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Crianças</label>
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={() => { setEditingRsvp(prev => { const v = Math.max(0, (prev.childrenCount||0) - 1); const companions = [...(prev.companionNames||[])]; const total = (prev.adultsCount||1) + v; const needed = Math.max(0, total-1); while(companions.length < needed) companions.push(''); return {...prev, childrenCount: v, companionNames: companions.slice(0, needed)}; }); }} className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 transition">-</button>
+                  <span className="w-8 text-center font-bold text-slate-800">{editingRsvp.childrenCount||0}</span>
+                  <button type="button" onClick={() => { setEditingRsvp(prev => { const v = (prev.childrenCount||0) + 1; const companions = [...(prev.companionNames||[])]; const total = (prev.adultsCount||1) + v; const needed = Math.max(0, total-1); while(companions.length < needed) companions.push(''); return {...prev, childrenCount: v, companionNames: companions.slice(0, needed)}; }); }} className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 transition">+</button>
+                </div>
+              </div>
+              {/* Companions */}
+              {(editingRsvp.companionNames||[]).length > 0 && (
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Nomes dos Acompanhantes</label>
+                  <div className="space-y-2">
+                    {(editingRsvp.companionNames||[]).map((name, i) => (
+                      <input key={i} type="text" value={name} onChange={(e) => { const next = [...(editingRsvp.companionNames||[])]; next[i] = e.target.value; setEditingRsvp(prev => ({...prev, companionNames: next})); }} placeholder={`Nome do acompanhante ${i+1}`} className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition" />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* Phone */}
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">WhatsApp / Telefone</label>
+                <input type="text" value={editingRsvp.phone||''} onChange={(e) => setEditingRsvp(prev => ({...prev, phone: e.target.value}))} placeholder="(00) 00000-0000" className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition" />
+              </div>
+              {/* Message */}
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Recado com Carinho</label>
+                <textarea rows="3" value={editingRsvp.message||''} onChange={(e) => setEditingRsvp(prev => ({...prev, message: e.target.value}))} placeholder="Recado deixado pelo convidado..." className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl resize-none outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition" />
+              </div>
+              {/* Buttons */}
+              <div className="flex gap-2 pt-1">
+                <button type="submit" className="flex-1 py-3 rounded-2xl bg-blush-500 hover:bg-blush-600 active:scale-[0.98] text-white font-bold text-sm shadow-md shadow-blush-500/20 transition flex items-center justify-center gap-1.5">
+                  <Check className="w-4 h-4" /> Salvar Alterações
+                </button>
+                <button type="button" onClick={() => setEditingRsvp(null)} className="px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-sm transition">Cancelar</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
