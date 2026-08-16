@@ -20,6 +20,7 @@ export default function AdminPanel({
   rsvps, 
   onDeleteRSVP, 
   messages, 
+  onApproveMessage,
   onDeleteMessage 
 }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -112,6 +113,10 @@ export default function AdminPanel({
 
   const reservedGiftsCount = gifts.filter(g => g.status === 'reserved').length;
   const availableGiftsCount = gifts.length - reservedGiftsCount;
+
+  const pendingMessages = messages.filter(m => m.status === 'pending');
+  const approvedMessages = messages.filter(m => m.status === 'approved');
+  const [messageFilter, setMessageFilter] = useState('pending'); // 'pending' | 'approved'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-md animate-fade-in overflow-y-auto">
@@ -271,7 +276,14 @@ export default function AdminPanel({
                   }`}
                 >
                   <MessageCircleHeart className="w-3.5 h-3.5" />
-                  <span>Recados ({messages.length})</span>
+                  <span>Moderar Recados</span>
+                  {pendingMessages.length > 0 ? (
+                    <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold animate-pulse">
+                      {pendingMessages.length} pendente{pendingMessages.length > 1 ? 's' : ''}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400 text-[11px]">({approvedMessages.length})</span>
+                  )}
                 </button>
               </div>
             </div>
@@ -699,45 +711,141 @@ export default function AdminPanel({
                 </div>
               )}
 
-              {/* TAB 4: MESSAGES */}
+              {/* TAB 4: MESSAGES MODERATION */}
               {activeTab === 'messages' && (
                 <div className="space-y-4">
-                  <h5 className="font-bold text-slate-800 text-base">
-                    Mensagens do Mural ({messages.length})
-                  </h5>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h5 className="font-bold text-slate-800 text-base">
+                        Moderação do Mural de Recados
+                      </h5>
+                      <p className="text-xs text-slate-500">
+                        Aprove ou recuse recados deixados pelos convidados antes de serem exibidos publicamente
+                      </p>
+                    </div>
 
-                  {messages.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {messages.map((msg) => (
-                        <div key={msg.id} className="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col justify-between shadow-sm">
-                          <div>
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-bold text-slate-800 text-sm">{msg.author}</span>
-                              <span className="text-[11px] text-slate-400">{msg.date}</span>
+                    {/* Sub-tabs: Pendentes vs Aprovados */}
+                    <div className="flex items-center bg-white border border-slate-200 p-1 rounded-xl shadow-sm">
+                      <button
+                        onClick={() => setMessageFilter('pending')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                          messageFilter === 'pending'
+                            ? 'bg-rose-500 text-white shadow-sm'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <span>Aguardando Aprovação</span>
+                        <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-bold">
+                          {pendingMessages.length}
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={() => setMessageFilter('approved')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                          messageFilter === 'approved'
+                            ? 'bg-emerald-600 text-white shadow-sm'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <span>Aprovados no Mural</span>
+                        <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-bold">
+                          {approvedMessages.length}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Messages Content */}
+                  {messageFilter === 'pending' ? (
+                    pendingMessages.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {pendingMessages.map((msg) => (
+                          <div key={msg.id} className="bg-white p-5 rounded-2xl border-2 border-rose-200/80 flex flex-col justify-between shadow-sm relative">
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-bold text-slate-800 text-sm">{msg.author}</span>
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                                  Pendente
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-700 leading-relaxed italic bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                "{msg.text}"
+                              </p>
                             </div>
-                            <p className="text-xs text-slate-600 leading-relaxed italic">
-                              "{msg.text}"
-                            </p>
+
+                            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                              <span className="text-[10px] text-slate-400">{msg.date}</span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => onApproveMessage(msg.id)}
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition"
+                                  title="Aprovar e publicar no mural"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>Aprovar Recado</span>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (confirm('Recusar e excluir este recado?')) {
+                                      onDeleteMessage(msg.id);
+                                    }
+                                  }}
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold transition"
+                                  title="Recusar recado"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                  <span>Recusar</span>
+                                </button>
+                              </div>
+                            </div>
                           </div>
-                          <div className="mt-4 pt-2 border-t border-slate-100 flex justify-end">
-                            <button
-                              onClick={() => {
-                                if (confirm('Excluir este recado?')) {
-                                  onDeleteMessage(msg.id);
-                                }
-                              }}
-                              className="text-xs text-rose-500 hover:text-rose-700 font-semibold"
-                            >
-                              Excluir
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-white p-10 rounded-2xl text-center border border-slate-200 text-slate-400 text-sm">
+                        <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                        <p className="font-bold text-slate-700">Tudo em dia!</p>
+                        <p className="text-xs text-slate-400 mt-1">Não há novos recados aguardando aprovação.</p>
+                      </div>
+                    )
                   ) : (
-                    <div className="bg-white p-8 rounded-2xl text-center border border-slate-200 text-slate-400 text-sm">
-                      Nenhuma mensagem no mural ainda.
-                    </div>
+                    approvedMessages.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {approvedMessages.map((msg) => (
+                          <div key={msg.id} className="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col justify-between shadow-sm">
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-bold text-slate-800 text-sm">{msg.author}</span>
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  No Mural ✓
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-600 leading-relaxed italic">
+                                "{msg.text}"
+                              </p>
+                            </div>
+                            <div className="mt-4 pt-2 border-t border-slate-100 flex items-center justify-between">
+                              <span className="text-[10px] text-slate-400">{msg.date}</span>
+                              <button
+                                onClick={() => {
+                                  if (confirm('Excluir este recado do mural?')) {
+                                    onDeleteMessage(msg.id);
+                                  }
+                                }}
+                                className="text-xs text-rose-500 hover:text-rose-700 font-semibold"
+                              >
+                                Remover do Mural
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-white p-8 rounded-2xl text-center border border-slate-200 text-slate-400 text-sm">
+                        Nenhum recado aprovado no momento.
+                      </div>
+                    )
                   )}
                 </div>
               )}
