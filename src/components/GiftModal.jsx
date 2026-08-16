@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Heart, Check, X, Gift, Sparkles, MessageCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-export default function GiftModal({ gift, pledges = [], isOpen, onClose, onConfirm, onAddPledge }) {
+export default function GiftModal({ gift, gifts = [], pledges = [], isOpen, onClose, onConfirm, onAddPledge }) {
   const [guestName, setGuestName] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [confirmedQuantity, setConfirmedQuantity] = useState(1);
@@ -11,11 +11,27 @@ export default function GiftModal({ gift, pledges = [], isOpen, onClose, onConfi
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  const [selectedMimoId, setSelectedMimoId] = useState('');
+  const [mimoQuantity, setMimoQuantity] = useState(1);
+  const [mimoError, setMimoError] = useState(false);
+  const [confirmedMimo, setConfirmedMimo] = useState(null);
+  const [confirmedMimoQty, setConfirmedMimoQty] = useState(1);
+
   // Compute remaining quota limit quietly without displaying quota bars or totals
   const giftPledges = (pledges || []).filter(p => p.giftId === gift?.id);
   const totalPledged = giftPledges.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
   const targetQty = Number(gift?.targetQuantity) || 5;
   const remainingAvailable = Math.max(1, targetQty - totalPledged);
+
+  const isFralda = gift?.category === 'Fraldas';
+  
+  const availableMimos = (gifts || []).filter(g => {
+    if (g.category === 'Fraldas' || g.id === gift?.id) return false;
+    const pList = (pledges || []).filter(p => p.giftId === g.id);
+    const pledgedTotal = pList.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
+    const target = Number(g.targetQuantity) || 5;
+    return pledgedTotal < target;
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -23,8 +39,15 @@ export default function GiftModal({ gift, pledges = [], isOpen, onClose, onConfi
       setGuestName('');
       setNameError(false);
       setIsSuccess(false);
+      setMimoError(false);
+      if (isFralda && availableMimos.length > 0) {
+        setSelectedMimoId(availableMimos[0].id);
+      } else {
+        setSelectedMimoId('');
+      }
+      setMimoQuantity(1);
     }
-  }, [isOpen, gift?.id]);
+  }, [isOpen, gift?.id, gifts, pledges, isFralda]);
 
   if (!isOpen || !gift) return null;
 
@@ -34,12 +57,36 @@ export default function GiftModal({ gift, pledges = [], isOpen, onClose, onConfi
       return;
     }
 
+    if (isFralda && availableMimos.length > 0 && !selectedMimoId) {
+      setMimoError(true);
+      return;
+    }
+
     setIsSubmitting(true);
     setNameError(false);
+    setMimoError(false);
 
     const safeQty = Math.min(remainingAvailable, Math.max(1, quantity));
     setConfirmedQuantity(safeQty);
     setConfirmedGuestName(guestName.trim());
+    
+    let safeMimoQty = 1;
+    let chosenMimo = null;
+
+    if (isFralda && selectedMimoId) {
+      chosenMimo = gifts.find(g => g.id === selectedMimoId);
+      if (chosenMimo) {
+        const pList = (pledges || []).filter(p => p.giftId === chosenMimo.id);
+        const pledgedTotal = pList.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
+        const target = Number(chosenMimo.targetQuantity) || 5;
+        const mimoRemaining = Math.max(1, target - pledgedTotal);
+        safeMimoQty = Math.min(mimoRemaining, Math.max(1, mimoQuantity));
+        setConfirmedMimo(chosenMimo);
+        setConfirmedMimoQty(safeMimoQty);
+      }
+    } else {
+      setConfirmedMimo(null);
+    }
     
     // Confetti celebration effect
     confetti({
@@ -52,6 +99,9 @@ export default function GiftModal({ gift, pledges = [], isOpen, onClose, onConfi
     setTimeout(() => {
       if (onAddPledge) {
         onAddPledge(gift.id, guestName.trim(), safeQty);
+        if (chosenMimo) {
+          onAddPledge(chosenMimo.id, guestName.trim(), safeMimoQty);
+        }
       } else if (onConfirm) {
         onConfirm(gift.id, guestName.trim());
       }
@@ -66,7 +116,10 @@ export default function GiftModal({ gift, pledges = [], isOpen, onClose, onConfi
     onClose();
   };
 
-  const whatsappMessage = `Oi Leo e Isa! 💕 Acabei de escolher ${gift.title} (${confirmedQuantity} un.) para a Maitê no site! Mal posso esperar pelo Chá! 💖`;
+  let whatsappMessage = `Oi Leo e Isa! 💕 Acabei de escolher ${gift.title} (${confirmedQuantity} un.) para a Maitê no site! Mal posso esperar pelo Chá! 💖`;
+  if (confirmedMimo) {
+    whatsappMessage = `Oi Leo e Isa! 💕 Acabei de escolher ${gift.title} (${confirmedQuantity} un.) + ${confirmedMimo.title} (${confirmedMimoQty} un.) para a Maitê no site! Mal posso esperar pelo Chá! 💖`;
+  }
   const whatsappShareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappMessage)}`;
 
   return (
@@ -116,6 +169,14 @@ export default function GiftModal({ gift, pledges = [], isOpen, onClose, onConfi
                 <p className="text-sm text-slate-600 font-medium">
                   Quantidade: <strong className="text-blush-600">{confirmedQuantity} {confirmedQuantity === 1 ? 'unidade' : 'unidades'}</strong>
                 </p>
+                {confirmedMimo && (
+                  <div className="pt-2 mt-2 border-t border-blush-200/60">
+                    <h5 className="font-bold text-slate-700 text-base">{confirmedMimo.title}</h5>
+                    <p className="text-sm text-slate-600 font-medium">
+                      Quantidade: <strong className="text-blush-600">{confirmedMimoQty} {confirmedMimoQty === 1 ? 'unidade' : 'unidades'}</strong>
+                    </p>
+                  </div>
+                )}
                 <p className="text-xs text-slate-500 pt-1">
                   Presenteado por: <strong>{confirmedGuestName}</strong>
                 </p>
@@ -256,6 +317,98 @@ export default function GiftModal({ gift, pledges = [], isOpen, onClose, onConfi
                   )}
                 </div>
               </div>
+
+              {/* Mimo Selection */}
+              {isFralda && (
+                <div className="mt-4 pt-4 border-t border-slate-100">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-blush-500" />
+                    <span>Escolha um Mimo para acompanhar a fralda: <span className="text-rose-500">*</span></span>
+                  </label>
+                  
+                  {availableMimos.length > 0 ? (
+                    <div className="space-y-3">
+                      <select
+                        value={selectedMimoId}
+                        onChange={(e) => {
+                          setSelectedMimoId(e.target.value);
+                          setMimoError(false);
+                          setMimoQuantity(1);
+                        }}
+                        className={`w-full px-4 py-3 rounded-2xl border outline-none text-base sm:text-sm transition ${
+                          mimoError
+                            ? 'border-rose-500 bg-rose-50/30 focus:ring-2 focus:ring-rose-200'
+                            : 'border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-200 bg-white'
+                        }`}
+                      >
+                        <option value="" disabled>Selecione um mimo...</option>
+                        {availableMimos.map(m => (
+                          <option key={m.id} value={m.id}>{m.icon || '🎁'} {m.title} ({m.category})</option>
+                        ))}
+                      </select>
+                      
+                      {selectedMimoId && (
+                        <div className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100">
+                          <span className="text-sm font-medium text-slate-600">Quantidade do Mimo:</span>
+                          <div className="flex items-center border border-slate-200 rounded-xl bg-white p-1 shadow-sm">
+                            <button
+                              type="button"
+                              onClick={() => setMimoQuantity(q => Math.max(1, q - 1))}
+                              disabled={mimoQuantity <= 1}
+                              className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 font-bold flex items-center justify-center transition active:scale-95"
+                            >
+                              -
+                            </button>
+                            <input
+                              type="number"
+                              min="1"
+                              max={(() => {
+                                const sMimo = gifts.find(g => g.id === selectedMimoId);
+                                const pList = (pledges || []).filter(p => p.giftId === selectedMimoId);
+                                const pTotal = pList.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
+                                return Math.max(1, (Number(sMimo?.targetQuantity) || 5) - pTotal);
+                              })()}
+                              value={mimoQuantity}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value) || 1;
+                                const sMimo = gifts.find(g => g.id === selectedMimoId);
+                                const pList = (pledges || []).filter(p => p.giftId === selectedMimoId);
+                                const pTotal = pList.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
+                                const maxAvail = Math.max(1, (Number(sMimo?.targetQuantity) || 5) - pTotal);
+                                setMimoQuantity(Math.min(maxAvail, Math.max(1, val)));
+                              }}
+                              className="w-10 text-center font-bold text-slate-800 text-sm outline-none bg-transparent"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setMimoQuantity(q => {
+                                const sMimo = gifts.find(g => g.id === selectedMimoId);
+                                const pList = (pledges || []).filter(p => p.giftId === selectedMimoId);
+                                const pTotal = pList.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
+                                const maxAvail = Math.max(1, (Number(sMimo?.targetQuantity) || 5) - pTotal);
+                                return Math.min(maxAvail, q + 1);
+                              })}
+                              disabled={mimoQuantity >= (() => {
+                                const sMimo = gifts.find(g => g.id === selectedMimoId);
+                                const pList = (pledges || []).filter(p => p.giftId === selectedMimoId);
+                                const pTotal = pList.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
+                                return Math.max(1, (Number(sMimo?.targetQuantity) || 5) - pTotal);
+                              })()}
+                              className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 font-bold flex items-center justify-center transition active:scale-95"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                      <p className="text-sm text-amber-700">Todos os mimos já foram escolhidos! Você pode presentear apenas com a fralda.</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Actions */}
               <div className="pt-2 flex flex-col sm:flex-row gap-3">
