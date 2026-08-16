@@ -390,7 +390,7 @@ export const INITIAL_EVENT_CONFIG = {
   mapUrl: 'https://maps.google.com/?q=Rua+das+Camelias+120',
   pixKey: 'maite.bebe@email.com',
   pixName: 'Leonardo / Isabella',
-  adminPin: '1234', // PIN fácil e alterável pelos pais
+  adminPin: '16101928', // PIN oficial
   welcomeMessage: 'Estamos muito felizes em compartilhar esse momento tão especial com você! Preparamos tudo com muito amor e carinho para esperar a nossa Maitê.',
 };
 

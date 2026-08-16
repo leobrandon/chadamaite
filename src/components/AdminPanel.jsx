@@ -59,7 +59,8 @@ export default function AdminPanel({
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (pinInput === config.adminPin || pinInput === '1234') {
+    const correctPin = String(config.adminPin || '16101928').trim();
+    if (pinInput.trim() === correctPin) {
       setIsAuthenticated(true);
       setPinError(false);
     } else {
@@ -184,7 +185,7 @@ export default function AdminPanel({
                 Área Restrita aos Pais
               </h4>
               <p className="text-slate-500 text-xs sm:text-sm mt-1">
-                Digite a senha de acesso (PIN padrão: <strong className="text-slate-700 font-mono">1234</strong>)
+                Digite a senha de acesso dos papais para gerenciar o Chá
               </p>
             </div>
 
@@ -192,19 +193,23 @@ export default function AdminPanel({
               <div>
                 <input
                   type="password"
-                  maxLength={10}
+                  maxLength={15}
                   value={pinInput}
                   onChange={(e) => {
                     setPinInput(e.target.value);
                     setPinError(false);
                   }}
-                  placeholder="Digite a senha (ex: 1234)"
-                  className="w-full text-center tracking-widest font-mono text-xl py-3 rounded-2xl border border-slate-300 focus:border-blush-500 focus:ring-2 focus:ring-blush-200 outline-none transition"
+                  placeholder="Digite a senha do painel"
+                  className={`w-full text-center tracking-widest font-mono text-xl py-3 rounded-2xl border outline-none transition ${
+                    pinError
+                      ? 'border-rose-500 bg-rose-50/30 focus:ring-2 focus:ring-rose-200'
+                      : 'border-slate-300 focus:border-blush-500 focus:ring-2 focus:ring-blush-200'
+                  }`}
                   autoFocus
                 />
                 {pinError && (
-                  <p className="text-xs text-rose-500 font-semibold mt-2">
-                    Senha incorreta. A senha padrão é 1234.
+                  <p className="text-xs text-rose-500 font-bold mt-2">
+                    ❌ Senha incorreta. Verifique a senha digitada e tente novamente.
                   </p>
                 )}
               </div>
