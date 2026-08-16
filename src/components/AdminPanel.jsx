@@ -123,11 +123,11 @@ export default function AdminPanel({
     }
   };
 
-  const handleCreateGift = (e) => {
+  const handleCreateGift = async (e) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
 
-    onAddGift({
+    await onAddGift({
       title: newTitle.trim(),
       category: newCategory,
       description: newDesc.trim(),
@@ -141,11 +141,11 @@ export default function AdminPanel({
     setNewTargetQuantity(5);
   };
 
-  const handleSaveEditedGift = (e) => {
+  const handleSaveEditedGift = async (e) => {
     e.preventDefault();
     if (!editingGift) return;
 
-    onUpdateGift(editingGift.id, {
+    await onUpdateGift(editingGift.id, {
       title: editingGift.title,
       category: editingGift.category,
       description: editingGift.description,

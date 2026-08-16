@@ -92,6 +92,20 @@ function mapGiftToDB(g) {
   };
 }
 
+// Helper to detect missing target_quantity column in Supabase
+function isTargetQuantityColumnError(error) {
+  if (!error) return false;
+  const msg = String(error.message || '').toLowerCase();
+  const details = String(error.details || '').toLowerCase();
+  const hint = String(error.hint || '').toLowerCase();
+  return (
+    error.code === 'PGRST204' ||
+    msg.includes('target_quantity') ||
+    details.includes('target_quantity') ||
+    hint.includes('target_quantity')
+  );
+}
+
 function mapRSVPFromDB(row) {
   return {
     id: row.id,
@@ -340,7 +354,11 @@ export const storageService = {
       if (!data || data.length === 0) {
         // Inicializa o banco com a lista completa inicial
         const dbGifts = INITIAL_GIFTS.map(mapGiftToDB);
-        await supabase.from('gifts').insert(dbGifts);
+        const { error: insertErr } = await supabase.from('gifts').insert(dbGifts);
+        if (insertErr && isTargetQuantityColumnError(insertErr)) {
+          const fallbackGifts = dbGifts.map(({ target_quantity, ...rest }) => rest);
+          await supabase.from('gifts').insert(fallbackGifts);
+        }
         return INITIAL_GIFTS;
       }
       const mapped = data.map(mapGiftFromDB);
@@ -447,7 +465,19 @@ export const storageService = {
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('gifts').insert([mapGiftToDB(gift)]);
+        const payload = mapGiftToDB(gift);
+        const { error } = await supabase.from('gifts').insert([payload]);
+        if (error) {
+          if (isTargetQuantityColumnError(error)) {
+            const { target_quantity, ...payloadWithoutTarget } = payload;
+            const retryRes = await supabase.from('gifts').insert([payloadWithoutTarget]);
+            if (retryRes.error) {
+              console.error('Erro ao adicionar presente no Supabase (retry sem target_quantity):', retryRes.error);
+            }
+          } else {
+            console.error('Erro ao adicionar presente no Supabase:', error);
+          }
+        }
       } catch (err) {
         console.error('Erro ao adicionar presente no Supabase:', err);
       }
@@ -464,7 +494,19 @@ export const storageService = {
       try {
         const gift = updated.find(g => g.id === giftId);
         if (gift) {
-          await supabase.from('gifts').update(mapGiftToDB(gift)).eq('id', giftId);
+          const payload = mapGiftToDB(gift);
+          const { error } = await supabase.from('gifts').update(payload).eq('id', giftId);
+          if (error) {
+            if (isTargetQuantityColumnError(error)) {
+              const { target_quantity, ...payloadWithoutTarget } = payload;
+              const retryRes = await supabase.from('gifts').update(payloadWithoutTarget).eq('id', giftId);
+              if (retryRes.error) {
+                console.error('Erro ao atualizar presente no Supabase (retry sem target_quantity):', retryRes.error);
+              }
+            } else {
+              console.error('Erro ao atualizar presente no Supabase:', error);
+            }
+          }
         }
       } catch (err) {
         console.error('Erro ao atualizar presente no Supabase:', err);
@@ -493,7 +535,19 @@ export const storageService = {
     if (isSupabaseConfigured && supabase) {
       try {
         await supabase.from('gifts').delete().neq('id', 'dummy');
-        await supabase.from('gifts').insert(INITIAL_GIFTS.map(mapGiftToDB));
+        const dbGifts = INITIAL_GIFTS.map(mapGiftToDB);
+        const { error } = await supabase.from('gifts').insert(dbGifts);
+        if (error) {
+          if (isTargetQuantityColumnError(error)) {
+            const fallbackGifts = dbGifts.map(({ target_quantity, ...rest }) => rest);
+            const retryRes = await supabase.from('gifts').insert(fallbackGifts);
+            if (retryRes.error) {
+              console.error('Erro ao resetar presentes no Supabase (retry sem target_quantity):', retryRes.error);
+            }
+          } else {
+            console.error('Erro ao resetar presentes no Supabase:', error);
+          }
+        }
       } catch (err) {
         console.error('Erro ao resetar presentes no Supabase:', err);
       }
