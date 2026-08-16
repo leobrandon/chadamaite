@@ -11,15 +11,19 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
 
   // Filtered gifts (Only Fraldas for the Combo view)
   const filteredGifts = useMemo(() => {
-    return safeGifts.filter(gift => {
-      if (!gift || gift.category !== 'Fraldas') return false;
-      
-      // Search match
-      const matchSearch = 
-        (gift.title && gift.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (gift.description && gift.description.toLowerCase().includes(searchQuery.toLowerCase()));
-
-    }).sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999));
+    return safeGifts
+      .filter(gift => {
+        if (!gift || gift.category !== 'Fraldas') return false;
+        
+        // Search match
+        if (!searchQuery.trim()) return true;
+        const q = searchQuery.toLowerCase();
+        return (
+          (gift.title && gift.title.toLowerCase().includes(q)) ||
+          (gift.description && gift.description.toLowerCase().includes(q))
+        );
+      })
+      .sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999));
   }, [safeGifts, searchQuery]);
 
   const mimos = useMemo(() => {
