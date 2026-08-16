@@ -380,17 +380,17 @@ export const INITIAL_GIFTS = [
 export const INITIAL_EVENT_CONFIG = {
   babyName: 'Maitê',
   parents: 'Leonardo & Isabella',
-  date: '2026-10-18', // Exemplo padrão
+  date: '2026-10-17',
   time: '15:30',
-  displayDate: 'Domingo, 18 de Outubro de 2026',
+  displayDate: 'Sábado, 17 de Outubro de 2026',
   displayTime: 'A partir das 15:30h',
-  locationName: 'Espaço Recanto das Flores & Eventos',
-  address: 'Rua das Camélias, 120 - Jardim Primavera',
-  city: 'São Paulo - SP',
-  mapUrl: 'https://maps.google.com/?q=Rua+das+Camelias+120',
-  pixKey: 'maite.bebe@email.com',
+  locationName: 'Espaço LC Eventos',
+  address: 'R. EMA-01, Quadra 07 Lote 28 - Lot. Alphaville Res., Goiânia - GO, 74370-720',
+  city: 'Goiânia - GO',
+  mapUrl: 'https://maps.app.goo.gl/6c8WqWsfqNx4kpXFA',
+  pixKey: '70436237156',
   pixName: 'Leonardo / Isabella',
-  adminPin: '16101928', // PIN oficial
+  adminPin: '16101928',
   welcomeMessage: 'Estamos muito felizes em compartilhar esse momento tão especial com você! Preparamos tudo com muito amor e carinho para esperar a nossa Maitê.',
 };
 
