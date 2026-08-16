@@ -197,9 +197,16 @@ export const storageService = {
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase
+        const payload = mapConfigToDB(newConfig);
+        const { error } = await supabase
           .from('event_config')
-          .upsert([mapConfigToDB(newConfig)]);
+          .update(payload)
+          .eq('id', 'default_config');
+
+        if (error) {
+          console.error('Erro ao atualizar config no Supabase:', error);
+          await supabase.from('event_config').upsert([payload]);
+        }
       } catch (err) {
         console.error('Erro ao salvar config no Supabase:', err);
       }
