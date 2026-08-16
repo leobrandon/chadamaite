@@ -131,6 +131,11 @@ export default function App() {
     if (Array.isArray(updated)) setRsvps(updated);
   };
 
+  const handleUpdateRSVP = async (rsvpId, fields) => {
+    const updated = await storageService.updateRSVP(rsvpId, fields);
+    if (Array.isArray(updated)) setRsvps(updated);
+  };
+
   // Messages actions
   const handleAddMessage = async (msgData) => {
     await storageService.addMessage(msgData);
@@ -265,6 +270,7 @@ export default function App() {
             onDeletePledge={handleDeletePledge}
             rsvps={rsvps}
             onDeleteRSVP={handleDeleteRSVP}
+            onUpdateRSVP={handleUpdateRSVP}
             messages={messages}
             onApproveMessage={handleApproveMessage}
             onDeleteMessage={handleDeleteMessage}
