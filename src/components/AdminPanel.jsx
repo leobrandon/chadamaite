@@ -98,6 +98,37 @@ export default function AdminPanel({
     setEditingGift(null);
   };
 
+  const handleDateChange = (newDate) => {
+    let formattedDisplay = tempConfig.displayDate;
+    if (newDate) {
+      const parts = newDate.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        const dateObj = new Date(year, month, day);
+        if (!isNaN(dateObj.getTime())) {
+          const weekday = dateObj.toLocaleDateString('pt-BR', { weekday: 'long' });
+          const monthName = dateObj.toLocaleDateString('pt-BR', { month: 'long' });
+          formattedDisplay = `${weekday.charAt(0).toUpperCase() + weekday.slice(1)}, ${day} de ${monthName.charAt(0).toUpperCase() + monthName.slice(1)} de ${year}`;
+        }
+      }
+    }
+    setTempConfig(prev => ({
+      ...prev,
+      date: newDate,
+      displayDate: formattedDisplay,
+    }));
+  };
+
+  const handleTimeChange = (newTime) => {
+    setTempConfig(prev => ({
+      ...prev,
+      time: newTime,
+      displayTime: newTime ? `A partir das ${newTime}h` : prev.displayTime,
+    }));
+  };
+
   const handleSaveConfig = (e) => {
     e.preventDefault();
     onSaveConfig(tempConfig);
@@ -781,32 +812,44 @@ export default function AdminPanel({
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Data (AAAA-MM-DD)</label>
+                        <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Data (Calendário)</label>
                         <input
                           type="date"
                           value={tempConfig.date}
-                          onChange={(e) => setTempConfig({ ...tempConfig, date: e.target.value })}
+                          onChange={(e) => handleDateChange(e.target.value)}
                           className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Horário (HH:MM)</label>
+                        <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Horário (Seletor)</label>
                         <input
                           type="time"
                           value={tempConfig.time}
-                          onChange={(e) => setTempConfig({ ...tempConfig, time: e.target.value })}
+                          onChange={(e) => handleTimeChange(e.target.value)}
                           className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400"
                         />
                       </div>
 
-                      <div className="sm:col-span-2">
-                        <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Data Formatada (Texto visível)</label>
+                      <div>
+                        <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Data Formatada (Texto no Site)</label>
                         <input
                           type="text"
                           value={tempConfig.displayDate}
                           onChange={(e) => setTempConfig({ ...tempConfig, displayDate: e.target.value })}
                           className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400"
+                          placeholder="Ex: Sábado, 17 de Outubro de 2026"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Horário Formatado (Texto no Site)</label>
+                        <input
+                          type="text"
+                          value={tempConfig.displayTime}
+                          onChange={(e) => setTempConfig({ ...tempConfig, displayTime: e.target.value })}
+                          className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400"
+                          placeholder="Ex: A partir das 15:30h"
                         />
                       </div>
 
