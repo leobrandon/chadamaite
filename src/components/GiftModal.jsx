@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Heart, Check, X, Gift, Sparkles, AlertCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-export default function GiftModal({ gift, isOpen, onClose, onConfirm }) {
+export default function GiftModal({ gift, isOpen, onClose, onConfirm, onAddPledge }) {
   const [guestName, setGuestName] = useState('');
+  const [quantity, setQuantity] = useState(1);
   const [nameError, setNameError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -27,9 +28,14 @@ export default function GiftModal({ gift, isOpen, onClose, onConfirm }) {
     });
 
     setTimeout(() => {
-      onConfirm(gift.id, guestName.trim());
+      if (onAddPledge) {
+        onAddPledge(gift.id, guestName.trim(), quantity);
+      } else {
+        onConfirm(gift.id, guestName.trim());
+      }
       setIsSubmitting(false);
       setGuestName('');
+      setQuantity(1);
       setNameError(false);
       onClose();
     }, 400);
@@ -84,10 +90,10 @@ export default function GiftModal({ gift, isOpen, onClose, onConfirm }) {
           </div>
 
           {/* Important Notice */}
-          <div className="flex items-start gap-3 p-3.5 bg-amber-50 rounded-2xl border border-amber-200/80 text-amber-900 text-xs sm:text-sm">
-            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 p-3.5 bg-blush-50 rounded-2xl border border-blush-200/80 text-blush-900 text-xs sm:text-sm">
+            <Heart className="w-5 h-5 text-blush-500 shrink-0 mt-0.5" />
             <p className="leading-relaxed">
-              <strong>Tem certeza que deseja escolher este item?</strong> Ao confirmar, este presente ficará reservado em seu nome e será retirado da lista para que outro convidado não compre repetido.
+              <strong>Você pode contribuir com quantas unidades quiser!</strong> Outros convidados também poderão escolher este mesmo item.
             </p>
           </div>
 
@@ -124,6 +130,21 @@ export default function GiftModal({ gift, isOpen, onClose, onConfirm }) {
             )}
           </div>
 
+          {/* Quantity Input */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              Quantas unidades você vai dar?
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="99"
+              value={quantity}
+              onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+              className="w-full px-4 py-3 rounded-2xl border outline-none text-sm transition border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-200"
+            />
+          </div>
+
           {/* Actions */}
           <div className="pt-2 flex flex-col sm:flex-row gap-3">
             <button
@@ -132,7 +153,7 @@ export default function GiftModal({ gift, isOpen, onClose, onConfirm }) {
               className="flex-1 py-3.5 px-6 rounded-2xl bg-blush-500 hover:bg-blush-600 active:scale-[0.98] text-white font-bold text-sm shadow-lg shadow-blush-500/25 transition flex items-center justify-center gap-2"
             >
               <Check className="w-5 h-5" />
-              <span>{isSubmitting ? 'Reservando...' : 'Sim, vou dar este presente!'}</span>
+              <span>{isSubmitting ? 'Confirmando...' : 'Confirmar meu presente! 💖'}</span>
             </button>
 
             <button

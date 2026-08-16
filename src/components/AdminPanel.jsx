@@ -17,6 +17,8 @@ export default function AdminPanel({
   onDeleteGift, 
   onCancelReservation,
   onResetGifts,
+  pledges = [],
+  onDeletePledge,
   rsvps, 
   onDeleteRSVP, 
   messages, 
@@ -54,6 +56,9 @@ export default function AdminPanel({
 
   // Gift report search state
   const [giftReportSearch, setGiftReportSearch] = useState('');
+  
+  // Accordion state for pledges
+  const [expandedGiftId, setExpandedGiftId] = useState(null);
 
   if (!isOpen) return null;
 
@@ -175,8 +180,9 @@ export default function AdminPanel({
   const totalChildren = attendingRSVPs.reduce((acc, curr) => acc + (curr.childrenCount || 0), 0);
   const totalGuests = totalAdults + totalChildren;
 
-  const reservedGiftsCount = safeGifts.filter(g => g && g.status === 'reserved').length;
-  const availableGiftsCount = safeGifts.length - reservedGiftsCount;
+  const giftsWithPledgesCount = new Set(pledges.map(p => p.giftId)).size;
+  const availableGiftsCount = safeGifts.length - giftsWithPledgesCount;
+  const totalPledgesCount = pledges.length;
 
   const pendingMessages = safeMessages.filter(m => m && m.status === 'pending');
   const approvedMessages = safeMessages.filter(m => m && m.status === 'approved');
@@ -274,15 +280,15 @@ export default function AdminPanel({
                 </div>
 
                 <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
-                  <span className="text-[11px] text-slate-400 font-semibold uppercase">Presentes Escolhidos</span>
+                  <span className="text-[11px] text-slate-400 font-semibold uppercase">Presentes com Contribuição</span>
                   <div className="flex items-baseline gap-1 mt-0.5">
-                    <span className="text-xl sm:text-2xl font-bold text-blush-600">{reservedGiftsCount}</span>
+                    <span className="text-xl sm:text-2xl font-bold text-blush-600">{giftsWithPledgesCount}</span>
                     <span className="text-[10px] text-slate-500">de {gifts.length}</span>
                   </div>
                 </div>
 
                 <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
-                  <span className="text-[11px] text-slate-400 font-semibold uppercase">Presentes Livres</span>
+                  <span className="text-[11px] text-slate-400 font-semibold uppercase">Presentes Sem Contrib.</span>
                   <div className="text-xl sm:text-2xl font-bold text-emerald-600 mt-0.5">
                     {availableGiftsCount}
                   </div>
@@ -307,7 +313,7 @@ export default function AdminPanel({
                   }`}
                 >
                   <Gift className="w-3.5 h-3.5 text-blush-500" />
-                  <span>🎁 Quem vai dar o quê? ({reservedGiftsCount})</span>
+                  <span>🎁 Contribuições por Presente ({giftsWithPledgesCount})</span>
                 </button>
 
                 <button
@@ -376,13 +382,13 @@ export default function AdminPanel({
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <h4 className="font-bold text-slate-800 text-base sm:text-lg flex items-center gap-2">
-                        <span>Relatório: Quem vai dar cada presente</span>
+                        <span>Relatório: Contribuições por Presente</span>
                         <span className="text-xs px-2.5 py-0.5 rounded-full bg-blush-100 text-blush-700 font-bold">
-                          {reservedGiftsCount} presentes reservados
+                          {giftsWithPledgesCount} presentes com contribuições
                         </span>
                       </h4>
                       <p className="text-xs text-slate-500">
-                        Acompanhe o nome de cada convidado e o presente que ele escolheu dar para a Maitê
+                        Acompanhe as contribuições não-exclusivas. Diversos convidados podem contribuir com o mesmo presente.
                       </p>
                     </div>
 
@@ -398,100 +404,113 @@ export default function AdminPanel({
                   </div>
 
                   {/* Search filter */}
-                  {reservedGiftsCount > 0 && (
+                  {giftsWithPledgesCount > 0 && (
                     <div className="max-w-md">
                       <input
                         type="text"
                         value={giftReportSearch}
                         onChange={(e) => setGiftReportSearch(e.target.value)}
-                        placeholder="Buscar por nome do convidado ou presente..."
+                        placeholder="Buscar por presente..."
                         className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 focus:border-blush-400 outline-none text-xs shadow-sm transition"
                       />
                     </div>
                   )}
 
-                  {/* Reserved Gifts Table */}
-                  {reservedGiftsCount > 0 ? (
-                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs text-slate-600">
-                          <thead className="bg-blush-50/70 text-slate-700 font-bold uppercase text-[10px] tracking-wider border-b border-blush-100">
-                            <tr>
-                              <th className="p-3.5 text-blush-900 font-bold">Quem vai dar (Convidado)</th>
-                              <th className="p-3.5">Presente Escolhido</th>
-                              <th className="p-3.5">Categoria</th>
-                              <th className="p-3.5">Data da Reserva</th>
-                              <th className="p-3.5 text-right">Ação</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {gifts
-                              .filter(g => g.status === 'reserved')
-                              .filter(g => {
-                                const q = giftReportSearch.toLowerCase();
-                                return (
-                                  (g.reservedBy && g.reservedBy.toLowerCase().includes(q)) ||
-                                  g.title.toLowerCase().includes(q) ||
-                                  g.category.toLowerCase().includes(q)
-                                );
-                              })
-                              .map((gift) => (
-                                <tr key={gift.id} className="hover:bg-slate-50/80 transition">
-                                  <td className="p-3.5 font-bold text-slate-900 text-sm">
-                                    <div className="flex items-center gap-2">
-                                      <span className="w-7 h-7 rounded-full bg-blush-100 text-blush-700 flex items-center justify-center text-xs font-bold shrink-0">
-                                        {(gift.reservedBy || 'C').charAt(0).toUpperCase()}
-                                      </span>
-                                      <span>{gift.reservedBy || 'Nome não informado'}</span>
-                                    </div>
-                                  </td>
-                                  <td className="p-3.5 font-semibold text-slate-800">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-lg">{gift.icon || '🎁'}</span>
-                                      <div>
-                                        <span>{gift.title}</span>
-                                        {gift.description && (
-                                          <span className="block text-[11px] text-slate-400 font-normal">
-                                            {gift.description}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </td>
-                                  <td className="p-3.5">
-                                    <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-medium text-[10px]">
-                                      {gift.category}
-                                    </span>
-                                  </td>
-                                  <td className="p-3.5 text-slate-500 font-medium">
-                                    {gift.reservedAt ? new Date(gift.reservedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recentemente'}
-                                  </td>
-                                  <td className="p-3.5 text-right">
-                                    <button
-                                      onClick={() => {
-                                        if (confirm(`Liberar este presente (${gift.title}) para que fique disponível novamente?`)) {
-                                          onCancelReservation(gift.id);
-                                        }
-                                      }}
-                                      className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-bold border border-amber-200 transition"
-                                      title="Desmarcar reserva"
-                                    >
-                                      Liberar Presente
-                                    </button>
-                                  </td>
-                                </tr>
-                              ))}
-                          </tbody>
-                        </table>
-                      </div>
+                  {/* Pledges Accordion */}
+                  {giftsWithPledgesCount > 0 ? (
+                    <div className="space-y-3">
+                      {gifts
+                        .filter(g => pledges.some(p => p.giftId === g.id))
+                        .filter(g => {
+                          const q = giftReportSearch.toLowerCase();
+                          return g.title.toLowerCase().includes(q) || g.category.toLowerCase().includes(q);
+                        })
+                        .map((gift) => {
+                          const giftPledges = pledges.filter(p => p.giftId === gift.id);
+                          const totalUnits = giftPledges.reduce((sum, p) => sum + p.quantity, 0);
+                          const isExpanded = expandedGiftId === gift.id;
+
+                          return (
+                            <div key={gift.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                              {/* Gift Header */}
+                              <div 
+                                className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition"
+                                onClick={() => setExpandedGiftId(isExpanded ? null : gift.id)}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-blush-50 text-blush-600 flex items-center justify-center text-xl shrink-0 border border-blush-100">
+                                    {gift.icon || '🎁'}
+                                  </div>
+                                  <div>
+                                    <h5 className="font-bold text-slate-800 text-sm">{gift.title}</h5>
+                                    <p className="text-xs text-slate-500">
+                                      {gift.category} • <span className="font-semibold text-blush-600">{giftPledges.length} contribuidor(es)</span> • <span className="font-semibold">{totalUnits} un. total</span>
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-slate-400 p-2">
+                                  {isExpanded ? '▲' : '▼'}
+                                </div>
+                              </div>
+
+                              {/* Expanded Pledges Table */}
+                              {isExpanded && (
+                                <div className="border-t border-slate-100 bg-slate-50 p-4">
+                                  <table className="w-full text-left text-xs text-slate-600">
+                                    <thead className="bg-slate-200/50 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
+                                      <tr>
+                                        <th className="p-2">Convidado</th>
+                                        <th className="p-2">Quantidade</th>
+                                        <th className="p-2">Data</th>
+                                        <th className="p-2 text-right">Ações</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-200">
+                                      {giftPledges.map(pledge => (
+                                        <tr key={pledge.id}>
+                                          <td className="p-2 font-bold text-slate-800">
+                                            <div className="flex items-center gap-2">
+                                              <span className="w-6 h-6 rounded-full bg-blush-100 text-blush-700 flex items-center justify-center text-[10px] font-bold shrink-0">
+                                                {(pledge.giverName || 'C').charAt(0).toUpperCase()}
+                                              </span>
+                                              <span>{pledge.giverName}</span>
+                                            </div>
+                                          </td>
+                                          <td className="p-2 font-medium">{pledge.quantity} un.</td>
+                                          <td className="p-2 text-slate-500">
+                                            {new Date(pledge.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                                          </td>
+                                          <td className="p-2 text-right">
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (confirm(`Excluir a contribuição de ${pledge.giverName}?`)) {
+                                                  onDeletePledge(pledge.id);
+                                                }
+                                              }}
+                                              className="p-1.5 rounded-lg hover:bg-rose-100 text-rose-500 hover:text-rose-700 transition"
+                                              title="Excluir contribuição"
+                                            >
+                                              <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                     </div>
                   ) : (
                     <div className="bg-white p-12 rounded-2xl text-center border border-slate-200 text-slate-400 text-sm space-y-2">
                       <div className="w-12 h-12 rounded-full bg-blush-50 text-blush-400 mx-auto flex items-center justify-center text-xl">
                         🎁
                       </div>
-                      <p className="font-bold text-slate-700 text-base">Nenhum presente foi reservado ainda.</p>
-                      <p className="text-xs text-slate-400">Assim que os convidados escolherem os presentes no site, a lista com o nome de cada um aparecerá aqui!</p>
+                      <p className="font-bold text-slate-700 text-base">Sem contribuições ainda.</p>
+                      <p className="text-xs text-slate-400">Assim que os convidados começarem a escolher presentes, eles aparecerão aqui!</p>
                     </div>
                   )}
                 </div>
@@ -678,104 +697,70 @@ export default function AdminPanel({
                     </form>
                   </div>
 
-                  {/* Gifts Table */}
+                  {/* Gifts Card List — mobile-friendly, fully clickable */}
                   <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
                     <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                       <span className="font-bold text-slate-800 text-sm">
                         Todos os Presentes ({gifts.length})
                       </span>
-
                       <button
                         onClick={() => {
                           if (confirm('Tem certeza que deseja restaurar a lista padrão de presentes?')) {
                             onResetGifts();
                           }
                         }}
-                        className="text-[11px] text-slate-400 hover:text-slate-600 flex items-center gap-1"
+                        className="text-[11px] text-slate-400 hover:text-slate-600 flex items-center gap-1 transition"
                       >
                         <RefreshCw className="w-3 h-3" />
                         <span>Restaurar Lista Padrão</span>
                       </button>
                     </div>
 
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs text-slate-600">
-                        <thead className="bg-slate-50 text-slate-700 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
-                          <tr>
-                            <th className="p-3">Ícone</th>
-                            <th className="p-3">Presente</th>
-                            <th className="p-3">Categoria</th>
-                            <th className="p-3">Status</th>
-                            <th className="p-3">Reservado Por</th>
-                            <th className="p-3 text-right">Ações</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {gifts.map((gift) => (
-                            <tr key={gift.id} className="hover:bg-slate-50/80 transition">
-                              <td className="p-3 text-xl">{gift.icon || '🎁'}</td>
-                              <td className="p-3 font-semibold text-slate-800">
+                    <p className="px-4 py-2.5 text-[11px] text-slate-400 bg-slate-50/60 border-b border-slate-100">
+                      Toque em qualquer item para editar
+                    </p>
+
+                    <div className="divide-y divide-slate-100">
+                      {gifts.map((gift) => {
+                        const giftPledges = pledges.filter(p => p.giftId === gift.id);
+                        return (
+                          <button
+                            key={gift.id}
+                            onClick={() => setEditingGift(gift)}
+                            className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 active:bg-blush-50/50 transition text-left group"
+                          >
+                            {/* Emoji */}
+                            <div className="w-10 h-10 rounded-xl bg-blush-50 border border-blush-100 flex items-center justify-center text-xl shrink-0">
+                              {gift.icon || '🎁'}
+                            </div>
+
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-slate-800 text-sm leading-snug truncate">
                                 {gift.title}
-                                {gift.description && (
-                                  <span className="block text-[11px] text-slate-400 font-normal">
-                                    {gift.description}
-                                  </span>
-                                )}
-                              </td>
-                              <td className="p-3">
+                              </p>
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
                                 <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium text-[10px]">
                                   {gift.category}
                                 </span>
-                              </td>
-                              <td className="p-3">
-                                {gift.status === 'reserved' ? (
+                                {gift.priority === 'high' && (
+                                  <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold text-[10px]">★ Alta</span>
+                                )}
+                                {giftPledges.length > 0 ? (
                                   <span className="px-2 py-0.5 rounded-full bg-blush-100 text-blush-700 font-bold text-[10px]">
-                                    Reservado
+                                    💝 {giftPledges.length} contrib.
                                   </span>
                                 ) : (
-                                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">
-                                    Disponível
-                                  </span>
+                                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-[10px]">Disponível</span>
                                 )}
-                              </td>
-                              <td className="p-3 text-slate-500 font-medium">
-                                {gift.reservedBy || '-'}
-                              </td>
-                              <td className="p-3 text-right space-x-1">
-                                {gift.status === 'reserved' && (
-                                  <button
-                                    onClick={() => onCancelReservation(gift.id)}
-                                    className="px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 text-[10px] font-bold transition"
-                                    title="Tornar disponível novamente"
-                                  >
-                                    Liberar
-                                  </button>
-                                )}
+                              </div>
+                            </div>
 
-                                <button
-                                  onClick={() => setEditingGift(gift)}
-                                  className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition"
-                                  title="Editar presente"
-                                >
-                                  <Edit2 className="w-3.5 h-3.5" />
-                                </button>
-
-                                <button
-                                  onClick={() => {
-                                    if (confirm(`Excluir ${gift.title}?`)) {
-                                      onDeleteGift(gift.id);
-                                    }
-                                  }}
-                                  className="p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition"
-                                  title="Excluir presente"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                            {/* Chevron */}
+                            <Edit2 className="w-3.5 h-3.5 text-slate-300 group-hover:text-blush-400 transition shrink-0" />
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -1081,72 +1066,122 @@ export default function AdminPanel({
 
       {/* Edit Gift Modal */}
       {editingGift && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60">
-          <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4">
-            <h4 className="font-bold text-slate-800 text-base">Editar Presente</h4>
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden">
             
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1">Ícone (Emoji)</label>
-              <select
-                value={editingGift.icon || '🎁'}
-                onChange={(e) => setEditingGift({ ...editingGift, icon: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white outline-none focus:border-blush-400"
-              >
-                {BABY_EMOJIS.map((item) => (
-                  <option key={item.emoji} value={item.emoji}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1">Título</label>
-              <input
-                type="text"
-                value={editingGift.title}
-                onChange={(e) => setEditingGift({ ...editingGift, title: e.target.value })}
-                className="w-full px-3 py-2 text-sm border rounded-xl"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1">Categoria</label>
-              <select
-                value={editingGift.category}
-                onChange={(e) => setEditingGift({ ...editingGift, category: e.target.value })}
-                className="w-full px-3 py-2 text-sm border rounded-xl bg-white"
-              >
-                {INITIAL_CATEGORIES.filter(c => c !== 'Todas').map(c => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1">Descrição</label>
-              <textarea
-                rows="2"
-                value={editingGift.description}
-                onChange={(e) => setEditingGift({ ...editingGift, description: e.target.value })}
-                className="w-full px-3 py-2 text-sm border rounded-xl resize-none"
-              />
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={handleSaveEditedGift}
-                className="flex-1 py-2 rounded-xl bg-blush-500 text-white font-bold text-xs"
-              >
-                Salvar Alterações
-              </button>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{editingGift.icon || '🎁'}</span>
+                <h4 className="font-bold text-slate-800 text-base">Editar Presente</h4>
+              </div>
               <button
                 onClick={() => setEditingGift(null)}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold text-xs"
+                className="p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition"
               >
-                Cancelar
+                <X className="w-4 h-4" />
               </button>
             </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveEditedGift} className="p-5 space-y-4">
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Ícone (Emoji)</label>
+                <select
+                  value={editingGift.icon || '🎁'}
+                  onChange={(e) => setEditingGift({ ...editingGift, icon: e.target.value })}
+                  className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl bg-white outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition"
+                >
+                  {BABY_EMOJIS.map((item) => (
+                    <option key={item.emoji} value={item.emoji}>{item.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Nome do Item *</label>
+                <input
+                  type="text"
+                  required
+                  value={editingGift.title}
+                  onChange={(e) => setEditingGift({ ...editingGift, title: e.target.value })}
+                  className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Categoria</label>
+                  <select
+                    value={editingGift.category}
+                    onChange={(e) => setEditingGift({ ...editingGift, category: e.target.value })}
+                    className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl bg-white outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition"
+                  >
+                    {INITIAL_CATEGORIES.filter(c => c !== 'Todas').map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Prioridade</label>
+                  <select
+                    value={editingGift.priority || 'medium'}
+                    onChange={(e) => setEditingGift({ ...editingGift, priority: e.target.value })}
+                    className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl bg-white outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition"
+                  >
+                    <option value="high">★ Alta</option>
+                    <option value="medium">Média</option>
+                    <option value="low">Baixa</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Descrição / Sugestão de Marca</label>
+                <textarea
+                  rows="2"
+                  value={editingGift.description}
+                  onChange={(e) => setEditingGift({ ...editingGift, description: e.target.value })}
+                  className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl resize-none outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="submit"
+                  className="flex-1 py-3 rounded-2xl bg-blush-500 hover:bg-blush-600 active:scale-[0.98] text-white font-bold text-sm shadow-md shadow-blush-500/20 transition flex items-center justify-center gap-1.5"
+                >
+                  <Check className="w-4 h-4" />
+                  Salvar Alterações
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingGift(null)}
+                  className="px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-sm transition"
+                >
+                  Cancelar
+                </button>
+              </div>
+
+              {/* Danger Zone — Delete */}
+              <div className="pt-1 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm(`Excluir "${editingGift.title}" permanentemente?`)) {
+                      onDeleteGift(editingGift.id);
+                      setEditingGift(null);
+                    }
+                  }}
+                  className="w-full py-2.5 rounded-2xl border border-rose-200 text-rose-600 hover:bg-rose-50 active:scale-[0.98] font-semibold text-sm transition flex items-center justify-center gap-1.5"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Excluir este presente
+                </button>
+              </div>
+            </form>
+
           </div>
         </div>
       )}
