@@ -8,24 +8,26 @@ export default function GiftList({ gifts, onSelectGift, onOpenAdmin }) {
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'available' | 'reserved'
 
   const categories = INITIAL_CATEGORIES;
+  const safeGifts = Array.isArray(gifts) ? gifts : [];
 
   // Stats calculation
-  const totalCount = gifts.length;
-  const reservedCount = gifts.filter(g => g.status === 'reserved').length;
+  const totalCount = safeGifts.length;
+  const reservedCount = safeGifts.filter(g => g && g.status === 'reserved').length;
   const availableCount = totalCount - reservedCount;
   const percentageReserved = totalCount > 0 ? Math.round((reservedCount / totalCount) * 100) : 0;
 
   // Filtered gifts
   const filteredGifts = useMemo(() => {
-    return gifts.filter(gift => {
+    return safeGifts.filter(gift => {
+      if (!gift) return false;
       // Category match
       const matchCategory = selectedCategory === 'Todas' || gift.category === selectedCategory;
       
       // Search match
       const matchSearch = 
-        gift.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (gift.title && gift.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (gift.description && gift.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        gift.category.toLowerCase().includes(searchQuery.toLowerCase());
+        (gift.category && gift.category.toLowerCase().includes(searchQuery.toLowerCase()));
 
       // Status match
       const matchStatus = 
@@ -35,7 +37,7 @@ export default function GiftList({ gifts, onSelectGift, onOpenAdmin }) {
 
       return matchCategory && matchSearch && matchStatus;
     });
-  }, [gifts, selectedCategory, searchQuery, statusFilter]);
+  }, [safeGifts, selectedCategory, searchQuery, statusFilter]);
 
   return (
     <section id="presentes" className="py-16 md:py-20 relative">

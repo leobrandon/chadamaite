@@ -8,7 +8,8 @@ export default function MessagesWall({ messages, onAddMessage, onLikeMessage }) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPendingAlert, setShowPendingAlert] = useState(false);
 
-  const approvedMessages = messages.filter(m => m.status === 'approved');
+  const safeMessages = Array.isArray(messages) ? messages : [];
+  const approvedMessages = safeMessages.filter(m => m && m.status === 'approved');
 
   const handleSubmit = (e) => {
     e.preventDefault();
