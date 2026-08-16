@@ -116,9 +116,9 @@ export default function GiftModal({ gift, gifts = [], pledges = [], isOpen, onCl
     onClose();
   };
 
-  let whatsappMessage = `Oi Leo e Isa! 💕 Acabei de escolher ${gift.title} (${confirmedQuantity} un.) para a Maitê no site! Mal posso esperar pelo Chá! 💖`;
+  let whatsappMessage = `Oi Leo e Isa! 💕 Acabei de escolher o combo: ${gift.title} (${confirmedQuantity} un.) para a Maitê no site! Mal posso esperar pelo Chá! 💖`;
   if (confirmedMimo) {
-    whatsappMessage = `Oi Leo e Isa! 💕 Acabei de escolher ${gift.title} (${confirmedQuantity} un.) + ${confirmedMimo.title} (${confirmedMimoQty} un.) para a Maitê no site! Mal posso esperar pelo Chá! 💖`;
+    whatsappMessage = `Oi Leo e Isa! 💕 Acabei de escolher o combo: ${gift.title} (${confirmedQuantity} un.) + ${confirmedMimo.title} (${confirmedMimoQty} un.) para a Maitê no site! Mal posso esperar pelo Chá! 💖`;
   }
   const whatsappShareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappMessage)}`;
 
@@ -144,7 +144,7 @@ export default function GiftModal({ gift, gifts = [], pledges = [], isOpen, onCl
           </div>
           
           <h3 className="font-serif text-2xl font-bold tracking-tight">
-            {isSuccess ? 'Presente Escolhido com Amor! 💕' : 'Presentear a Maitê 💖'}
+            {isSuccess ? 'Combo Escolhido com Muito Amor! 💕' : 'Montar Combo de Presente 💖'}
           </h3>
           <p className="text-blush-100 text-xs sm:text-sm mt-1">
             {isSuccess
@@ -161,7 +161,7 @@ export default function GiftModal({ gift, gifts = [], pledges = [], isOpen, onCl
             <div className="space-y-6 text-center py-2 animate-fade-in">
               <div className="bg-blush-50/80 border border-blush-200/90 rounded-2xl p-5 space-y-2">
                 <span className="text-xs uppercase tracking-wider font-bold text-blush-700 block">
-                  Confirmação de Presente
+                  Confirmação de Combo
                 </span>
                 <h4 className="font-bold text-slate-800 text-lg sm:text-xl">
                   {gift.title}
@@ -419,7 +419,7 @@ export default function GiftModal({ gift, gifts = [], pledges = [], isOpen, onCl
                   className="flex-1 py-3.5 px-6 rounded-2xl bg-blush-500 hover:bg-blush-600 active:scale-[0.98] text-white font-bold text-sm sm:text-base shadow-lg shadow-blush-500/25 transition flex items-center justify-center gap-2"
                 >
                   <Check className="w-5 h-5" />
-                  <span>{isSubmitting ? 'Confirmando...' : 'Confirmar meu presente! 💖'}</span>
+                  <span>{isSubmitting ? 'Confirmando...' : 'Confirmar meu Combo de Presente! 💖'}</span>
                 </button>
 
                 <button

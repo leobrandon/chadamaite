@@ -3,28 +3,25 @@ import { Gift, Search, Sparkles, CheckCircle2, Lock, Heart } from 'lucide-react'
 import { INITIAL_CATEGORIES } from '../data/initialGifts';
 
 export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmin, isLoading = false }) {
-  const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const categories = INITIAL_CATEGORIES;
   const safeGifts = Array.isArray(gifts) ? gifts : [];
 
-  // Filtered gifts
+  // Filtered gifts (Only Fraldas for the Combo view)
   const filteredGifts = useMemo(() => {
     return safeGifts.filter(gift => {
-      if (!gift) return false;
-      // Category match
-      const matchCategory = selectedCategory === 'Todas' || gift.category === selectedCategory;
+      if (!gift || gift.category !== 'Fraldas') return false;
       
       // Search match
       const matchSearch = 
         (gift.title && gift.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (gift.description && gift.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (gift.category && gift.category.toLowerCase().includes(searchQuery.toLowerCase()));
+        (gift.description && gift.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      return matchCategory && matchSearch;
+      return matchSearch;
     });
-  }, [safeGifts, selectedCategory, searchQuery]);
+  }, [safeGifts, searchQuery]);
+
+  const mimos = useMemo(() => safeGifts.filter(g => g.category !== 'Fraldas'), [safeGifts]);
 
   return (
     <section id="presentes" className="py-16 md:py-20 relative">
@@ -34,13 +31,13 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
         <div className="text-center max-w-2xl mx-auto mb-10">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blush-100/80 text-blush-700 text-xs font-bold uppercase tracking-wider mb-3">
             <Gift className="w-3.5 h-3.5" />
-            <span>Lista de Presentes da Maitê</span>
+            <span>Lista de Presentes & Combos da Maitê</span>
           </div>
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-slate-800 tracking-tight">
-            Escolha o que gostaria de dar
+            Escolha o seu Combo de Presente
           </h2>
           <p className="text-slate-600 text-sm sm:text-base mt-3 leading-relaxed">
-            Selecione o presente desejado. Ao clicar em <strong>"Vou dar este presente"</strong>, você pode escolher a quantidade que deseja contribuir com todo carinho.
+            Como funciona: Escolha o tamanho do pacote de fraldas e, em seguida, selecione um mimo especial (lenços umedecidos, pomadinhas, roupinhas, etc.) para acompanhar com todo carinho! 💕
           </p>
         </div>
 
@@ -68,31 +65,33 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
             )}
           </div>
 
-          {/* Categories Pill Scroller with Horizontal Scroll Indicators */}
-          <div className="relative">
-            {/* Soft fade shadow indicators for horizontal scrolling */}
-            <div className="pointer-events-none absolute right-0 top-0 bottom-2 w-10 bg-gradient-to-l from-white/90 via-white/40 to-transparent z-10 sm:hidden" />
-            <div className="pointer-events-none absolute left-0 top-0 bottom-2 w-6 bg-gradient-to-r from-white/90 via-white/40 to-transparent z-10 sm:hidden" />
-            
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none overscroll-x-contain px-0.5">
-              {categories.map(cat => {
-                const isActive = selectedCategory === cat;
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-semibold transition-all shrink-0 ${
-                      isActive
-                        ? 'bg-slate-800 text-white shadow-sm scale-105'
-                        : 'bg-white text-slate-600 border border-slate-200 hover:border-blush-300 hover:bg-blush-50 active:scale-95'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                );
-              })}
+          {/* Mimos Preview Section */}
+          {mimos.length > 0 && (
+            <div className="bg-white/60 border border-slate-200/60 rounded-2xl p-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-lg">🧸</span>
+                <h3 className="font-semibold text-sm text-slate-700 uppercase tracking-wide">Mimos disponíveis para acompanhar:</h3>
+              </div>
+              <div className="relative">
+                <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white/90 to-transparent z-10" />
+                <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none overscroll-x-contain pr-4">
+                  {mimos.map(mimo => {
+                    const mimoPledges = pledges.filter(p => p.giftId === mimo.id);
+                    const mimoPledgedTotal = mimoPledges.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
+                    const mimoTarget = Number(mimo.targetQuantity) || 5;
+                    const isMimoCompleted = mimoPledgedTotal >= mimoTarget;
+                    
+                    return (
+                      <div key={mimo.id} className={`whitespace-nowrap px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 border transition-all ${isMimoCompleted ? 'bg-slate-50 text-slate-400 border-slate-200 opacity-60' : 'bg-blush-50 text-blush-700 border-blush-100 hover:bg-blush-100/70'}`}>
+                        <span className="text-base">{mimo.icon || '🎁'}</span>
+                        <span className="truncate max-w-[150px]">{mimo.title}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
 
@@ -144,8 +143,8 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
                       </div>
 
                       <div className="flex flex-col items-end gap-1.5">
-                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                          {gift.category}
+                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blush-100 text-blush-700 border border-blush-200 shadow-sm flex items-center gap-1">
+                          🎁 Combo: Fralda + Mimo
                         </span>
 
                         {gift.priority === 'high' && (
@@ -171,6 +170,13 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
                         {gift.description}
                       </p>
                     )}
+
+                    <div className="mt-2 mb-2 bg-blush-50/50 rounded-lg p-2.5 border border-blush-100/50">
+                      <p className="text-blush-600 text-xs font-medium flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        + Inclui 1 Mimo à sua escolha no próximo passo ✨
+                      </p>
+                    </div>
                   </div>
 
                   {/* Bottom Action Area */}
@@ -178,7 +184,7 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
                     {isCompleted ? (
                       <div className="space-y-1.5">
                         <p className="text-center text-[11px] text-sage-700 font-medium italic">
-                          Presente já completo por outros convidados ✨
+                          Combo já completo por outros convidados ✨
                         </p>
                         <button
                           disabled
@@ -186,7 +192,7 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
                           className="w-full py-3 px-4 rounded-2xl font-semibold text-xs sm:text-sm bg-slate-100 text-slate-400 border border-slate-200/80 cursor-not-allowed flex items-center justify-center gap-2 select-none shadow-none"
                         >
                           <Lock className="w-3.5 h-3.5 text-slate-400" />
-                          <span>Limite deste presente já foi preenchido 💖</span>
+                          <span>Limite deste combo já foi preenchido 💖</span>
                         </button>
                       </div>
                     ) : (
@@ -195,7 +201,7 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
                         className="w-full py-3 px-4 rounded-2xl active:scale-[0.98] font-bold text-xs sm:text-sm bg-blush-500 hover:bg-blush-600 text-white shadow-md shadow-blush-500/20 hover:shadow-blush-500/30 transition flex items-center justify-center gap-2 group cursor-pointer"
                       >
                         <Heart className="w-4 h-4 group-hover:scale-125 transition-transform fill-white" />
-                        <span>Vou dar este presente 💖</span>
+                        <span>Vou dar este Combo (Fralda + Mimo) 💖</span>
                       </button>
                     )}
                   </div>
@@ -216,7 +222,6 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
             </p>
             <button
               onClick={() => {
-                setSelectedCategory('Todas');
                 setSearchQuery('');
               }}
               className="px-4 py-2 rounded-xl bg-blush-500 text-white text-xs font-semibold hover:bg-blush-600 transition"
