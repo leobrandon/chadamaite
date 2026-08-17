@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Gift, CalendarCheck, Heart, Sparkles, Menu, X, Shield, MessageCircleHeart, Share2 } from 'lucide-react';
+import { Gift, CalendarCheck, Heart, Sparkles, Menu, X, Shield, MessageCircleHeart, Share2, Sun, Moon } from 'lucide-react';
 
-export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, totalGiftsAvailable }) {
+export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, totalGiftsAvailable, isDark, onToggleDark }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
@@ -77,7 +77,21 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, totalGift
               );
             })}
 
-            <div className="h-5 w-px bg-slate-200 mx-1" />
+            <div className="h-5 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
+
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={onToggleDark}
+              title={isDark ? 'Alternar para Modo Claro' : 'Alternar para Modo Escuro'}
+              className={`p-2 rounded-full transition border ${
+                isDark 
+                  ? 'text-amber-300 bg-slate-800 border-slate-700 hover:bg-slate-700' 
+                  : 'text-slate-600 bg-slate-50 border-slate-200 hover:bg-slate-100 hover:text-blush-600'
+              }`}
+              aria-label={isDark ? 'Modo Claro' : 'Modo Escuro'}
+            >
+              {isDark ? <Sun className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-amber-300 animate-fade-in" /> : <Moon className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-slate-600 animate-fade-in" />}
+            </button>
 
             {/* Social Share WhatsApp Button */}
             <a
@@ -104,6 +118,20 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, totalGift
 
           {/* Mobile Menu Buttons */}
           <div className="flex md:hidden items-center gap-2">
+            {/* Dark Mode Toggle (Mobile) */}
+            <button
+              onClick={onToggleDark}
+              title={isDark ? 'Modo Claro' : 'Modo Escuro'}
+              className={`p-2 rounded-full border transition ${
+                isDark
+                  ? 'text-amber-300 bg-slate-800 border-slate-700'
+                  : 'text-slate-600 bg-slate-50 border-slate-200 hover:bg-slate-100'
+              }`}
+              aria-label={isDark ? 'Modo Claro' : 'Modo Escuro'}
+            >
+              {isDark ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4" />}
+            </button>
+
             <a
               href={getShareUrl()}
               target="_blank"

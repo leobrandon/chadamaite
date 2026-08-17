@@ -18,11 +18,21 @@
   background-opacity: 0.25;
 }
 
+.dark .bg-baby-pattern {
+  background-color: #0f1219;
+  background-image: radial-gradient(rgba(252, 174, 196, 0.15) 0.75px, transparent 0.75px), radial-gradient(rgba(238, 216, 106, 0.08) 0.75px, #0f1219 0.75px);
+}
+
 .glass-card {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 220, 230, 0.6);
+}
+
+.dark .glass-card {
+  background: rgba(30, 34, 46, 0.88);
+  border: 1px solid rgba(252, 174, 196, 0.12);
 }
 
 .glass-card-hover {
@@ -33,6 +43,11 @@
   transform: translateY(-4px);
   box-shadow: 0 20px 25px -5px rgba(247, 121, 158, 0.12), 0 10px 10px -5px rgba(247, 121, 158, 0.04);
   border-color: rgba(247, 121, 158, 0.4);
+}
+
+.dark .glass-card-hover:hover {
+  box-shadow: 0 20px 25px -5px rgba(247, 121, 158, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+  border-color: rgba(247, 121, 158, 0.3);
 }
 
 /* Custom scrollbar */
@@ -52,3 +67,222 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #fcaec4;
 }
+
+.dark ::-webkit-scrollbar-track {
+  background: #0f1219;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #4a2035;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b2d4a;
+}
+
+/* ======================================== */
+/* DARK MODE OVERRIDES                      */
+/* Strategy: Override surface, card, and    */
+/* text colors using the .dark class       */
+/* without touching individual components  */
+/* ======================================== */
+
+/* --- Global surfaces --- */
+.dark body {
+  color: #e2e8f0;
+}
+
+/* --- White backgrounds → dark surfaces --- */
+.dark .bg-white {
+  background-color: #1a1e2e !important;
+}
+
+.dark .bg-white\/85 {
+  background-color: rgba(26, 30, 46, 0.92) !important;
+}
+
+.dark .bg-white\/90 {
+  background-color: rgba(26, 30, 46, 0.95) !important;
+}
+
+.dark .bg-white\/95 {
+  background-color: rgba(26, 30, 46, 0.97) !important;
+}
+
+/* --- Slate scale overrides --- */
+.dark .bg-slate-50 {
+  background-color: #161a28 !important;
+}
+
+.dark .bg-slate-100 {
+  background-color: #1e2236 !important;
+}
+
+.dark .bg-slate-200 {
+  background-color: #262b42 !important;
+}
+
+.dark .text-slate-800 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+.dark .text-slate-500 {
+  color: #64748b !important;
+}
+
+.dark .text-slate-400 {
+  color: #64748b !important;
+}
+
+.dark .border-slate-100 {
+  border-color: #262b42 !important;
+}
+
+.dark .border-slate-200 {
+  border-color: #2d3350 !important;
+}
+
+/* --- Blush tint overrides (subtle backgrounds) --- */
+.dark .bg-blush-50 {
+  background-color: #1f1625 !important;
+}
+
+.dark .bg-blush-100 {
+  background-color: #2a1a2e !important;
+}
+
+.dark .bg-blush-50\/60,
+.dark .bg-blush-50\/80 {
+  background-color: rgba(31, 22, 37, 0.7) !important;
+}
+
+.dark .border-blush-100 {
+  border-color: #3a2240 !important;
+}
+
+.dark .border-blush-200 {
+  border-color: #4a2d4e !important;
+}
+
+.dark .border-blush-200\/90 {
+  border-color: rgba(74, 45, 78, 0.9) !important;
+}
+
+/* --- Cream tint overrides --- */
+.dark .bg-cream-50 {
+  background-color: #1a1b1e !important;
+}
+
+.dark .bg-cream-100 {
+  background-color: #22231f !important;
+}
+
+/* --- Sage tint overrides --- */
+.dark .bg-sage-50 {
+  background-color: #141e16 !important;
+}
+
+.dark .bg-sage-100 {
+  background-color: #1a281c !important;
+}
+
+/* --- Emerald subtle backgrounds --- */
+.dark .bg-emerald-50 {
+  background-color: #0d2818 !important;
+}
+
+/* --- Amber subtle backgrounds --- */
+.dark .bg-amber-50 {
+  background-color: #2a2210 !important;
+}
+
+/* --- Rose subtle backgrounds --- */
+.dark .bg-rose-50 {
+  background-color: #2a1018 !important;
+}
+
+.dark .bg-rose-50\/30 {
+  background-color: rgba(42, 16, 24, 0.3) !important;
+}
+
+/* --- Text contrast adjustments in Dark Mode --- */
+.dark .text-blush-700 {
+  color: #fcaec4 !important;
+}
+
+.dark .text-blush-800 {
+  color: #ffd6e1 !important;
+}
+
+.dark .text-sage-700 {
+  color: #a7c3a9 !important;
+}
+
+.dark .text-emerald-700 {
+  color: #6ee7b7 !important;
+}
+
+.dark .text-emerald-800 {
+  color: #a7f3d0 !important;
+}
+
+.dark .text-amber-800 {
+  color: #fde68a !important;
+}
+
+.dark .text-gold-600 {
+  color: #eed86a !important;
+}
+
+/* --- Gradient overlays for hero/headers --- */
+.dark .bg-gradient-to-b.from-cream-50 {
+  --tw-gradient-from: #0f1219 !important;
+}
+
+.dark .bg-gradient-to-b.to-white {
+  --tw-gradient-to: #1a1e2e !important;
+}
+
+/* --- Input fields in dark mode --- */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #161a28 !important;
+  color: #e2e8f0 !important;
+  border-color: #2d3350 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: #ee4b7b !important;
+}
+
+/* --- Italicized message quotes --- */
+.dark .italic {
+  color: #b0bec5 !important;
+}
+
+/* --- Dividers --- */
+.dark .divide-slate-100 > :not(:last-child) {
+  border-color: #262b42 !important;
+}
+
+/* Dark mode transition */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
