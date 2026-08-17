@@ -106,7 +106,7 @@ export default function RSVPInlineModal({ guestNamePrefill = '', config, onSubmi
                 !attending ? 'border-slate-400 bg-slate-100 text-slate-800 shadow-sm' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
               }`}
             >
-              <span>Não poderei</span>
+              <span>🥺 Infelizmente não poderei</span>
             </button>
           </div>
         </div>

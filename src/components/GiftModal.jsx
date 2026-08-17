@@ -149,14 +149,31 @@ export default function GiftModal({ gift, gifts = [], pledges = [], rsvps = [], 
       // ignore
     }
 
-    setTimeout(() => {
-      setPendingPledges({
+    setTimeout(async () => {
+      const pledgeData = {
         mainGiftId: gift.id,
         guestName: guestName.trim(),
         qty: safeQty,
         chosenMimo: chosenMimo,
         safeMimoQty: safeMimoQty,
-      });
+      };
+
+      if (rsvpDone) {
+        // Guest already confirmed RSVP — save pledges immediately
+        if (onAddPledge) {
+          await onAddPledge(pledgeData.mainGiftId, pledgeData.guestName, pledgeData.qty);
+          if (pledgeData.chosenMimo) {
+            await onAddPledge(pledgeData.chosenMimo.id, pledgeData.guestName, pledgeData.safeMimoQty);
+          }
+        } else if (onConfirm) {
+          await onConfirm(pledgeData.mainGiftId, pledgeData.guestName);
+        }
+        setPendingPledges(null);
+      } else {
+        // Defer saving until guest confirms RSVP
+        setPendingPledges(pledgeData);
+      }
+
       setIsSubmitting(false);
       setIsSuccess(true);
     }, 250);
