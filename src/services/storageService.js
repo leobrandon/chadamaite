@@ -855,6 +855,31 @@ export const storageService = {
     return updated;
   },
 
+  updateMessage: async (msgId, fields) => {
+    const messages = storageService.getMessages();
+    const target = messages.find(m => m.id === msgId);
+    if (!target) return messages;
+
+    const dbFields = {};
+    if (fields.author !== undefined) dbFields.author = fields.author;
+    if (fields.text !== undefined) dbFields.text = fields.text;
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { error } = await supabase.from('messages').update(dbFields).eq('id', msgId);
+        if (error) throw error;
+      } catch (err) {
+        console.error('Erro ao atualizar mensagem no Supabase:', err);
+        return messages;
+      }
+    }
+
+    const updated = messages.map(m => m.id === msgId ? { ...m, ...dbFields } : m);
+    localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent('messages_updated', { detail: updated }));
+    return updated;
+  },
+
   // EXPORTAÇÕES PARA CSV / EXCEL
   exportRSVPsToCSV: () => {
     const rsvps = storageService.getRSVPs();
