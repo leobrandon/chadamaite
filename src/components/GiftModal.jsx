@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Heart, Check, X, Gift, Sparkles, MessageCircle, Search, CheckCircle2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import RSVPInlineModal from './RSVPInlineModal';
 
-export default function GiftModal({ gift, gifts = [], pledges = [], isOpen, onClose, onConfirm, onAddPledge }) {
+export default function GiftModal({ gift, gifts = [], pledges = [], rsvps = [], onSaveRSVP, config, isOpen, onClose, onConfirm, onAddPledge }) {
   const [guestName, setGuestName] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [confirmedQuantity, setConfirmedQuantity] = useState(1);
@@ -10,6 +11,7 @@ export default function GiftModal({ gift, gifts = [], pledges = [], isOpen, onCl
   const [nameError, setNameError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [rsvpDone, setRsvpDone] = useState(false);
 
   const [selectedMimoId, setSelectedMimoId] = useState('');
   const [mimoQuantity, setMimoQuantity] = useState(1);
@@ -84,6 +86,7 @@ export default function GiftModal({ gift, gifts = [], pledges = [], isOpen, onCl
       setMimoSearch('');
       setMimoCategoryFilter('Todos');
       setConfirmedMimo(null);
+      setRsvpDone(false);
       
       // Auto-select first available mimo
       if (availableMimos.length > 0) {
@@ -248,30 +251,55 @@ export default function GiftModal({ gift, gifts = [], pledges = [], isOpen, onCl
                 </div>
               </div>
 
-              <p className="text-slate-600 text-xs sm:text-sm leading-relaxed max-w-sm mx-auto">
-                Que emoção ter você ao nosso lado para receber a Maitê! Avise os papais no WhatsApp abaixo para que possamos comemorar juntos! 💕
-              </p>
+              {(() => {
+                const guestNameLower = confirmedGuestName.toLowerCase().trim();
+                const alreadyHasRsvp = rsvps.some(r => {
+                  const rName = r.name.toLowerCase().trim();
+                  return rName.includes(guestNameLower) || guestNameLower.includes(rName);
+                });
 
-              {/* Prominent WhatsApp Notify Button */}
-              <div className="space-y-2.5 pt-1">
-                <a
-                  href={whatsappShareUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-3.5 sm:py-4 px-6 rounded-2xl bg-[#25D366] hover:bg-[#20ba59] active:scale-[0.98] text-white font-bold text-sm sm:text-base shadow-lg shadow-emerald-500/25 transition flex items-center justify-center gap-2.5 group"
-                >
-                  <MessageCircle className="w-5 h-5 fill-current" />
-                  <span>Avisar os papais no WhatsApp 💌</span>
-                </a>
+                if (!alreadyHasRsvp && !rsvpDone && onSaveRSVP) {
+                  return (
+                    <div className="pt-2">
+                      <RSVPInlineModal
+                        guestNamePrefill={confirmedGuestName}
+                        config={config}
+                        onSubmit={onSaveRSVP}
+                        onDone={() => setRsvpDone(true)}
+                      />
+                    </div>
+                  );
+                }
 
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="w-full py-3 px-5 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-[0.98] text-slate-700 font-bold text-xs sm:text-sm transition"
-                >
-                  Concluir e Voltar ao Site
-                </button>
-              </div>
+                return (
+                  <>
+                    <p className="text-slate-600 text-xs sm:text-sm leading-relaxed max-w-sm mx-auto mt-4">
+                      Que emoção ter você ao nosso lado para receber a Maitê! Avise os papais no WhatsApp abaixo para que possamos comemorar juntos! 💕
+                    </p>
+
+                    {/* Prominent WhatsApp Notify Button */}
+                    <div className="space-y-2.5 pt-1 mt-4">
+                      <a
+                        href={whatsappShareUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-3.5 sm:py-4 px-6 rounded-2xl bg-[#25D366] hover:bg-[#20ba59] active:scale-[0.98] text-white font-bold text-sm sm:text-base shadow-lg shadow-emerald-500/25 transition flex items-center justify-center gap-2.5 group"
+                      >
+                        <MessageCircle className="w-5 h-5 fill-current" />
+                        <span>Avisar os papais no WhatsApp 💌</span>
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={handleClose}
+                        className="w-full py-3 px-5 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-[0.98] text-slate-700 font-bold text-xs sm:text-sm transition"
+                      >
+                        Concluir e Voltar ao Site
+                      </button>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           ) : (
             /* FORM VIEW */

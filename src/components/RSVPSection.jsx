@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { CalendarCheck, Users, Heart, Sparkles, Send, CheckCircle2, Smile } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import GiftSuggestModal from './GiftSuggestModal';
 
-export default function RSVPSection({ config, onSaveRSVP }) {
+export default function RSVPSection({ config, onSaveRSVP, gifts = [], pledges = [], onSelectGift }) {
   const [attending, setAttending] = useState(true);
   const [name, setName] = useState('');
   const [adultsCount, setAdultsCount] = useState(1);
@@ -13,6 +14,7 @@ export default function RSVPSection({ config, onSaveRSVP }) {
   
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showGiftSuggest, setShowGiftSuggest] = useState(false);
 
   // Sync companion fields with total people
   const handleAdultsChange = (delta) => {
@@ -98,6 +100,7 @@ export default function RSVPSection({ config, onSaveRSVP }) {
     setPhone('');
     setMessage('');
     setIsSubmitted(false);
+    setShowGiftSuggest(false);
   };
 
   return (
@@ -142,7 +145,14 @@ export default function RSVPSection({ config, onSaveRSVP }) {
                 )}
               </p>
 
-              <div className="pt-6">
+              <div className="pt-6 space-y-3">
+                <button
+                  onClick={() => setShowGiftSuggest(true)}
+                  className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-blush-500 hover:bg-blush-600 text-white font-bold text-sm shadow-lg shadow-blush-500/25 transition mx-auto flex items-center justify-center gap-2"
+                >
+                  🎁 Também quero escolher um presentinho!
+                </button>
+
                 <button
                   onClick={handleReset}
                   className="px-6 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
@@ -339,6 +349,17 @@ export default function RSVPSection({ config, onSaveRSVP }) {
         </div>
 
       </div>
+      
+      <GiftSuggestModal
+        isOpen={showGiftSuggest}
+        onClose={() => setShowGiftSuggest(false)}
+        gifts={gifts}
+        pledges={pledges}
+        onSelectGift={(gift) => {
+          setShowGiftSuggest(false);
+          if (onSelectGift) onSelectGift(gift);
+        }}
+      />
     </section>
   );
 }

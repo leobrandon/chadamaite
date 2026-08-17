@@ -213,6 +213,9 @@ export default function App() {
         <RSVPSection
           config={config}
           onSaveRSVP={handleSaveRSVP}
+          gifts={safeGifts}
+          pledges={safePledges}
+          onSelectGift={handleSelectGift}
         />
 
         {/* Guestbook / Messages Wall */}
@@ -228,6 +231,9 @@ export default function App() {
         gift={selectedGiftForModal}
         gifts={gifts}
         pledges={pledges}
+        rsvps={safeRsvps}
+        onSaveRSVP={handleSaveRSVP}
+        config={config}
         isOpen={Boolean(selectedGiftForModal)}
         onClose={() => setSelectedGiftForModal(null)}
         onConfirm={handleConfirmReservation}
