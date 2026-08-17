@@ -16,35 +16,35 @@ export default function AdminStats({
   approvedMessagesCount,
 }) {
   return (
-    <div className="bg-slate-50 border-b border-slate-200 p-4 sm:p-5 shrink-0">
+    <div className="bg-slate-50 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800 p-4 sm:p-5 shrink-0">
       {/* Top Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
-          <span className="text-[11px] text-slate-400 font-semibold uppercase">Total Convidados</span>
+        <div className="bg-white dark:bg-slate-900/90 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <span className="text-[11px] text-slate-400 dark:text-slate-500 font-semibold uppercase">Total Convidados</span>
           <div className="flex items-baseline gap-1 mt-0.5">
-            <span className="text-xl sm:text-2xl font-bold text-slate-800">{totalGuests}</span>
-            <span className="text-[10px] text-slate-500 font-medium">({totalAdults} ad. / {totalChildren} cr.)</span>
+            <span className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white">{totalGuests}</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">({totalAdults} ad. / {totalChildren} cr.)</span>
           </div>
         </div>
 
-        <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
-          <span className="text-[11px] text-slate-400 font-semibold uppercase">Presentes com Contribuição</span>
+        <div className="bg-white dark:bg-slate-900/90 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <span className="text-[11px] text-slate-400 dark:text-slate-500 font-semibold uppercase">Presentes com Contribuição</span>
           <div className="flex items-baseline gap-1 mt-0.5">
-            <span className="text-xl sm:text-2xl font-bold text-blush-600">{giftsWithPledgesCount}</span>
-            <span className="text-[10px] text-slate-500">de {totalGiftsCount}</span>
+            <span className="text-xl sm:text-2xl font-bold text-blush-600 dark:text-blush-400">{giftsWithPledgesCount}</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400">de {totalGiftsCount}</span>
           </div>
         </div>
 
-        <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
-          <span className="text-[11px] text-slate-400 font-semibold uppercase">Presentes Sem Contrib.</span>
-          <div className="text-xl sm:text-2xl font-bold text-emerald-600 mt-0.5">
+        <div className="bg-white dark:bg-slate-900/90 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <span className="text-[11px] text-slate-400 dark:text-slate-500 font-semibold uppercase">Presentes Sem Contrib.</span>
+          <div className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
             {availableGiftsCount}
           </div>
         </div>
 
-        <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
-          <span className="text-[11px] text-slate-400 font-semibold uppercase">Recados no Mural</span>
-          <div className="text-xl sm:text-2xl font-bold text-purple-600 mt-0.5">
+        <div className="bg-white dark:bg-slate-900/90 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <span className="text-[11px] text-slate-400 dark:text-slate-500 font-semibold uppercase">Recados no Mural</span>
+          <div className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400 mt-0.5">
             {totalMessagesCount}
           </div>
         </div>
@@ -56,11 +56,11 @@ export default function AdminStats({
           onClick={() => setActiveTab('gifts-report')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
             activeTab === 'gifts-report'
-              ? 'bg-slate-900 text-white shadow-sm'
-              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+              ? 'bg-slate-900 dark:bg-slate-800 text-white shadow-sm'
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
-          <Gift className="w-3.5 h-3.5 text-blush-500" />
+          <Gift className="w-3.5 h-3.5 text-blush-500 dark:text-blush-400" />
           <span>🎁 Contribuições por Presente ({giftsWithPledgesCount})</span>
         </button>
 
@@ -68,8 +68,8 @@ export default function AdminStats({
           onClick={() => setActiveTab('rsvps')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
             activeTab === 'rsvps'
-              ? 'bg-slate-900 text-white shadow-sm'
-              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+              ? 'bg-slate-900 dark:bg-slate-800 text-white shadow-sm'
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
           <Users className="w-3.5 h-3.5" />
@@ -80,8 +80,8 @@ export default function AdminStats({
           onClick={() => setActiveTab('gifts')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
             activeTab === 'gifts'
-              ? 'bg-slate-900 text-white shadow-sm'
-              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+              ? 'bg-slate-900 dark:bg-slate-800 text-white shadow-sm'
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
           <Plus className="w-3.5 h-3.5" />
@@ -92,8 +92,8 @@ export default function AdminStats({
           onClick={() => setActiveTab('messages')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
             activeTab === 'messages'
-              ? 'bg-slate-900 text-white shadow-sm'
-              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+              ? 'bg-slate-900 dark:bg-slate-800 text-white shadow-sm'
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
           <MessageCircleHeart className="w-3.5 h-3.5" />
@@ -103,7 +103,7 @@ export default function AdminStats({
               {pendingMessagesCount} pendente{pendingMessagesCount > 1 ? 's' : ''}
             </span>
           ) : (
-            <span className="text-slate-400 text-[11px]">({approvedMessagesCount})</span>
+            <span className="text-slate-400 dark:text-slate-500 text-[11px]">({approvedMessagesCount})</span>
           )}
         </button>
 
@@ -111,8 +111,8 @@ export default function AdminStats({
           onClick={() => setActiveTab('config')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
             activeTab === 'config'
-              ? 'bg-slate-900 text-white shadow-sm'
-              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+              ? 'bg-slate-900 dark:bg-slate-800 text-white shadow-sm'
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
           <Settings className="w-3.5 h-3.5" />

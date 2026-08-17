@@ -318,6 +318,63 @@
   color: #cbd5e1 !important;
 }
 
+/* --- Admin Panel & Dark Mode Surfaces --- */
+.dark .bg-slate-50\/50,
+.dark .bg-slate-50\/60,
+.dark .bg-slate-50\/70,
+.dark .bg-slate-50\/80 {
+  background-color: #0d111b !important;
+}
+
+.dark .bg-slate-100\/80,
+.dark .bg-slate-100\/90 {
+  background-color: #161c2b !important;
+}
+
+.dark .bg-slate-200\/50,
+.dark .bg-slate-200\/60 {
+  background-color: #1e2638 !important;
+}
+
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-slate-50\/80:hover {
+  background-color: #1a2236 !important;
+}
+
+.dark .hover\:bg-slate-100:hover {
+  background-color: #222c44 !important;
+}
+
+.dark .hover\:bg-slate-200:hover {
+  background-color: #2b3754 !important;
+}
+
+.dark .hover\:bg-slate-700:hover {
+  background-color: #334155 !important;
+}
+
+.dark .hover\:bg-slate-800:hover {
+  background-color: #1e293b !important;
+}
+
+.dark .active\:bg-slate-50:active {
+  background-color: #1a2236 !important;
+}
+
+.dark .divide-slate-200 > :not(:last-child) {
+  border-color: #262f46 !important;
+}
+
+.dark thead {
+  background-color: #161c2b !important;
+  color: #94a3b8 !important;
+}
+
+.dark tr.hover\:bg-slate-50\/80:hover,
+.dark tr.hover\:bg-slate-50:hover {
+  background-color: #192033 !important;
+}
+
 /* --- Dividers --- */
 .dark .divide-slate-100 > :not(:last-child) {
   border-color: #22293d !important;
@@ -329,3 +386,4 @@ html, body, header, section, div, button {
   transition-duration: 200ms;
   transition-timing-function: ease-in-out;
 }
+

@@ -55,132 +55,132 @@ export default function AdminConfigTab({ config, onSaveConfig }) {
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm max-w-2xl">
-      <h5 className="font-bold text-slate-800 text-base mb-4">
+    <div className="bg-white dark:bg-slate-900/90 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm max-w-2xl">
+      <h5 className="font-bold text-slate-800 dark:text-white text-base mb-4">
         Personalização do Chá de Bebê
       </h5>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Nome da Bebê</label>
+            <label className="block text-xs font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">Nome da Bebê</label>
             <input
               type="text"
               value={tempConfig.babyName || ''}
               onChange={(e) => setTempConfig({ ...tempConfig, babyName: e.target.value })}
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400"
+              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blush-400 dark:focus:border-blush-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Nome dos Papais</label>
+            <label className="block text-xs font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">Nome dos Papais</label>
             <input
               type="text"
               value={tempConfig.parents || ''}
               onChange={(e) => setTempConfig({ ...tempConfig, parents: e.target.value })}
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400"
+              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blush-400 dark:focus:border-blush-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Data (Calendário)</label>
+            <label className="block text-xs font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">Data (Calendário)</label>
             <input
               type="date"
               value={tempConfig.date || ''}
               onChange={(e) => handleDateChange(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400"
+              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blush-400 dark:focus:border-blush-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Horário (Seletor)</label>
+            <label className="block text-xs font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">Horário (Seletor)</label>
             <input
               type="time"
               value={tempConfig.time || ''}
               onChange={(e) => handleTimeChange(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400"
+              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blush-400 dark:focus:border-blush-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Data Formatada (Texto no Site)</label>
+            <label className="block text-xs font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">Data Formatada (Texto no Site)</label>
             <input
               type="text"
               value={tempConfig.displayDate || ''}
               onChange={(e) => setTempConfig({ ...tempConfig, displayDate: e.target.value })}
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400"
+              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blush-400 dark:focus:border-blush-500"
               placeholder="Ex: Sábado, 17 de Outubro de 2026"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Horário Formatado (Texto no Site)</label>
+            <label className="block text-xs font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">Horário Formatado (Texto no Site)</label>
             <input
               type="text"
               value={tempConfig.displayTime || ''}
               onChange={(e) => setTempConfig({ ...tempConfig, displayTime: e.target.value })}
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400"
+              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blush-400 dark:focus:border-blush-500"
               placeholder="Ex: A partir das 15:30h"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Nome do Local</label>
+            <label className="block text-xs font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">Nome do Local</label>
             <input
               type="text"
               value={tempConfig.locationName || ''}
               onChange={(e) => setTempConfig({ ...tempConfig, locationName: e.target.value })}
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400"
+              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blush-400 dark:focus:border-blush-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Cidade / Estado</label>
+            <label className="block text-xs font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">Cidade / Estado</label>
             <input
               type="text"
               value={tempConfig.city || ''}
               onChange={(e) => setTempConfig({ ...tempConfig, city: e.target.value })}
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400"
+              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blush-400 dark:focus:border-blush-500"
             />
           </div>
 
           <div className="sm:col-span-2">
-            <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Endereço Completo</label>
+            <label className="block text-xs font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">Endereço Completo</label>
             <input
               type="text"
               value={tempConfig.address || ''}
               onChange={(e) => setTempConfig({ ...tempConfig, address: e.target.value })}
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400"
+              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blush-400 dark:focus:border-blush-500"
             />
           </div>
 
           <div className="sm:col-span-2">
-            <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Link do Google Maps</label>
+            <label className="block text-xs font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">Link do Google Maps</label>
             <input
               type="url"
               value={tempConfig.mapUrl || ''}
               onChange={(e) => setTempConfig({ ...tempConfig, mapUrl: e.target.value })}
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400"
+              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blush-400 dark:focus:border-blush-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Chave Pix</label>
+            <label className="block text-xs font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">Chave Pix</label>
             <input
               type="text"
               value={tempConfig.pixKey || ''}
               onChange={(e) => setTempConfig({ ...tempConfig, pixKey: e.target.value })}
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400"
+              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blush-400 dark:focus:border-blush-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-600 mb-1">Senha PIN do Painel</label>
+            <label className="block text-xs font-bold uppercase text-slate-600 dark:text-slate-400 mb-1">Senha PIN do Painel</label>
             <input
               type="text"
               value={tempConfig.adminPin || ''}
               onChange={(e) => setTempConfig({ ...tempConfig, adminPin: e.target.value })}
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:border-blush-400"
+              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blush-400 dark:focus:border-blush-500"
             />
           </div>
         </div>
@@ -188,14 +188,14 @@ export default function AdminConfigTab({ config, onSaveConfig }) {
         <div className="pt-4 flex items-center gap-3">
           <button
             type="submit"
-            className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm transition flex items-center gap-2"
+            className="px-6 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-2"
           >
             <Check className="w-4 h-4" />
             <span>Salvar Alterações</span>
           </button>
 
           {configSaved && (
-            <span className="text-xs text-emerald-600 font-bold">
+            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">
               ✓ Salvo com sucesso!
             </span>
           )}

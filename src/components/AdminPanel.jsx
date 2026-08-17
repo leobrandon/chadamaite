@@ -329,8 +329,8 @@ export default function AdminPanel({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="bg-white w-full max-w-5xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto flex flex-col max-h-[90dvh] overscroll-contain">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 dark:bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-5xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-auto flex flex-col max-h-[90dvh] overscroll-contain">
         
         {/* Header */}
         <AdminHeader
@@ -369,7 +369,7 @@ export default function AdminPanel({
             />
 
             {/* Tab Body */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/50">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/50 dark:bg-slate-950/40">
               
               {/* TAB 0: RELATÓRIO QUEM VAI DAR O QUÊ */}
               {activeTab === 'gifts-report' && (
