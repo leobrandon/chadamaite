@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Smile, Send } from 'lucide-react';
+import { formatPhone, handlePhoneKeyDown } from '../utils/phoneMask';
 
 export default function RSVPInlineModal({ guestNamePrefill = '', config, onSubmit, onDone }) {
   const [attending, setAttending] = useState(true);
@@ -181,9 +182,11 @@ export default function RSVPInlineModal({ guestNamePrefill = '', config, onSubmi
               <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-700 mb-1">WhatsApp <span className="text-slate-400 font-normal">(opcional)</span></label>
               <input
                 type="tel"
-                maxLength={25}
+                inputMode="numeric"
+                maxLength={15}
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onKeyDown={handlePhoneKeyDown}
+                onChange={(e) => setPhone(formatPhone(e.target.value))}
                 placeholder="(11) 99999-9999"
                 className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 focus:border-blush-400 focus:ring-1 focus:ring-blush-100 outline-none text-sm shadow-sm transition"
               />
