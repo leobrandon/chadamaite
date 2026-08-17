@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CalendarCheck, Users, Heart, Sparkles, Send, CheckCircle2, Smile } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import GiftSuggestModal from './GiftSuggestModal';
+import { formatPhone, handlePhoneKeyDown } from '../utils/phoneMask';
 
 export default function RSVPSection({ config, onSaveRSVP, gifts = [], pledges = [], onSelectGift }) {
   const [attending, setAttending] = useState(true);
@@ -308,9 +309,11 @@ export default function RSVPSection({ config, onSaveRSVP, gifts = [], pledges = 
                     </label>
                     <input
                       type="tel"
-                      maxLength={25}
+                      inputMode="numeric"
+                      maxLength={15}
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onKeyDown={handlePhoneKeyDown}
+                      onChange={(e) => setPhone(formatPhone(e.target.value))}
                       placeholder="(11) 99999-9999"
                       className="w-full px-4 py-3 rounded-2xl bg-white border border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 outline-none text-base sm:text-sm shadow-sm transition"
                     />
