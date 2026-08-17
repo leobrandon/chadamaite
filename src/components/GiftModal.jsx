@@ -12,6 +12,7 @@ export default function GiftModal({ gift, gifts = [], pledges = [], rsvps = [], 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [rsvpDone, setRsvpDone] = useState(false);
+  const [pendingPledges, setPendingPledges] = useState(null);
 
   const [selectedMimoId, setSelectedMimoId] = useState('');
   const [mimoQuantity, setMimoQuantity] = useState(1);
@@ -87,6 +88,7 @@ export default function GiftModal({ gift, gifts = [], pledges = [], rsvps = [], 
       setMimoCategoryFilter('Todos');
       setConfirmedMimo(null);
       setRsvpDone(false);
+      setPendingPledges(null);
       
       // Auto-select first available mimo
       if (availableMimos.length > 0) {
@@ -146,17 +148,29 @@ export default function GiftModal({ gift, gifts = [], pledges = [], rsvps = [], 
     }
 
     setTimeout(() => {
-      if (onAddPledge) {
-        onAddPledge(gift.id, guestName.trim(), safeQty);
-        if (chosenMimo) {
-          onAddPledge(chosenMimo.id, guestName.trim(), safeMimoQty);
-        }
-      } else if (onConfirm) {
-        onConfirm(gift.id, guestName.trim());
-      }
+      setPendingPledges({
+        mainGiftId: gift.id,
+        guestName: guestName.trim(),
+        qty: safeQty,
+        chosenMimo: chosenMimo,
+        safeMimoQty: safeMimoQty,
+      });
       setIsSubmitting(false);
       setIsSuccess(true);
     }, 250);
+  };
+
+  const commitPledges = async () => {
+    if (!pendingPledges) return;
+    if (onAddPledge) {
+      await onAddPledge(pendingPledges.mainGiftId, pendingPledges.guestName, pendingPledges.qty);
+      if (pendingPledges.chosenMimo) {
+        await onAddPledge(pendingPledges.chosenMimo.id, pendingPledges.guestName, pendingPledges.safeMimoQty);
+      }
+    } else if (onConfirm) {
+      await onConfirm(pendingPledges.mainGiftId, pendingPledges.guestName);
+    }
+    setPendingPledges(null);
   };
 
   const handleClose = () => {
@@ -252,21 +266,33 @@ export default function GiftModal({ gift, gifts = [], pledges = [], rsvps = [], 
               </div>
 
               {(() => {
-                const guestNameLower = confirmedGuestName.toLowerCase().trim();
-                const alreadyHasRsvp = rsvps.some(r => {
-                  const rName = r.name.toLowerCase().trim();
-                  return rName.includes(guestNameLower) || guestNameLower.includes(rName);
-                });
-
-                if (!alreadyHasRsvp && !rsvpDone && onSaveRSVP) {
+                if (!rsvpDone && onSaveRSVP) {
                   return (
                     <div className="pt-2">
                       <RSVPInlineModal
                         guestNamePrefill={confirmedGuestName}
                         config={config}
                         onSubmit={onSaveRSVP}
-                        onDone={() => setRsvpDone(true)}
+                        onDone={async () => {
+                          await commitPledges();
+                          setRsvpDone(true);
+                        }}
                       />
+                      <div className="flex items-center gap-3 my-2">
+                        <div className="flex-1 h-px bg-slate-200" />
+                        <span className="text-xs text-slate-400 font-medium">ou</span>
+                        <div className="flex-1 h-px bg-slate-200" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await commitPledges();
+                          setRsvpDone(true);
+                        }}
+                        className="w-full py-2.5 px-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 font-semibold text-xs transition flex items-center justify-center gap-1.5"
+                      >
+                        Já confirmei minha presença ✔
+                      </button>
                     </div>
                   );
                 }
