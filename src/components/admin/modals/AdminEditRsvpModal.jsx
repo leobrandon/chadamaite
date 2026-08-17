@@ -11,16 +11,16 @@ export default function AdminEditRsvpModal({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90dvh] overflow-y-auto overscroll-contain">
+      <div className="bg-white dark:bg-slate-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-transparent dark:border-slate-800 overflow-hidden max-h-[90dvh] overflow-y-auto overscroll-contain">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <span className="text-2xl">✏️</span>
-            <h4 className="font-bold text-slate-800 text-base">Editar Confirmação</h4>
+            <h4 className="font-bold text-slate-800 dark:text-white text-base">Editar Confirmação</h4>
           </div>
           <button
             onClick={() => setEditingRsvp(null)}
-            className="p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition"
+            className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition"
           >
             <X className="w-4 h-4" />
           </button>
@@ -36,13 +36,13 @@ export default function AdminEditRsvpModal({
         >
           {/* Name (read-only) */}
           <div>
-            <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Convidado</label>
-            <p className="font-semibold text-slate-800 text-sm">{editingRsvp.name}</p>
+            <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">Convidado</label>
+            <p className="font-semibold text-slate-800 dark:text-white text-sm">{editingRsvp.name}</p>
           </div>
 
           {/* Adults */}
           <div>
-            <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Adultos</label>
+            <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">Adultos</label>
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -56,11 +56,11 @@ export default function AdminEditRsvpModal({
                     return { ...prev, adultsCount: v, companionNames: companions.slice(0, needed) };
                   });
                 }}
-                className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 transition"
+                className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-slate-700 dark:text-slate-300 transition"
               >
                 -
               </button>
-              <span className="w-8 text-center font-bold text-slate-800">{editingRsvp.adultsCount || 1}</span>
+              <span className="w-8 text-center font-bold text-slate-800 dark:text-white">{editingRsvp.adultsCount || 1}</span>
               <button
                 type="button"
                 onClick={() => {
@@ -73,7 +73,7 @@ export default function AdminEditRsvpModal({
                     return { ...prev, adultsCount: v, companionNames: companions.slice(0, needed) };
                   });
                 }}
-                className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 transition"
+                className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-slate-700 dark:text-slate-300 transition"
               >
                 +
               </button>
@@ -82,7 +82,7 @@ export default function AdminEditRsvpModal({
 
           {/* Children */}
           <div>
-            <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Crianças</label>
+            <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">Crianças</label>
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -96,11 +96,11 @@ export default function AdminEditRsvpModal({
                     return { ...prev, childrenCount: v, companionNames: companions.slice(0, needed) };
                   });
                 }}
-                className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 transition"
+                className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-slate-700 dark:text-slate-300 transition"
               >
                 -
               </button>
-              <span className="w-8 text-center font-bold text-slate-800">{editingRsvp.childrenCount || 0}</span>
+              <span className="w-8 text-center font-bold text-slate-800 dark:text-white">{editingRsvp.childrenCount || 0}</span>
               <button
                 type="button"
                 onClick={() => {
@@ -113,7 +113,7 @@ export default function AdminEditRsvpModal({
                     return { ...prev, childrenCount: v, companionNames: companions.slice(0, needed) };
                   });
                 }}
-                className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 transition"
+                className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-slate-700 dark:text-slate-300 transition"
               >
                 +
               </button>
@@ -123,7 +123,7 @@ export default function AdminEditRsvpModal({
           {/* Companions */}
           {(editingRsvp.companionNames || []).length > 0 && (
             <div>
-              <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">
+              <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">
                 Nome dos Acompanhantes e Crianças * (Obrigatório)
               </label>
               <div className="space-y-2">
@@ -139,7 +139,7 @@ export default function AdminEditRsvpModal({
                       setEditingRsvp((prev) => ({ ...prev, companionNames: next }));
                     }}
                     placeholder={`Nome do acompanhante / criança ${i + 1} *`}
-                    className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition"
+                    className="w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blush-400 dark:focus:border-blush-500 focus:ring-2 focus:ring-blush-100 dark:focus:ring-blush-950 transition"
                   />
                 ))}
               </div>
@@ -148,7 +148,7 @@ export default function AdminEditRsvpModal({
 
           {/* Phone */}
           <div>
-            <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">WhatsApp / Telefone</label>
+            <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">WhatsApp / Telefone</label>
             <input
               type="tel"
               inputMode="numeric"
@@ -157,19 +157,19 @@ export default function AdminEditRsvpModal({
               onKeyDown={handlePhoneKeyDown}
               onChange={(e) => setEditingRsvp((prev) => ({ ...prev, phone: formatPhone(e.target.value) }))}
               placeholder="(11) 99999-9999"
-              className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition"
+              className="w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blush-400 dark:focus:border-blush-500 focus:ring-2 focus:ring-blush-100 dark:focus:ring-blush-950 transition"
             />
           </div>
 
           {/* Message */}
           <div>
-            <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1.5">Recado com Carinho</label>
+            <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">Recado com Carinho</label>
             <textarea
               rows="3"
               value={editingRsvp.message || ''}
               onChange={(e) => setEditingRsvp((prev) => ({ ...prev, message: e.target.value }))}
               placeholder="Recado deixado pelo convidado..."
-              className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl resize-none outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition"
+              className="w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 resize-none outline-none focus:border-blush-400 dark:focus:border-blush-500 focus:ring-2 focus:ring-blush-100 dark:focus:ring-blush-950 transition"
             />
           </div>
 
@@ -184,7 +184,7 @@ export default function AdminEditRsvpModal({
             <button
               type="button"
               onClick={() => setEditingRsvp(null)}
-              className="px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-sm transition"
+              className="px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-sm transition"
             >
               Cancelar
             </button>
