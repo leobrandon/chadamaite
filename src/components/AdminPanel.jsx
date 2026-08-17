@@ -25,7 +25,8 @@ export default function AdminPanel({
   onUpdateRSVP,
   messages, 
   onApproveMessage,
-  onDeleteMessage 
+  onDeleteMessage,
+  onUpdateMessage,
 }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     try {
@@ -66,6 +67,8 @@ export default function AdminPanel({
 
   // Message moderation filter state
   const [messageFilter, setMessageFilter] = useState('pending'); // 'pending' | 'approved'
+  const [editingMessage, setEditingMessage] = useState(null); // { id, author, text }
+  const [isSavingMessage, setIsSavingMessage] = useState(false);
 
   // Gift report search state
   const [giftReportSearch, setGiftReportSearch] = useState('');
@@ -1342,14 +1345,23 @@ export default function AdminPanel({
                   {messageFilter === 'pending' ? (
                     pendingMessages.length > 0 ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {pendingMessages.map((msg) => (
+                      {pendingMessages.map((msg) => (
                           <div key={msg.id} className="bg-white p-5 rounded-2xl border-2 border-rose-200/80 flex flex-col justify-between shadow-sm relative">
                             <div>
                               <div className="flex items-center justify-between mb-2">
                                 <span className="font-bold text-slate-800 text-sm">{msg.author}</span>
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                                  Pendente
-                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                                    Pendente
+                                  </span>
+                                  <button
+                                    onClick={() => setEditingMessage({ id: msg.id, author: msg.author, text: msg.text })}
+                                    className="p-1.5 rounded-lg bg-slate-100 hover:bg-blush-100 text-slate-500 hover:text-blush-600 transition"
+                                    title="Editar recado"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
                               </div>
                               <p className="text-xs text-slate-700 leading-relaxed italic bg-slate-50 p-3 rounded-xl border border-slate-100">
                                 "{msg.text}"
@@ -1404,9 +1416,18 @@ export default function AdminPanel({
                             <div>
                               <div className="flex items-center justify-between mb-2">
                                 <span className="font-bold text-slate-800 text-sm">{msg.author}</span>
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                  No Mural ✓
-                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    No Mural ✓
+                                  </span>
+                                  <button
+                                    onClick={() => setEditingMessage({ id: msg.id, author: msg.author, text: msg.text })}
+                                    className="p-1.5 rounded-lg bg-slate-100 hover:bg-blush-100 text-slate-500 hover:text-blush-600 transition"
+                                    title="Editar recado"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
                               </div>
                               <p className="text-xs text-slate-600 leading-relaxed italic">
                                 "{msg.text}"
@@ -1668,6 +1689,99 @@ export default function AdminPanel({
                   <Check className="w-4 h-4" /> Salvar Alterações
                 </button>
                 <button type="button" onClick={() => setEditingRsvp(null)} className="px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-sm transition">Cancelar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Message Modal */}
+      {editingMessage && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-blush-100 overflow-hidden animate-slide-up">
+            <div className="bg-gradient-to-r from-blush-400 to-blush-500 p-5 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Edit2 className="w-5 h-5" />
+                <div>
+                  <h3 className="font-bold text-base">Editar Recado</h3>
+                  <p className="text-xs text-white/80">Altere o nome ou o texto do recado</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditingMessage(null)}
+                className="w-8 h-8 rounded-xl bg-white/20 hover:bg-white/30 flex items-center justify-center transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const author = editingMessage.author.trim();
+                const text = editingMessage.text.trim();
+                if (!author || !text) return;
+                setIsSavingMessage(true);
+                try {
+                  if (onUpdateMessage) {
+                    await onUpdateMessage(editingMessage.id, { author, text });
+                  }
+                  setEditingMessage(null);
+                } catch (err) {
+                  console.error('Erro ao salvar recado:', err);
+                } finally {
+                  setIsSavingMessage(false);
+                }
+              }}
+              className="p-5 space-y-4"
+            >
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                  Nome do Autor *
+                </label>
+                <input
+                  type="text"
+                  maxLength={80}
+                  required
+                  value={editingMessage.author}
+                  onChange={(e) => setEditingMessage(prev => ({ ...prev, author: e.target.value }))}
+                  placeholder="Nome de quem enviou o recado"
+                  className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                  Texto do Recado *
+                </label>
+                <textarea
+                  rows={4}
+                  maxLength={1000}
+                  required
+                  value={editingMessage.text}
+                  onChange={(e) => setEditingMessage(prev => ({ ...prev, text: e.target.value }))}
+                  placeholder="Mensagem do convidado..."
+                  className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl resize-none outline-none focus:border-blush-400 focus:ring-2 focus:ring-blush-100 transition"
+                />
+                <p className="text-[10px] text-slate-400 mt-1 text-right">{editingMessage.text.length}/1000 caracteres</p>
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="submit"
+                  disabled={isSavingMessage}
+                  className="flex-1 py-3 rounded-2xl bg-blush-500 hover:bg-blush-600 active:scale-[0.98] text-white font-bold text-sm shadow-md shadow-blush-500/20 transition flex items-center justify-center gap-1.5 disabled:opacity-60"
+                >
+                  <Check className="w-4 h-4" />
+                  {isSavingMessage ? 'Salvando...' : 'Salvar Recado'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingMessage(null)}
+                  className="px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-sm transition"
+                >
+                  Cancelar
+                </button>
               </div>
             </form>
           </div>

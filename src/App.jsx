@@ -156,6 +156,11 @@ export default function App() {
     if (Array.isArray(updated)) setMessages(updated);
   };
 
+  const handleUpdateMessage = async (msgId, fields) => {
+    const updated = await storageService.updateMessage(msgId, fields);
+    if (Array.isArray(updated)) setMessages(updated);
+  };
+
   // Config actions
   const handleSaveConfig = async (newConfig) => {
     const updated = await storageService.saveConfig(newConfig);
@@ -281,6 +286,7 @@ export default function App() {
             messages={messages}
             onApproveMessage={handleApproveMessage}
             onDeleteMessage={handleDeleteMessage}
+            onUpdateMessage={handleUpdateMessage}
           />
         </Suspense>
       )}
