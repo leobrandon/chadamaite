@@ -11,11 +11,13 @@ import PixModal from './components/PixModal';
 import ScrollButtons from './components/ScrollButtons';
 import Footer from './components/Footer';
 import { storageService } from './services/storageService';
+import { useDarkMode } from './hooks/useDarkMode';
 
 // Lazy load AdminPanel to dramatically reduce initial guest bundle size
 const AdminPanel = lazy(() => import('./components/AdminPanel'));
 
 export default function App() {
+  const { isDark, toggle: toggleDark } = useDarkMode();
   const [config, setConfig] = useState(storageService.getConfig());
   const [gifts, setGifts] = useState(storageService.getGifts());
   const [rsvps, setRsvps] = useState(storageService.getRSVPs());
@@ -192,6 +194,8 @@ export default function App() {
         setActiveTab={setActiveTab}
         onOpenAdmin={() => setIsAdminOpen(true)}
         totalGiftsAvailable={availableGiftsCount}
+        isDark={isDark}
+        onToggleDark={toggleDark}
       />
 
       <main className="flex-1">
