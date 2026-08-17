@@ -34,13 +34,13 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, totalGift
           {/* Logo / Title */}
           <button 
             onClick={() => handleNavClick('inicio')}
-            className="flex items-center gap-2.5 text-left group transition shrink-0 py-1"
+            className="flex items-center gap-2.5 text-left group transition shrink-0 py-1 mr-4 lg:mr-8"
           >
             <div className="w-10 h-10 rounded-full bg-blush-100 flex items-center justify-center text-blush-600 group-hover:scale-105 transition shadow-inner shrink-0">
               <span className="text-xl">🌸</span>
             </div>
             <div className="flex flex-col justify-center">
-              <span className="font-serif text-lg sm:text-xl font-bold text-slate-800 tracking-tight leading-tight flex items-center gap-1">
+              <span className="font-serif text-lg sm:text-xl font-bold text-slate-800 tracking-tight leading-tight flex items-center gap-1 pr-1">
                 Chá da <span className="font-handwriting text-2xl sm:text-3xl text-blush-600 font-normal">Maitê</span>
               </span>
               <span className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold leading-none mt-0.5">
@@ -50,7 +50,7 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, totalGift
           </button>
 
           {/* Desktop Nav Items */}
-          <nav className="hidden md:flex items-center gap-1 lg:gap-1.5">
+          <nav className="hidden md:flex items-center gap-1.5 lg:gap-2 shrink-0">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
