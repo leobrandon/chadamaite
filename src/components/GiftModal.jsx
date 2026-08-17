@@ -3,7 +3,7 @@ import { Heart, Check, X, Gift, Sparkles, MessageCircle, Search, CheckCircle2 } 
 import confetti from 'canvas-confetti';
 import RSVPInlineModal from './RSVPInlineModal';
 
-export default function GiftModal({ gift, gifts = [], pledges = [], rsvps = [], onSaveRSVP, config, isOpen, onClose, onConfirm, onAddPledge }) {
+export default function GiftModal({ gift, gifts = [], pledges = [], rsvps = [], onSaveRSVP, config, rsvpConfirmedName = '', isOpen, onClose, onConfirm, onAddPledge }) {
   const [guestName, setGuestName] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [confirmedQuantity, setConfirmedQuantity] = useState(1);
@@ -80,14 +80,16 @@ export default function GiftModal({ gift, gifts = [], pledges = [], rsvps = [], 
   useEffect(() => {
     if (isOpen) {
       setQuantity(1);
-      setGuestName('');
+      // Pre-fill name from last confirmed RSVP if available
+      setGuestName(rsvpConfirmedName || '');
       setNameError(false);
       setIsSuccess(false);
       setMimoError(false);
       setMimoSearch('');
       setMimoCategoryFilter('Todos');
       setConfirmedMimo(null);
-      setRsvpDone(false);
+      // If guest already confirmed RSVP, mark as done so we skip the inline form
+      setRsvpDone(Boolean(rsvpConfirmedName));
       setPendingPledges(null);
       
       // Auto-select first available mimo
@@ -98,7 +100,7 @@ export default function GiftModal({ gift, gifts = [], pledges = [], rsvps = [], 
       }
       setMimoQuantity(1);
     }
-  }, [isOpen, gift?.id]); // Note: DO NOT include pledges/gifts here to prevent resetting during submit
+  }, [isOpen, gift?.id]); // Note: DO NOT include pledges/gifts/rsvpConfirmedName here to prevent resetting during submit
 
   if (!isOpen || !gift) return null;
 
@@ -289,9 +291,10 @@ export default function GiftModal({ gift, gifts = [], pledges = [], rsvps = [], 
                           await commitPledges();
                           setRsvpDone(true);
                         }}
-                        className="w-full py-2.5 px-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 font-semibold text-xs transition flex items-center justify-center gap-1.5"
+                        className="w-full py-3 px-4 rounded-xl border-2 border-blush-200 bg-blush-50 hover:bg-blush-100 hover:border-blush-300 text-blush-700 font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm"
                       >
-                        Já confirmei minha presença ✔
+                        <span className="w-5 h-5 rounded-full bg-blush-200 flex items-center justify-center text-blush-700 shrink-0">✔</span>
+                        Já confirmei minha presença
                       </button>
                     </div>
                   );

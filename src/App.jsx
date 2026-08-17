@@ -29,6 +29,7 @@ export default function App() {
   const [selectedGiftForModal, setSelectedGiftForModal] = useState(null);
   const [isPixModalOpen, setIsPixModalOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [lastRsvpGuestName, setLastRsvpGuestName] = useState('');
 
   // Sync with localStorage, Supabase and custom events
   useEffect(() => {
@@ -124,6 +125,8 @@ export default function App() {
   // RSVP actions
   const handleSaveRSVP = async (rsvpData) => {
     await storageService.saveRSVP(rsvpData);
+    // Store guest name so GiftModal can pre-fill and skip RSVP step
+    if (rsvpData?.name) setLastRsvpGuestName(rsvpData.name.trim());
   };
 
   const handleDeleteRSVP = async (rsvpId) => {
@@ -237,12 +240,13 @@ export default function App() {
         gifts={gifts}
         pledges={pledges}
         rsvps={safeRsvps}
-        onSaveRSVP={handleSaveRSVP}
-        config={config}
+        rsvpConfirmedName={lastRsvpGuestName}
         isOpen={Boolean(selectedGiftForModal)}
-        onClose={() => setSelectedGiftForModal(null)}
+        onClose={() => { setSelectedGiftForModal(null); }}
         onConfirm={handleConfirmReservation}
         onAddPledge={handleAddPledge}
+        onSaveRSVP={handleSaveRSVP}
+        config={config}
       />
 
       <PixModal
