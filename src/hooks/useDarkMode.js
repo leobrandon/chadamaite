@@ -5,8 +5,8 @@ export function useDarkMode() {
     try {
       const saved = localStorage.getItem('cha_maite_dark_mode');
       if (saved !== null) return saved === 'true';
-      // Respect system preference as default
-      return window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? false;
+      // Padrão obrigatório: tema claro (light) no primeiro acesso / aba anônima
+      return false;
     } catch {
       return false;
     }
