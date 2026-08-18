@@ -727,14 +727,18 @@ export const storageService = {
     if (isSupabaseConfigured && supabase && updatedEntry) {
       try {
         const payload = mapRSVPToDB(updatedEntry);
-        // Deleta e reinsere com o mesmo ID para garantir persistência independentemente de políticas de RLS UPDATE
-        await supabase.from('rsvps').delete().eq('id', rsvpId);
-        const { error: insertErr } = await supabase.from('rsvps').insert([payload]);
-        if (insertErr) {
-          console.error('Erro ao atualizar RSVP no Supabase:', insertErr);
+        const { error: updateErr } = await supabase.from('rsvps').update(payload).eq('id', rsvpId);
+        if (updateErr) {
+          await supabase.from('rsvps').delete().eq('id', rsvpId);
+          const { error: insertErr } = await supabase.from('rsvps').insert([payload]);
+          if (insertErr) {
+            console.error('Erro ao atualizar RSVP no Supabase:', insertErr);
+            throw insertErr;
+          }
         }
       } catch (err) {
         console.error('Erro ao atualizar RSVP no Supabase:', err);
+        throw err;
       }
     }
     return updated;
