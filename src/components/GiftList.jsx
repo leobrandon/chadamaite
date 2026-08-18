@@ -161,11 +161,11 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
 
         {/* Gift Cards Grid or Skeletons */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          <div className="flex flex-wrap justify-center gap-5 sm:gap-6">
             {[1, 2, 3, 4, 5, 6].map((idx) => (
               <div
                 key={idx}
-                className="glass-card rounded-3xl p-5 sm:p-6 flex flex-col justify-between border-blush-100/80 animate-pulse bg-white/70 min-h-[240px]"
+                className="glass-card rounded-3xl p-5 sm:p-6 flex flex-col justify-between border-blush-100/80 animate-pulse bg-white/70 min-h-[240px] w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)]"
               >
                 <div>
                   <div className="flex items-start justify-between gap-3 mb-4">
@@ -183,7 +183,7 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
             ))}
           </div>
         ) : filteredGifts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          <div className="flex flex-wrap justify-center gap-5 sm:gap-6">
             {filteredGifts.map((gift) => {
               const giftPledges = pledges.filter(p => p.giftId === gift.id);
               const totalPledged = giftPledges.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
@@ -193,7 +193,7 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
               return (
                 <div
                   key={gift.id}
-                  className={`glass-card rounded-3xl p-5 sm:p-6 flex flex-col justify-between transition-all duration-300 relative overflow-hidden border-blush-100/90 ${
+                  className={`glass-card rounded-3xl p-5 sm:p-6 flex flex-col justify-between transition-all duration-300 relative overflow-hidden border-blush-100/90 w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] ${
                     isCompleted
                       ? 'bg-white/70 opacity-95'
                       : 'hover:-translate-y-1 hover:shadow-lg transition-all duration-300'
