@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { storageService } from '../services/storageService';
 import ConfirmModal from './ConfirmModal';
 
@@ -52,8 +53,10 @@ export default function AdminPanel({
   // Edit states for modals
   const [editingGift, setEditingGift] = useState(null);
   const [editingRsvp, setEditingRsvp] = useState(null);
+  const [isSavingRsvp, setIsSavingRsvp] = useState(false);
   const [editingMessage, setEditingMessage] = useState(null);
   const [isSavingMessage, setIsSavingMessage] = useState(false);
+  const [toastNotification, setToastNotification] = useState(null);
 
   // In-app Confirmation Modal state
   const [confirmModal, setConfirmModal] = useState({
@@ -139,14 +142,35 @@ export default function AdminPanel({
 
   const handleSaveEditedRsvp = async () => {
     if (!editingRsvp) return;
-    await onUpdateRSVP(editingRsvp.id, {
-      adultsCount: Number(editingRsvp.adultsCount) || 1,
-      childrenCount: Number(editingRsvp.childrenCount) || 0,
-      companionNames: (editingRsvp.companionNames || []).map((n) => n.trim()),
-      phone: editingRsvp.phone || '',
-      message: editingRsvp.message || '',
-    });
-    setEditingRsvp(null);
+    const name = (editingRsvp.name || '').trim();
+    if (!name) return;
+
+    setIsSavingRsvp(true);
+    try {
+      await onUpdateRSVP(editingRsvp.id, {
+        name,
+        adultsCount: Number(editingRsvp.adultsCount) || 1,
+        childrenCount: Number(editingRsvp.childrenCount) || 0,
+        companionNames: (editingRsvp.companionNames || []).map((n) => n.trim()),
+        phone: editingRsvp.phone || '',
+        message: editingRsvp.message || '',
+      });
+      setEditingRsvp(null);
+      setToastNotification({
+        type: 'success',
+        message: `Convidado "${name}" atualizado com sucesso!`,
+      });
+      setTimeout(() => setToastNotification(null), 3500);
+    } catch (err) {
+      console.error('Erro ao atualizar RSVP:', err);
+      setToastNotification({
+        type: 'error',
+        message: 'Erro ao salvar alterações no banco. Tente novamente.',
+      });
+      setTimeout(() => setToastNotification(null), 3500);
+    } finally {
+      setIsSavingRsvp(false);
+    }
   };
 
   const handleExportCSV = () => {
@@ -450,6 +474,7 @@ export default function AdminPanel({
         editingRsvp={editingRsvp}
         setEditingRsvp={setEditingRsvp}
         onSaveEditedRsvp={handleSaveEditedRsvp}
+        isSaving={isSavingRsvp}
       />
 
       {/* Edit Message Modal */}
@@ -472,6 +497,18 @@ export default function AdminPanel({
         onConfirm={confirmModal.onConfirm}
         onCancel={closeConfirmModal}
       />
+
+      {/* Toast Notification Alert */}
+      {toastNotification && (
+        <div className="fixed bottom-6 right-6 z-[70] flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl border animate-slide-up text-xs font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-slate-700 dark:border-slate-200">
+          {toastNotification.type === 'error' ? (
+            <AlertCircle className="w-4 h-4 text-rose-400 dark:text-rose-600 flex-shrink-0" />
+          ) : (
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 dark:text-emerald-600 flex-shrink-0" />
+          )}
+          <span>{toastNotification.message}</span>
+        </div>
+      )}
 
     </div>
   );

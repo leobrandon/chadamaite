@@ -6,6 +6,7 @@ export default function AdminEditRsvpModal({
   editingRsvp,
   setEditingRsvp,
   onSaveEditedRsvp,
+  isSaving = false,
 }) {
   if (!editingRsvp) return null;
 
@@ -34,10 +35,19 @@ export default function AdminEditRsvpModal({
           }}
           className="p-5 space-y-4"
         >
-          {/* Name (read-only) */}
+          {/* Name */}
           <div>
-            <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">Convidado</label>
-            <p className="font-semibold text-slate-800 dark:text-white text-sm">{editingRsvp.name}</p>
+            <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">
+              Nome do Convidado Principal *
+            </label>
+            <input
+              type="text"
+              required
+              value={editingRsvp.name || ''}
+              onChange={(e) => setEditingRsvp((prev) => ({ ...prev, name: e.target.value }))}
+              placeholder="Nome do convidado"
+              className="w-full px-3 py-2.5 text-sm border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blush-400 dark:focus:border-blush-500 focus:ring-2 focus:ring-blush-100 dark:focus:ring-blush-950 transition"
+            />
           </div>
 
           {/* Adults */}
@@ -177,9 +187,11 @@ export default function AdminEditRsvpModal({
           <div className="flex gap-2 pt-1">
             <button
               type="submit"
-              className="flex-1 py-3 rounded-2xl bg-blush-500 hover:bg-blush-600 active:scale-[0.98] text-white font-bold text-sm shadow-md shadow-blush-500/20 transition flex items-center justify-center gap-1.5"
+              disabled={isSaving}
+              className="flex-1 py-3 rounded-2xl bg-blush-500 hover:bg-blush-600 active:scale-[0.98] text-white font-bold text-sm shadow-md shadow-blush-500/20 transition flex items-center justify-center gap-1.5 disabled:opacity-60"
             >
-              <Check className="w-4 h-4" /> Salvar Alterações
+              <Check className="w-4 h-4" />
+              {isSaving ? 'Salvando...' : 'Salvar Alterações'}
             </button>
             <button
               type="button"
