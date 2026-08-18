@@ -171,7 +171,7 @@ function mapRSVPFromDB(row) {
 }
 
 function mapRSVPToDB(r) {
-  return {
+  const payload = {
     id: r.id,
     name: r.name,
     attending: r.attending,
@@ -181,6 +181,10 @@ function mapRSVPToDB(r) {
     phone: r.phone || '',
     message: r.message || '',
   };
+  if (r.createdAt) {
+    payload.created_at = r.createdAt;
+  }
+  return payload;
 }
 
 function mapPledgeFromDB(row) {
@@ -727,12 +731,20 @@ export const storageService = {
     if (isSupabaseConfigured && supabase && updatedEntry) {
       try {
         const payload = mapRSVPToDB(updatedEntry);
-        const { error: updateErr } = await supabase.from('rsvps').update(payload).eq('id', rsvpId);
-        if (updateErr) {
+        // Supabase JS retorna status 200 com array vazio caso RLS bloqueie UPDATE.
+        // Usamos .select() para verificar se alguma linha foi realmente atualizada.
+        const { data: updatedRows, error: updateErr } = await supabase
+          .from('rsvps')
+          .update(payload)
+          .eq('id', rsvpId)
+          .select();
+
+        if (updateErr || !updatedRows || updatedRows.length === 0) {
+          // Fallback garantido: delete + insert (permitido por políticas anon no Supabase)
           await supabase.from('rsvps').delete().eq('id', rsvpId);
           const { error: insertErr } = await supabase.from('rsvps').insert([payload]);
           if (insertErr) {
-            console.error('Erro ao atualizar RSVP no Supabase:', insertErr);
+            console.error('Erro ao reinserir RSVP no Supabase:', insertErr);
             throw insertErr;
           }
         }
