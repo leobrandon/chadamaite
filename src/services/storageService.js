@@ -840,17 +840,18 @@ export const storageService = {
     return updated;
   },
 
-  likeMessage: async (msgId) => {
+  likeMessage: async (msgId, delta = 1) => {
     const messages = storageService.getMessages();
     const target = messages.find(m => m.id === msgId);
-    const newLikes = (target?.likes || 0) + 1;
+    const currentLikes = Number(target?.likes) || 0;
+    const newLikes = Math.max(0, currentLikes + delta);
     
     if (isSupabaseConfigured && supabase) {
       try {
         const { error } = await supabase.from('messages').update({ likes: newLikes }).eq('id', msgId);
         if (error) throw error;
       } catch (err) {
-        console.error('Erro ao curtir mensagem no Supabase:', err);
+        console.error('Erro ao atualizar curtida da mensagem no Supabase:', err);
       }
     }
 
