@@ -151,8 +151,8 @@ export default function App() {
     if (Array.isArray(updated)) setMessages(updated);
   };
 
-  const handleLikeMessage = async (msgId) => {
-    const updated = await storageService.likeMessage(msgId);
+  const handleLikeMessage = async (msgId, delta = 1) => {
+    const updated = await storageService.likeMessage(msgId, delta);
     if (Array.isArray(updated)) setMessages(updated);
   };
 
