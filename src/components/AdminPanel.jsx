@@ -18,6 +18,7 @@ import AdminEditGiftModal from './admin/modals/AdminEditGiftModal';
 import AdminEditRsvpModal from './admin/modals/AdminEditRsvpModal';
 import AdminEditMessageModal from './admin/modals/AdminEditMessageModal';
 import { verifyAdminPin } from '../utils/security';
+import { formatPhone } from '../utils/phoneMask';
 
 export default function AdminPanel({ 
   isOpen, 
@@ -319,7 +320,7 @@ export default function AdminPanel({
         <td style="text-align:center;">${r.attending ? (r.adultsCount || 0) : '-'}</td>
         <td style="text-align:center;">${r.attending ? (r.childrenCount || 0) : '-'}</td>
         <td>${(r.companionNames || []).join(', ') || '-'}</td>
-        <td>${r.phone || '-'}</td>
+        <td>${r.phone ? formatPhone(r.phone) : '-'}</td>
         <td>${r.message || '-'}</td>
       </tr>
     `).join('');

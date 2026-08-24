@@ -64,7 +64,7 @@ export default function RSVPInlineModal({ guestNamePrefill = '', config, onSubmi
       adultsCount: attending ? adultsCount : 0,
       childrenCount: attending ? childrenCount : 0,
       companionNames: attending ? companionNames.map(n => n.trim()) : [],
-      phone: phone.trim(),
+      phone: formatPhone(phone),
       message: message.trim(),
     };
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { FileText, Download, CheckCircle2, XCircle, Edit2, Trash2, Search, Phone, MessageSquare, Users } from 'lucide-react';
+import { FileText, Download, CheckCircle2, XCircle, Edit2, Trash2, Search, MessageSquare, Users } from 'lucide-react';
+import { formatPhone } from '../../utils/phoneMask';
 
 export default function AdminRSVPTab({
   rsvps = [],
@@ -23,9 +24,14 @@ export default function AdminRSVPTab({
     if (!rsvpSearch.trim()) return true;
     const q = rsvpSearch.toLowerCase();
     const companions = (rsvp.companionNames || []).join(' ').toLowerCase();
+    const formattedPhone = formatPhone(rsvp.phone || '');
+    const rawPhone = (rsvp.phone || '').replace(/\D/g, '');
+    const rawQuery = q.replace(/\D/g, '');
+
     return (
       (rsvp.name || '').toLowerCase().includes(q) ||
-      (rsvp.phone || '').includes(q) ||
+      formattedPhone.toLowerCase().includes(q) ||
+      (rawQuery && rawPhone.includes(rawQuery)) ||
       (rsvp.message || '').toLowerCase().includes(q) ||
       companions.includes(q)
     );
@@ -142,7 +148,7 @@ export default function AdminRSVPTab({
                           {rsvp.name}
                         </p>
                         <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                          {rsvp.phone ? `📱 ${rsvp.phone}` : 'Sem WhatsApp informado'}
+                          {rsvp.phone ? `📱 ${formatPhone(rsvp.phone)}` : 'Sem WhatsApp informado'}
                         </p>
                       </div>
                     </div>
@@ -258,7 +264,7 @@ export default function AdminRSVPTab({
                           ? rsvp.companionNames.join(', ')
                           : '-'}
                       </td>
-                      <td className="p-3 text-slate-600 dark:text-slate-300">{rsvp.phone || '-'}</td>
+                      <td className="p-3 text-slate-600 dark:text-slate-300">{rsvp.phone ? formatPhone(rsvp.phone) : '-'}</td>
                       <td className="p-3 text-slate-500 dark:text-slate-400 max-w-[200px] truncate" title={rsvp.message}>
                         {rsvp.message || '-'}
                       </td>

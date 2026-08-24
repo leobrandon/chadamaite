@@ -8,7 +8,15 @@
  */
 export function formatPhone(value) {
   if (!value) return '';
-  const digits = String(value).replace(/\D/g, '').slice(0, 11);
+  let digits = String(value).replace(/\D/g, '');
+
+  // Se o número veio com DDI do Brasil (55) e tem 12 ou 13 dígitos, remove o 55 inicial
+  if ((digits.length === 12 || digits.length === 13) && digits.startsWith('55')) {
+    digits = digits.slice(2);
+  }
+
+  // Limita ao máximo de 11 dígitos (DDD + 9 dígitos)
+  digits = digits.slice(0, 11);
 
   if (digits.length === 0) return '';
   if (digits.length === 1) return `(${digits}`;
