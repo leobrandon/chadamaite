@@ -17,6 +17,7 @@ import AdminMessagesTab from './admin/AdminMessagesTab';
 import AdminEditGiftModal from './admin/modals/AdminEditGiftModal';
 import AdminEditRsvpModal from './admin/modals/AdminEditRsvpModal';
 import AdminEditMessageModal from './admin/modals/AdminEditMessageModal';
+import { verifyAdminPin } from '../utils/security';
 
 export default function AdminPanel({ 
   isOpen, 
@@ -97,10 +98,14 @@ export default function AdminPanel({
 
   if (!isOpen) return null;
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const correctPin = String(config?.adminPin || '16101928').trim();
-    if (pinInput.trim() === correctPin) {
+    const entered = pinInput.trim();
+    const storedHash = config?.adminPinHash || config?.adminPin;
+
+    const isValid = await verifyAdminPin(entered, storedHash);
+
+    if (isValid) {
       try {
         sessionStorage.setItem('cha_maite_admin_auth', 'true');
       } catch {
@@ -353,8 +358,8 @@ export default function AdminPanel({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 dark:bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-5xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-auto flex flex-col max-h-[90dvh] overscroll-contain">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/80 dark:bg-black/85 backdrop-blur-md animate-fade-in">
+      <div className="bg-white dark:bg-slate-900 w-full sm:max-w-5xl rounded-t-[28px] sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-[94dvh] sm:h-auto sm:max-h-[90dvh] overscroll-contain transition-all">
         
         {/* Header */}
         <AdminHeader
