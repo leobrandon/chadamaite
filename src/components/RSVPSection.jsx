@@ -66,7 +66,7 @@ export default function RSVPSection({ config, onSaveRSVP, gifts = [], pledges = 
       adultsCount: attending ? adultsCount : 0,
       childrenCount: attending ? childrenCount : 0,
       companionNames: attending ? companionNames.map(n => n.trim()) : [],
-      phone: phone.trim(),
+      phone: formatPhone(phone),
       message: message.trim(),
     };
 

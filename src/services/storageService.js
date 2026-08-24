@@ -1,5 +1,6 @@
 import { INITIAL_GIFTS, INITIAL_EVENT_CONFIG, INITIAL_MESSAGES } from '../data/initialGifts';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
+import { formatPhone } from '../utils/phoneMask';
 
 const KEYS = {
   GIFTS: 'cha_maite_gifts_v1',
@@ -164,7 +165,7 @@ function mapRSVPFromDB(row) {
     adultsCount: row.adults_count || 1,
     childrenCount: row.children_count || 0,
     companionNames: row.companion_names || [],
-    phone: row.phone || '',
+    phone: formatPhone(row.phone || ''),
     message: row.message || '',
     createdAt: row.created_at,
   };
@@ -178,7 +179,7 @@ function mapRSVPToDB(r) {
     adults_count: r.adultsCount || 1,
     children_count: r.childrenCount || 0,
     companion_names: r.companionNames || [],
-    phone: r.phone || '',
+    phone: formatPhone(r.phone || ''),
     message: r.message || '',
   };
   if (r.createdAt) {
@@ -651,7 +652,13 @@ export const storageService = {
   getRSVPs: () => {
     try {
       const saved = localStorage.getItem(KEYS.RSVPS);
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map((r) => ({
+        ...r,
+        phone: formatPhone(r.phone || ''),
+      }));
     } catch {
       return [];
     }
@@ -663,6 +670,7 @@ export const storageService = {
       id: generateUniqueId('rsvp'),
       createdAt: new Date().toISOString(),
       ...rsvpData,
+      phone: formatPhone(rsvpData.phone || ''),
     };
 
     const hasMessage = Boolean(rsvpData.message && rsvpData.message.trim());
@@ -918,7 +926,7 @@ export const storageService = {
       r.adultsCount || 1,
       r.childrenCount || 0,
       `"${(r.companionNames || []).join(', ').replace(/"/g, '""')}"`,
-      `"${r.phone || ''}"`,
+      `"${formatPhone(r.phone || '')}"`,
       `"${(r.message || '').replace(/"/g, '""')}"`
     ]);
 
