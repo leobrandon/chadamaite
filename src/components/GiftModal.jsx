@@ -235,6 +235,49 @@ export default function GiftModal({ gift, gifts = [], pledges = [], rsvps = [], 
           </p>
         </div>
 
+        {/* Visual Step Progress Indicator */}
+        <div className="bg-blush-50/80 border-b border-blush-200/70 px-4 py-2.5 flex items-center justify-between sm:justify-center gap-1.5 sm:gap-3 text-[11px] sm:text-xs select-none">
+          {/* Step 1: Diaper / Main Gift */}
+          <div className={`flex items-center gap-1 font-bold ${isSuccess ? 'text-emerald-700' : 'text-blush-800'}`}>
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${isSuccess ? 'bg-emerald-500 text-white' : 'bg-blush-500 text-white shadow-xs'}`}>
+              {isSuccess ? '✓' : '1'}
+            </span>
+            <span className="truncate max-w-[80px] sm:max-w-none">{isFralda ? 'Fralda' : 'Presente'}</span>
+          </div>
+
+          <span className="text-slate-300 font-bold">›</span>
+
+          {/* Step 2: Mimo (if diaper) */}
+          {isFralda && (
+            <>
+              <div className={`flex items-center gap-1 font-bold ${isSuccess ? 'text-emerald-700' : selectedMimoId ? 'text-blush-800' : 'text-slate-400'}`}>
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${isSuccess ? 'bg-emerald-500 text-white' : selectedMimoId ? 'bg-blush-500 text-white shadow-xs' : 'bg-slate-200 text-slate-600'}`}>
+                  {isSuccess ? '✓' : '2'}
+                </span>
+                <span>Mimo</span>
+              </div>
+              <span className="text-slate-300 font-bold">›</span>
+            </>
+          )}
+
+          {/* Step 3: Guest Name */}
+          <div className={`flex items-center gap-1 font-bold ${isSuccess ? 'text-emerald-700' : guestName.trim() ? 'text-blush-800' : 'text-slate-400'}`}>
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${isSuccess ? 'bg-emerald-500 text-white' : guestName.trim() ? 'bg-blush-500 text-white shadow-xs' : 'bg-slate-200 text-slate-600'}`}>
+              {isSuccess ? '✓' : isFralda ? '3' : '2'}
+            </span>
+            <span className="truncate max-w-[85px] sm:max-w-none">Seus Dados</span>
+          </div>
+
+          {/* Step 4: Success */}
+          <span className="text-slate-300 font-bold">›</span>
+          <div className={`flex items-center gap-1 font-bold ${isSuccess ? 'text-emerald-700 font-extrabold' : 'text-slate-400'}`}>
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${isSuccess ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-200 text-slate-500'}`}>
+              {isFralda ? '4' : '3'}
+            </span>
+            <span>Confirmado</span>
+          </div>
+        </div>
+
         {/* Modal Body */}
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 flex-1 overflow-y-auto">
           

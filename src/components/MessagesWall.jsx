@@ -1,8 +1,49 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { MessageCircleHeart, Heart, Send, ChevronLeft, ChevronRight, Search, Sparkles } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { MessageCircleHeart, Heart, Send, ChevronLeft, ChevronRight, Search, Sparkles, CheckCircle2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { formatRelativeOrExactDate } from '../utils/dateUtils';
 
 const MESSAGES_PER_PAGE = 6; // 6 cards per page (2 rows of 3 on desktop, 3 rows of 2 on tablet, 6 rows of 1 on mobile)
+
+// Paleta suave e acolhedora de cartões de recado (estilo mural de chá de bebê com suporte completo a tema claro e escuro)
+const CARD_THEMES = [
+  {
+    bg: 'bg-gradient-to-br from-rose-50/90 via-blush-50/60 to-white border-rose-200/80 dark:from-rose-950/40 dark:via-slate-800/90 dark:to-slate-900/95 dark:border-rose-900/40',
+    avatarBg: 'bg-rose-100 text-rose-700 dark:bg-rose-950/90 dark:text-rose-300 dark:border dark:border-rose-800/50',
+    tapeBg: 'bg-rose-200/60 dark:bg-rose-800/40',
+    badgeText: 'text-rose-500 dark:text-rose-400',
+  },
+  {
+    bg: 'bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-white border-amber-200/80 dark:from-amber-950/40 dark:via-slate-800/90 dark:to-slate-900/95 dark:border-amber-900/40',
+    avatarBg: 'bg-amber-100 text-amber-800 dark:bg-amber-950/90 dark:text-amber-300 dark:border dark:border-amber-800/50',
+    tapeBg: 'bg-amber-200/60 dark:bg-amber-800/40',
+    badgeText: 'text-amber-600 dark:text-amber-400',
+  },
+  {
+    bg: 'bg-gradient-to-br from-emerald-50/90 via-teal-50/50 to-white border-emerald-200/80 dark:from-emerald-950/40 dark:via-slate-800/90 dark:to-slate-900/95 dark:border-emerald-900/40',
+    avatarBg: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/90 dark:text-emerald-300 dark:border dark:border-emerald-800/50',
+    tapeBg: 'bg-emerald-200/60 dark:bg-emerald-800/40',
+    badgeText: 'text-emerald-600 dark:text-emerald-400',
+  },
+  {
+    bg: 'bg-gradient-to-br from-purple-50/90 via-pink-50/50 to-white border-purple-200/80 dark:from-purple-950/40 dark:via-slate-800/90 dark:to-slate-900/95 dark:border-purple-900/40',
+    avatarBg: 'bg-purple-100 text-purple-800 dark:bg-purple-950/90 dark:text-purple-300 dark:border dark:border-purple-800/50',
+    tapeBg: 'bg-purple-200/60 dark:bg-purple-800/40',
+    badgeText: 'text-purple-600 dark:text-purple-400',
+  },
+  {
+    bg: 'bg-gradient-to-br from-sky-50/90 via-blue-50/50 to-white border-sky-200/80 dark:from-sky-950/40 dark:via-slate-800/90 dark:to-slate-900/95 dark:border-sky-900/40',
+    avatarBg: 'bg-sky-100 text-sky-800 dark:bg-sky-950/90 dark:text-sky-300 dark:border dark:border-sky-800/50',
+    tapeBg: 'bg-sky-200/60 dark:bg-sky-800/40',
+    badgeText: 'text-sky-600 dark:text-sky-400',
+  },
+  {
+    bg: 'bg-gradient-to-br from-pink-50/90 via-rose-50/60 to-white border-pink-200/80 dark:from-pink-950/40 dark:via-slate-800/90 dark:to-slate-900/95 dark:border-pink-900/40',
+    avatarBg: 'bg-pink-100 text-pink-700 dark:bg-pink-950/90 dark:text-pink-300 dark:border dark:border-pink-800/50',
+    tapeBg: 'bg-pink-200/60 dark:bg-pink-800/40',
+    badgeText: 'text-pink-600 dark:text-pink-400',
+  },
+];
 
 export default function MessagesWall({ messages = [], onAddMessage, onLikeMessage }) {
   const [author, setAuthor] = useState('');
@@ -22,7 +63,7 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
     }
   });
 
-  const safeMessages = Array.isArray(messages) ? messages : [];
+  const safeMessages = useMemo(() => Array.isArray(messages) ? messages : [], [messages]);
   
   // Apenas mensagens aprovadas
   const approvedMessages = useMemo(() => {
@@ -41,18 +82,14 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
   // Total de páginas
   const totalPages = Math.max(1, Math.ceil(filteredMessages.length / MESSAGES_PER_PAGE));
 
-  // Ajusta página atual se ultrapassar o total
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
+  // Clamped current page
+  const activePage = Math.min(currentPage, totalPages);
 
   // Mensagens da página atual
   const paginatedMessages = useMemo(() => {
-    const startIdx = (currentPage - 1) * MESSAGES_PER_PAGE;
+    const startIdx = (activePage - 1) * MESSAGES_PER_PAGE;
     return filteredMessages.slice(startIdx, startIdx + MESSAGES_PER_PAGE);
-  }, [filteredMessages, currentPage]);
+  }, [filteredMessages, activePage]);
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -91,8 +128,8 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
 
       // Efeito sutil de confetezinho/corações quando curte
       confetti({
-        particleCount: 15,
-        spread: 40,
+        particleCount: 18,
+        spread: 45,
         origin: { y: 0.8 },
         colors: ['#f7799e', '#fcaec4', '#ffd6e1']
       });
@@ -121,58 +158,89 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
       setText('');
       setIsSubmitting(false);
       setShowPendingAlert(true);
-      setTimeout(() => setShowPendingAlert(false), 6000);
+      setTimeout(() => setShowPendingAlert(false), 7000);
     }, 300);
   };
 
+  const textRemaining = 500 - text.length;
+
   return (
-    <section id="recados" className="py-16 md:py-20 bg-white/50 border-t border-blush-100">
+    <section id="recados" className="py-16 md:py-20 bg-white/50 dark:bg-slate-900/50 border-t border-blush-100 dark:border-slate-800">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         
         {/* Header */}
         <div className="text-center max-w-xl mx-auto mb-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blush-100/80 text-blush-700 text-xs font-bold uppercase tracking-wider mb-3">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blush-100/80 dark:bg-blush-950/70 dark:border dark:border-blush-800/40 text-blush-700 dark:text-blush-300 text-xs font-bold uppercase tracking-wider mb-3">
             <MessageCircleHeart className="w-3.5 h-3.5" />
             <span>Mural de Amor</span>
           </div>
-          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-slate-800 tracking-tight">
+          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
             Recadinhos para a Maitê
           </h2>
-          <p className="text-slate-600 text-sm sm:text-base mt-2">
+          <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base mt-2">
             Deixe uma mensagem cheia de boas energias para a nossa pequena e para os papais.
           </p>
         </div>
 
-        {/* Input Card */}
-        <div className="glass-card max-w-2xl mx-auto p-6 sm:p-7 rounded-3xl mb-12 shadow-sm border border-blush-200/80">
+        {/* Input Card with Character Counter */}
+        <div className="glass-card max-w-2xl mx-auto p-6 sm:p-7 rounded-3xl mb-12 shadow-sm border border-blush-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  Seu Nome ou Família:
+                </label>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                  {author.length}/80
+                </span>
+              </div>
               <input
                 type="text"
                 maxLength={80}
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
-                placeholder="Seu nome (ex: Titia Jéssica)"
-                className="flex-1 px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 outline-none text-base sm:text-sm transition"
+                placeholder="Ex: Titia Jéssica / Família Silva"
+                className="w-full px-4 py-3 rounded-xl bg-slate-50/70 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 dark:focus:ring-blush-950 outline-none text-base sm:text-sm transition"
               />
             </div>
-            <textarea
-              rows="3"
-              maxLength={500}
-              required
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Escreva seu recadinho de carinho..."
-              className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 outline-none text-base sm:text-sm transition resize-none"
-            />
-            <div className="flex justify-end">
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  Seu Recado de Carinho: <span className="text-rose-500">*</span>
+                </label>
+                <span className={`text-[11px] font-medium transition ${
+                  textRemaining < 50
+                    ? 'text-rose-600 dark:text-rose-400 font-bold'
+                    : textRemaining < 150
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-slate-400 dark:text-slate-500'
+                }`}>
+                  {textRemaining} {textRemaining === 1 ? 'caractere restante' : 'caracteres restantes'}
+                </span>
+              </div>
+              <textarea
+                rows="3"
+                maxLength={500}
+                required
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Escreva sua mensagem cheia de afeto para a Maitê..."
+                className="w-full px-4 py-3 rounded-xl bg-slate-50/70 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 dark:focus:ring-blush-950 outline-none text-base sm:text-sm transition resize-none leading-relaxed"
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 order-2 sm:order-1 text-center sm:text-left">
+                ✨ Seu recado será publicado após rápida aprovação dos papais.
+              </p>
               <button
                 type="submit"
                 disabled={isSubmitting || !text.trim()}
-                className="px-6 py-3 rounded-full bg-blush-500 hover:bg-blush-600 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-md shadow-blush-500/20 disabled:opacity-50 transition flex items-center gap-2"
+                className="w-full sm:w-auto px-6 py-3 rounded-full bg-blush-500 hover:bg-blush-600 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-md shadow-blush-500/20 disabled:opacity-50 transition flex items-center justify-center gap-2 order-1 sm:order-2 cursor-pointer"
               >
                 <Send className="w-4 h-4" />
-                <span>{isSubmitting ? 'Publicando...' : 'Publicar Recado'}</span>
+                <span>{isSubmitting ? 'Publicando...' : 'Publicar Recado 💕'}</span>
               </button>
             </div>
           </form>
@@ -180,20 +248,25 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
 
         {/* Feedback Alert for Pending Approval */}
         {showPendingAlert && (
-          <div className="max-w-2xl mx-auto mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm text-center animate-fade-in shadow-sm flex items-center justify-center gap-2">
-            <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span><strong>Obrigado pelo carinho!</strong> Seu recado foi enviado e será exibido no mural assim que os papais aprovarem. 💖</span>
+          <div className="max-w-2xl mx-auto mb-8 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-emerald-900 dark:text-emerald-200 text-xs sm:text-sm animate-fade-in shadow-sm flex items-start gap-3">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-bold text-emerald-950 dark:text-emerald-100">Recado enviado com sucesso! 💖</p>
+              <p className="text-emerald-800 dark:text-emerald-300 text-xs mt-0.5">
+                Muito obrigado pelo carinho! Ele será exibido no mural de cartões assim que os papais aprovarem.
+              </p>
+            </div>
           </div>
         )}
 
-        {/* Messages Header & Search Bar (quando houver várias mensagens) */}
+        {/* Messages Header & Search Bar */}
         {approvedMessages.length > 0 && (
           <div id="recados-grid" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-slate-800">
-                Mural de Recados
+              <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                Mural de Cartões de Carinho
               </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-blush-100 text-blush-700 font-bold text-xs">
+              <span className="px-2.5 py-0.5 rounded-full bg-blush-100 dark:bg-blush-950/80 dark:border dark:border-blush-800/40 text-blush-700 dark:text-blush-300 font-bold text-xs">
                 {approvedMessages.length} {approvedMessages.length === 1 ? 'recado' : 'recados'}
               </span>
             </div>
@@ -208,81 +281,100 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                     setSearchQuery(e.target.value);
                     setCurrentPage(1);
                   }}
-                  placeholder="Buscar recados..."
-                  className="w-full pl-8 pr-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs outline-none focus:border-blush-400 focus:ring-1 focus:ring-blush-100 transition text-slate-700"
+                  placeholder="Buscar recados por nome..."
+                  className="w-full pl-8 pr-3 py-1.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-xs outline-none focus:border-blush-400 focus:ring-1 focus:ring-blush-100 dark:focus:ring-blush-950 transition"
                 />
               </div>
             )}
           </div>
         )}
 
-        {/* Messages Grid */}
+        {/* Messages Cards Grid (Mural de Cartões Físicos) */}
         {paginatedMessages.length > 0 ? (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-              {paginatedMessages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className="glass-card p-5 rounded-3xl border border-blush-100/90 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-blush-200 transition bg-white/80 backdrop-blur-xs min-h-[170px]"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="w-7 h-7 rounded-full bg-blush-100 text-blush-700 flex items-center justify-center font-bold text-xs shrink-0">
-                          {(msg.author || 'A').charAt(0).toUpperCase()}
-                        </span>
-                        <span className="font-bold text-slate-800 text-sm truncate">
-                          {msg.author}
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-slate-400 shrink-0 ml-2">
-                        {msg.date || 'Recente'}
-                      </span>
-                    </div>
-                    <p className="text-slate-600 text-xs sm:text-sm leading-relaxed whitespace-pre-line italic">
-                      "{msg.text}"
-                    </p>
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {paginatedMessages.map((msg, index) => {
+                const theme = CARD_THEMES[index % CARD_THEMES.length];
+                const isLiked = likedMessageIds.includes(msg.id);
+                const displayDate = formatRelativeOrExactDate(msg.date, msg.createdAt);
 
-                  <div className="mt-4 pt-3 border-t border-slate-100/80 flex items-center justify-between">
-                    <span className="text-[11px] text-slate-400">Com muito amor ✨</span>
-                    {(() => {
-                      const isLiked = likedMessageIds.includes(msg.id);
-                      return (
-                        <button
-                          type="button"
-                          onClick={() => handleToggleLike(msg.id)}
-                          className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-semibold transition cursor-pointer active:scale-90 shadow-xs ${
-                            isLiked
-                              ? 'bg-blush-500 text-white shadow-blush-500/25 ring-2 ring-blush-200'
-                              : 'bg-blush-50 text-blush-600 hover:bg-blush-100 hover:text-blush-700'
-                          }`}
-                          title={isLiked ? 'Você curtiu este recado (clique para remover)' : 'Curtir recadinho'}
-                          aria-label={isLiked ? 'Você curtiu este recado (clique para remover)' : 'Curtir recadinho'}
-                        >
-                          <Heart className={`w-3.5 h-3.5 transition-transform duration-200 ${isLiked ? 'fill-white text-white scale-110' : 'fill-blush-400 text-blush-400'}`} />
-                          <span className="tabular-nums">{msg.likes || 0}</span>
-                        </button>
-                      );
-                    })()}
+                return (
+                  <div
+                    key={msg.id}
+                    className={`relative p-5 sm:p-6 rounded-3xl border shadow-sm flex flex-col justify-between hover:shadow-md transition-all duration-300 min-h-[190px] ${theme.bg}`}
+                  >
+                    {/* Delicate tape badge at top */}
+                    <div className={`w-12 h-2.5 rounded-full ${theme.tapeBg} absolute -top-1.5 left-1/2 -translate-x-1/2 shadow-2xs border border-white/60 dark:border-white/10`} />
+
+                    <div>
+                      {/* Author Header */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className={`w-8 h-8 rounded-full ${theme.avatarBg} flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs`}>
+                            {(msg.author || 'A').charAt(0).toUpperCase()}
+                          </span>
+                          <div className="min-w-0">
+                            <span className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate block">
+                              {msg.author}
+                            </span>
+                            {displayDate && (
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
+                                {displayDate}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-lg select-none">💌</span>
+                      </div>
+
+                      {/* Message Body */}
+                      <div className="relative pt-1">
+                        <p className="text-slate-700 dark:text-slate-200 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-normal">
+                          "{msg.text}"
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Card Footer */}
+                    <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
+                      <span className={`text-[11px] font-semibold ${theme.badgeText} flex items-center gap-1`}>
+                        <Sparkles className="w-3 h-3" />
+                        <span>Com amor</span>
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => handleToggleLike(msg.id)}
+                        className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-semibold transition cursor-pointer active:scale-90 shadow-xs ${
+                          isLiked
+                            ? 'bg-blush-500 text-white shadow-blush-500/25 ring-2 ring-blush-200 dark:ring-blush-900'
+                            : 'bg-white/90 dark:bg-slate-800/90 text-blush-700 dark:text-blush-300 hover:bg-white dark:hover:bg-slate-800 hover:text-blush-800 dark:hover:text-blush-200 border border-blush-200/70 dark:border-slate-700'
+                        }`}
+                        title={isLiked ? 'Você curtiu este recado (clique para remover)' : 'Curtir recadinho'}
+                        aria-label={isLiked ? 'Você curtiu este recado (clique para remover)' : 'Curtir recadinho'}
+                      >
+                        <Heart className={`w-3.5 h-3.5 transition-transform duration-200 ${isLiked ? 'fill-white text-white scale-110' : 'fill-blush-400 text-blush-400 dark:fill-blush-400'}`} />
+                        <span className="tabular-nums font-bold">{msg.likes || 0}</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-blush-100">
-                <p className="text-xs text-slate-500 order-2 sm:order-1">
-                  Mostrando {((currentPage - 1) * MESSAGES_PER_PAGE) + 1} - {Math.min(currentPage * MESSAGES_PER_PAGE, filteredMessages.length)} de {filteredMessages.length} recados
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-blush-100 dark:border-slate-800">
+                <p className="text-xs text-slate-500 dark:text-slate-400 order-2 sm:order-1">
+                  Mostrando {((activePage - 1) * MESSAGES_PER_PAGE) + 1} - {Math.min(activePage * MESSAGES_PER_PAGE, filteredMessages.length)} de {filteredMessages.length} recados
                 </p>
 
                 <div className="flex items-center gap-1.5 order-1 sm:order-2">
                   <button
                     type="button"
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-blush-50 hover:text-blush-600 disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-slate-600 transition shadow-xs min-h-[38px] min-w-[38px] flex items-center justify-center"
+                    onClick={() => handlePageChange(activePage - 1)}
+                    disabled={activePage === 1}
+                    className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blush-50 dark:hover:bg-slate-700 hover:text-blush-600 dark:hover:text-blush-300 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-slate-800 disabled:hover:text-slate-600 dark:disabled:hover:text-slate-300 transition shadow-xs min-h-[38px] min-w-[38px] flex items-center justify-center cursor-pointer"
                     aria-label="Página anterior"
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -292,11 +384,10 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                   <div className="flex items-center gap-1">
                     {Array.from({ length: totalPages }, (_, i) => i + 1)
                       .filter((page) => {
-                        // Mostra primeira, última, e páginas próximas da atual
                         return (
                           page === 1 ||
                           page === totalPages ||
-                          Math.abs(page - currentPage) <= 1
+                          Math.abs(page - activePage) <= 1
                         );
                       })
                       .map((page, index, arr) => {
@@ -305,15 +396,15 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                         return (
                           <React.Fragment key={page}>
                             {showEllipsisBefore && (
-                              <span className="px-1 text-slate-400 text-xs select-none">...</span>
+                              <span className="px-1 text-slate-400 dark:text-slate-500 text-xs select-none">...</span>
                             )}
                             <button
                               type="button"
                               onClick={() => handlePageChange(page)}
-                              className={`w-9 h-9 rounded-xl text-xs font-bold transition flex items-center justify-center shadow-xs ${
-                                currentPage === page
+                              className={`w-9 h-9 rounded-xl text-xs font-bold transition flex items-center justify-center shadow-xs cursor-pointer ${
+                                activePage === page
                                   ? 'bg-blush-500 text-white shadow-blush-500/20'
-                                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-blush-50 hover:text-blush-600'
+                                  : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blush-50 dark:hover:bg-slate-700 hover:text-blush-600 dark:hover:text-blush-300'
                               }`}
                             >
                               {page}
@@ -325,9 +416,9 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
 
                   <button
                     type="button"
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-blush-50 hover:text-blush-600 disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-slate-600 transition shadow-xs min-h-[38px] min-w-[38px] flex items-center justify-center"
+                    onClick={() => handlePageChange(activePage + 1)}
+                    disabled={activePage === totalPages}
+                    className="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blush-50 dark:hover:bg-slate-700 hover:text-blush-600 dark:hover:text-blush-300 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-slate-800 disabled:hover:text-slate-600 dark:disabled:hover:text-slate-300 transition shadow-xs min-h-[38px] min-w-[38px] flex items-center justify-center cursor-pointer"
                     aria-label="Próxima página"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -337,11 +428,11 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
             )}
           </div>
         ) : (
-          <div className="text-center py-12 text-slate-400 text-sm glass-card rounded-3xl p-6">
+          <div className="text-center py-12 text-slate-400 dark:text-slate-500 text-sm glass-card rounded-3xl p-6 dark:bg-slate-800/60 dark:border-slate-700/60">
             {searchQuery ? (
               <p>Nenhum recado encontrado para "{searchQuery}".</p>
             ) : (
-              <p>Seja o primeiro a deixar um recadinho carinhoso! 💌</p>
+              <p>Seja o primeiro a deixar um recadinho carinhoso para a Maitê! 💕</p>
             )}
           </div>
         )}
@@ -350,3 +441,4 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
     </section>
   );
 }
+

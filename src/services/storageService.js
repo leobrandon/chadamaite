@@ -201,7 +201,7 @@ function mapMessageFromDB(row) {
     id: row.id,
     author: row.author,
     text: row.text,
-    date: row.date || 'Recente',
+    date: row.date || '',
     likes: Number(row.likes) || 0,
     status: row.status || 'approved',
     createdAt: row.created_at,
@@ -213,7 +213,7 @@ function mapMessageToDB(m) {
     id: m.id,
     author: m.author || 'Amigo com carinho',
     text: m.text || '',
-    date: m.date || 'Agora mesmo',
+    date: m.date || '',
     likes: Number(m.likes) || 0,
     status: m.status || 'pending',
     created_at: m.createdAt || new Date().toISOString(),
@@ -803,12 +803,13 @@ export const storageService = {
 
   addMessage: async (msgData, autoApprove = false) => {
     const messages = storageService.getMessages();
+    const nowIso = new Date().toISOString();
     const newMsg = {
       id: generateUniqueId('msg'),
       author: msgData.author || 'Amigo com carinho',
       text: msgData.text,
-      date: 'Agora mesmo',
-      createdAt: new Date().toISOString(),
+      date: nowIso,
+      createdAt: nowIso,
       likes: 0,
       status: autoApprove ? 'approved' : 'pending',
     };
