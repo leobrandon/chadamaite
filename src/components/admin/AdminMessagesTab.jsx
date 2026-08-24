@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Edit2, Check, X, CheckCircle2, MessageCircle, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { formatRelativeOrExactDate } from '../../utils/dateUtils';
 
 const ADMIN_MESSAGES_PER_PAGE = 8;
 
@@ -137,7 +138,9 @@ export default function AdminMessagesTab({
                   </div>
 
                   <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500">{msg.date}</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                      {formatRelativeOrExactDate(msg.date, msg.createdAt) || 'Recente'}
+                    </span>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => onApproveMessage(msg.id)}
@@ -239,7 +242,9 @@ export default function AdminMessagesTab({
                   </div>
 
                   <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500">{msg.date}</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                      {formatRelativeOrExactDate(msg.date, msg.createdAt) || 'Recente'}
+                    </span>
                     <button
                       onClick={() => {
                         onRequestConfirm({

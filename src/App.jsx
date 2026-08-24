@@ -9,6 +9,7 @@ import RSVPSection from './components/RSVPSection';
 import MessagesWall from './components/MessagesWall';
 import PixModal from './components/PixModal';
 import ScrollButtons from './components/ScrollButtons';
+import MobileFloatingCTA from './components/MobileFloatingCTA';
 import Footer from './components/Footer';
 import { storageService } from './services/storageService';
 import { useDarkMode } from './hooks/useDarkMode';
@@ -301,6 +302,12 @@ export default function App() {
 
       {/* Floating Quick Scroll Buttons */}
       <ScrollButtons />
+
+      {/* Mobile Sticky Action Bar */}
+      <MobileFloatingCTA
+        onNavigateToGifts={() => scrollToSection('presentes')}
+        onNavigateToRSVP={() => scrollToSection('rsvp')}
+      />
 
       {/* Footer */}
       <Footer

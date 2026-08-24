@@ -38,7 +38,7 @@ export default function ScrollButtons() {
   };
 
   return (
-    <aside aria-label="Navegação rápida de rolagem" className="fixed bottom-6 right-5 z-40 flex flex-col gap-2 pointer-events-auto">
+    <aside aria-label="Navegação rápida de rolagem" className="fixed bottom-16 sm:bottom-6 right-4 sm:right-5 z-40 flex flex-col gap-2 pointer-events-auto">
       {/* Scroll to Top */}
       <button
         onClick={scrollToTop}
