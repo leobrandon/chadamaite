@@ -37,7 +37,7 @@ function mapConfigFromDB(row) {
     mapUrl: row.map_url || INITIAL_EVENT_CONFIG.mapUrl,
     pixKey: row.pix_key || INITIAL_EVENT_CONFIG.pixKey,
     pixName: row.pix_name || INITIAL_EVENT_CONFIG.pixName,
-    adminPin: row.admin_pin || INITIAL_EVENT_CONFIG.adminPin,
+    adminPinHash: row.admin_pin || INITIAL_EVENT_CONFIG.adminPinHash || 'e815b24d314219266fbae1d11292d9d23bb2befbd5d0dc3f7a2422edc354413c',
     welcomeMessage: row.welcome_message || INITIAL_EVENT_CONFIG.welcomeMessage,
   };
 }
@@ -57,7 +57,7 @@ function mapConfigToDB(cfg) {
     map_url: cfg.mapUrl,
     pix_key: cfg.pixKey,
     pix_name: cfg.pixName,
-    admin_pin: cfg.adminPin,
+    admin_pin: cfg.adminPinHash || cfg.adminPin || 'e815b24d314219266fbae1d11292d9d23bb2befbd5d0dc3f7a2422edc354413c',
     welcome_message: cfg.welcomeMessage,
   };
 }
@@ -315,9 +315,10 @@ export const storageService = {
         }
       };
 
-      // Canal de escuta em tempo real (Realtime Postgres Changes)
+      // Canal de escuta em tempo real com nome único para evitar conflito com canais já subscritos
+      const channelName = `cha_maite_realtime_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const channel = supabase
-        .channel('cha_maite_realtime_channel')
+        .channel(channelName)
         .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
           const tableName = payload?.table || '*';
           console.log(`🔄 Atualização em tempo real recebida para a tabela: ${tableName}`);
@@ -330,16 +331,23 @@ export const storageService = {
             processBatchedUpdates();
           }, 300);
         })
-        .subscribe();
+        .subscribe((status, error) => {
+          if (error) {
+            console.warn('Aviso no canal Realtime Supabase:', error);
+          }
+        });
 
       return () => {
         if (debounceTimer) {
           clearTimeout(debounceTimer);
         }
-        supabase.removeChannel(channel);
+        if (channel) {
+          supabase.removeChannel(channel);
+        }
       };
     } catch (err) {
       console.error('Erro na sincronização com Supabase:', err);
+      return () => {};
     }
   },
 
