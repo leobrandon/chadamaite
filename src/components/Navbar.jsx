@@ -121,14 +121,18 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, totalGift
               <button
                 onClick={onToggleDark}
                 title={isDark ? 'Alternar para Modo Claro' : 'Alternar para Modo Escuro'}
-                className={`p-2 rounded-full transition border ${
+                className={`p-2 rounded-full transition-all duration-300 transform active:scale-90 border ${
                   isDark 
-                    ? 'text-amber-300 bg-slate-800 border-slate-700 hover:bg-slate-700' 
-                    : 'text-slate-600 bg-slate-50 border-slate-200 hover:bg-slate-100 hover:text-blush-600'
+                    ? 'text-amber-300 bg-slate-800 border-slate-700 hover:bg-slate-700 shadow-xs' 
+                    : 'text-slate-600 bg-slate-50 border-slate-200 hover:bg-slate-100 hover:text-blush-600 shadow-xs'
                 }`}
                 aria-label={isDark ? 'Modo Claro' : 'Modo Escuro'}
               >
-                {isDark ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4 text-slate-600" />}
+                {isDark ? (
+                  <Sun className="w-4 h-4 text-amber-300 transform rotate-0 hover:rotate-45 transition-transform duration-300" />
+                ) : (
+                  <Moon className="w-4 h-4 text-slate-600 transform rotate-0 hover:-rotate-12 transition-transform duration-300" />
+                )}
               </button>
 
               {/* Social Share WhatsApp Button */}
@@ -160,14 +164,14 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, totalGift
               <button
                 onClick={onToggleDark}
                 title={isDark ? 'Modo Claro' : 'Modo Escuro'}
-                className={`p-2 rounded-full border transition ${
+                className={`p-2 rounded-full border transition-all duration-300 transform active:scale-90 ${
                   isDark
                     ? 'text-amber-300 bg-slate-800 border-slate-700'
                     : 'text-slate-600 bg-slate-50 border-slate-200 hover:bg-slate-100'
                 }`}
                 aria-label={isDark ? 'Modo Claro' : 'Modo Escuro'}
               >
-                {isDark ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4" />}
+                {isDark ? <Sun className="w-4 h-4 text-amber-300 transform rotate-0" /> : <Moon className="w-4 h-4 text-slate-600 transform rotate-0" />}
               </button>
 
               <a
