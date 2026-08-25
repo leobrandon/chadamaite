@@ -127,11 +127,6 @@ export default function AdminPanel({
       }
       setIsAuthenticated(true);
       setPinError(false);
-      storageService.addAdminLog({
-        action: 'Acesso ao Painel',
-        details: 'Administrador realizou login com sucesso.',
-        category: 'system',
-      });
     } else {
       setPinError(true);
     }

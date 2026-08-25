@@ -1032,7 +1032,9 @@ export const storageService = {
       const saved = localStorage.getItem(KEYS.LOGS);
       if (!saved) return [];
       const parsed = JSON.parse(saved);
-      return Array.isArray(parsed) ? parsed : [];
+      if (!Array.isArray(parsed)) return [];
+      // Filtrar logs de acesso/login para não poluir o histórico
+      return parsed.filter(l => l.action !== 'Acesso ao Painel');
     } catch {
       return [];
     }
@@ -1040,6 +1042,12 @@ export const storageService = {
 
   addAdminLog: ({ action, details, category = 'system', author = 'Administrador' }) => {
     try {
+      const trimmedAction = String(action || 'Ação do Sistema').trim();
+      // Não registrar acessos ao painel para evitar poluição dos logs
+      if (trimmedAction === 'Acesso ao Painel') {
+        return null;
+      }
+
       const currentLogs = storageService.getAdminLogs();
       const now = new Date();
       const newLog = {
@@ -1047,7 +1055,7 @@ export const storageService = {
         timestamp: now.toISOString(),
         formattedTime: now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         formattedDate: now.toLocaleDateString('pt-BR'),
-        action: String(action || 'Ação do Sistema').trim(),
+        action: trimmedAction,
         details: String(details || '').trim(),
         category, // 'gifts' | 'rsvps' | 'messages' | 'config' | 'system'
         author: String(author || 'Administrador').trim(),
