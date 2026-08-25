@@ -1033,8 +1033,9 @@ export const storageService = {
       if (!saved) return [];
       const parsed = JSON.parse(saved);
       if (!Array.isArray(parsed)) return [];
-      // Filtrar logs de acesso/login para não poluir o histórico
-      return parsed.filter(l => l.action !== 'Acesso ao Painel');
+      // Filtrar logs de acesso/login e sessão encerrada para não poluir o histórico
+      const ignoredActions = ['Acesso ao Painel', 'Sessão Encerrada', 'Logout'];
+      return parsed.filter(l => !ignoredActions.includes(l.action));
     } catch {
       return [];
     }
@@ -1043,8 +1044,9 @@ export const storageService = {
   addAdminLog: ({ action, details, category = 'system', author = 'Administrador' }) => {
     try {
       const trimmedAction = String(action || 'Ação do Sistema').trim();
-      // Não registrar acessos ao painel para evitar poluição dos logs
-      if (trimmedAction === 'Acesso ao Painel') {
+      // Não registrar acessos ou encerramentos de sessão no painel para evitar poluição dos logs
+      const ignoredActions = ['Acesso ao Painel', 'Sessão Encerrada', 'Logout'];
+      if (ignoredActions.includes(trimmedAction)) {
         return null;
       }
 
