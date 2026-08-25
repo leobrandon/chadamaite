@@ -138,11 +138,6 @@ export default function AdminPanel({
     } catch {
       // ignore
     }
-    storageService.addAdminLog({
-      action: 'Sessão Encerrada',
-      details: 'Administrador bloqueou o painel de controle.',
-      category: 'system',
-    });
     setIsAuthenticated(false);
     setPinInput('');
     setPinError(false);
