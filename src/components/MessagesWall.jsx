@@ -1,7 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { MessageCircleHeart, Heart, Send, ChevronLeft, ChevronRight, Search, Sparkles, CheckCircle2 } from 'lucide-react';
+import { MessageCircleHeart, Send, ChevronLeft, ChevronRight, Search, Sparkles, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { formatRelativeOrExactDate } from '../utils/dateUtils';
+import HeartBurstButton from './ui/HeartBurstButton';
+import { useToast } from './ui/ToastProvider';
+import CloudHeadingReveal from './ui/CloudHeadingReveal';
 
 const MESSAGES_PER_PAGE = 6; // 6 cards per page (2 rows of 3 on desktop, 3 rows of 2 on tablet, 6 rows of 1 on mobile)
 
@@ -46,6 +50,7 @@ const CARD_THEMES = [
 ];
 
 export default function MessagesWall({ messages = [], onAddMessage, onLikeMessage }) {
+  const { addToast } = useToast();
   const [author, setAuthor] = useState('');
   const [text, setText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -125,6 +130,7 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
         console.error('Erro ao salvar curtidas locais:', err);
       }
       onLikeMessage(msgId, 1);
+      addToast({ message: 'Recado curtido com muito amor! 💕', type: 'heart' });
 
       // Efeito sutil de confetezinho/corações quando curte
       confetti({
@@ -158,6 +164,7 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
       setText('');
       setIsSubmitting(false);
       setShowPendingAlert(true);
+      addToast({ message: 'Recadinho enviado com sucesso! ✨', type: 'sparkle' });
       setTimeout(() => setShowPendingAlert(false), 7000);
     }, 300);
   };
@@ -168,19 +175,15 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
     <section id="recados" className="py-16 md:py-20 bg-white/50 dark:bg-slate-900/50 border-t border-blush-100 dark:border-slate-800">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         
-        {/* Header */}
-        <div className="text-center max-w-xl mx-auto mb-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blush-100/80 dark:bg-blush-950/70 dark:border dark:border-blush-800/40 text-blush-700 dark:text-blush-300 text-xs font-bold uppercase tracking-wider mb-3">
-            <MessageCircleHeart className="w-3.5 h-3.5" />
-            <span>Mural de Amor</span>
-          </div>
-          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-            Recadinhos para a Maitê
-          </h2>
-          <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base mt-2">
-            Deixe uma mensagem cheia de boas energias para a nossa pequena e para os papais.
-          </p>
-        </div>
+        {/* Header with Cloud Carousel Reveal */}
+        <CloudHeadingReveal
+          badge="Mural de Amor"
+          badgeIcon={MessageCircleHeart}
+          title="Recadinhos para"
+          highlight="a Maitê 💕"
+          subtitle="Deixe uma mensagem cheia de boas energias para a nossa pequena e para os papais."
+          className="text-center max-w-xl mx-auto mb-10"
+        />
 
         {/* Input Card with Character Counter */}
         <div className="glass-card max-w-2xl mx-auto p-6 sm:p-7 rounded-3xl mb-12 shadow-sm border border-blush-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90">
@@ -289,7 +292,7 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
           </div>
         )}
 
-        {/* Messages Cards Grid (Mural de Cartões Físicos) */}
+        {/* Messages Cards Grid (Mural de Cartões de Carinho) */}
         {paginatedMessages.length > 0 ? (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -299,65 +302,63 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                 const displayDate = formatRelativeOrExactDate(msg.date, msg.createdAt);
 
                 return (
-                  <div
+                  <motion.div
                     key={msg.id}
-                    className={`relative p-5 sm:p-6 rounded-3xl border shadow-sm flex flex-col justify-between hover:shadow-md transition-all duration-300 min-h-[190px] ${theme.bg}`}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: Math.min(index * 0.04, 0.2) }}
+                    className="h-full"
                   >
-                    {/* Delicate tape badge at top */}
-                    <div className={`w-12 h-2.5 rounded-full ${theme.tapeBg} absolute -top-1.5 left-1/2 -translate-x-1/2 shadow-2xs border border-white/60 dark:border-white/10`} />
+                    <div
+                      className={`relative p-5 sm:p-6 rounded-3xl border shadow-xs flex flex-col justify-between hover:-translate-y-1 hover:shadow-lg hover:shadow-blush-500/10 hover:border-blush-300 dark:hover:border-blush-700/80 transition-all duration-200 ease-out min-h-[190px] h-full ${theme.bg}`}
+                    >
+                      {/* Delicate tape badge at top */}
+                      <div className={`w-12 h-2.5 rounded-full ${theme.tapeBg} absolute -top-1.5 left-1/2 -translate-x-1/2 shadow-2xs border border-white/60 dark:border-white/10`} />
 
-                    <div>
-                      {/* Author Header */}
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <span className={`w-8 h-8 rounded-full ${theme.avatarBg} flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs`}>
-                            {(msg.author || 'A').charAt(0).toUpperCase()}
-                          </span>
-                          <div className="min-w-0">
-                            <span className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate block">
-                              {msg.author}
+                      <div>
+                        {/* Author Header */}
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className={`w-8 h-8 rounded-full ${theme.avatarBg} flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs`}>
+                              {(msg.author || 'A').charAt(0).toUpperCase()}
                             </span>
-                            {displayDate && (
-                              <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
-                                {displayDate}
+                            <div className="min-w-0">
+                              <span className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate block">
+                                {msg.author}
                               </span>
-                            )}
+                              {displayDate && (
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
+                                  {displayDate}
+                                </span>
+                              )}
+                            </div>
                           </div>
+                          <span className="text-lg select-none">💌</span>
                         </div>
-                        <span className="text-lg select-none">💌</span>
+
+                        {/* Message Body */}
+                        <div className="relative pt-1">
+                          <p className="text-slate-700 dark:text-slate-200 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-normal">
+                            "{msg.text}"
+                          </p>
+                        </div>
                       </div>
 
-                      {/* Message Body */}
-                      <div className="relative pt-1">
-                        <p className="text-slate-700 dark:text-slate-200 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-normal">
-                          "{msg.text}"
-                        </p>
+                      {/* Card Footer */}
+                      <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
+                        <span className={`text-[11px] font-semibold ${theme.badgeText} flex items-center gap-1`}>
+                          <Sparkles className="w-3 h-3" />
+                          <span>Com amor</span>
+                        </span>
+
+                        <HeartBurstButton
+                          isLiked={isLiked}
+                          likesCount={msg.likes}
+                          onClick={() => handleToggleLike(msg.id)}
+                        />
                       </div>
                     </div>
-
-                    {/* Card Footer */}
-                    <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
-                      <span className={`text-[11px] font-semibold ${theme.badgeText} flex items-center gap-1`}>
-                        <Sparkles className="w-3 h-3" />
-                        <span>Com amor</span>
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={() => handleToggleLike(msg.id)}
-                        className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-semibold transition cursor-pointer active:scale-90 shadow-xs ${
-                          isLiked
-                            ? 'bg-blush-500 text-white shadow-blush-500/25 ring-2 ring-blush-200 dark:ring-blush-900'
-                            : 'bg-white/90 dark:bg-slate-800/90 text-blush-700 dark:text-blush-300 hover:bg-white dark:hover:bg-slate-800 hover:text-blush-800 dark:hover:text-blush-200 border border-blush-200/70 dark:border-slate-700'
-                        }`}
-                        title={isLiked ? 'Você curtiu este recado (clique para remover)' : 'Curtir recadinho'}
-                        aria-label={isLiked ? 'Você curtiu este recado (clique para remover)' : 'Curtir recadinho'}
-                      >
-                        <Heart className={`w-3.5 h-3.5 transition-transform duration-200 ${isLiked ? 'fill-white text-white scale-110' : 'fill-blush-400 text-blush-400 dark:fill-blush-400'}`} />
-                        <span className="tabular-nums font-bold">{msg.likes || 0}</span>
-                      </button>
-                    </div>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>

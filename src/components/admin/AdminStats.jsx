@@ -1,5 +1,5 @@
 import React from 'react';
-import { Gift, Users, Plus, MessageCircleHeart, Settings } from 'lucide-react';
+import { Gift, Users, Plus, MessageCircleHeart, Settings, History } from 'lucide-react';
 
 export default function AdminStats({
   totalGuests,
@@ -14,6 +14,7 @@ export default function AdminStats({
   rsvpsCount,
   pendingMessagesCount,
   approvedMessagesCount,
+  logsCount = 0,
 }) {
   const tabs = [
     {
@@ -46,6 +47,12 @@ export default function AdminStats({
       id: 'config',
       label: 'Ajustes',
       icon: Settings,
+    },
+    {
+      id: 'logs',
+      label: 'Histórico & Logs',
+      badge: logsCount,
+      icon: History,
     },
   ];
 

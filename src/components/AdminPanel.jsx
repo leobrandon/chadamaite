@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { storageService } from '../services/storageService';
 import ConfirmModal from './ConfirmModal';
@@ -12,6 +12,7 @@ import AdminRSVPTab from './admin/AdminRSVPTab';
 import AdminGiftsManageTab from './admin/AdminGiftsManageTab';
 import AdminConfigTab from './admin/AdminConfigTab';
 import AdminMessagesTab from './admin/AdminMessagesTab';
+import AdminLogsTab from './admin/AdminLogsTab';
 
 // Modals
 import AdminEditGiftModal from './admin/modals/AdminEditGiftModal';
@@ -50,7 +51,19 @@ export default function AdminPanel({
   });
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
-  const [activeTab, setActiveTab] = useState('gifts-report'); // 'gifts-report' | 'rsvps' | 'gifts' | 'config' | 'messages'
+  const [activeTab, setActiveTab] = useState('gifts-report'); // 'gifts-report' | 'rsvps' | 'gifts' | 'config' | 'messages' | 'logs'
+  const [logs, setLogs] = useState(() => storageService.getAdminLogs());
+
+  // Listen to logs updates in real time
+  useEffect(() => {
+    const handleLogsUpdate = (e) => {
+      if (Array.isArray(e.detail)) {
+        setLogs(e.detail);
+      }
+    };
+    window.addEventListener('admin_logs_updated', handleLogsUpdate);
+    return () => window.removeEventListener('admin_logs_updated', handleLogsUpdate);
+  }, []);
 
   // Edit states for modals
   const [editingGift, setEditingGift] = useState(null);
@@ -114,6 +127,11 @@ export default function AdminPanel({
       }
       setIsAuthenticated(true);
       setPinError(false);
+      storageService.addAdminLog({
+        action: 'Acesso ao Painel',
+        details: 'Administrador realizou login com sucesso.',
+        category: 'system',
+      });
     } else {
       setPinError(true);
     }
@@ -125,6 +143,11 @@ export default function AdminPanel({
     } catch {
       // ignore
     }
+    storageService.addAdminLog({
+      action: 'Sessão Encerrada',
+      details: 'Administrador bloqueou o painel de controle.',
+      category: 'system',
+    });
     setIsAuthenticated(false);
     setPinInput('');
     setPinError(false);
@@ -134,16 +157,75 @@ export default function AdminPanel({
     e.preventDefault();
     if (!editingGift) return;
 
+    const prevGift = safeGifts.find(g => g.id === editingGift.id);
+    const giftTitle = editingGift.title;
+    const newTarget = Number(editingGift.targetQuantity) || 5;
+    const newOrder = Number(editingGift.displayOrder) || 999;
+
+    const diffs = [];
+    if (prevGift) {
+      if (prevGift.title !== editingGift.title) diffs.push(`Título: "${prevGift.title}" → "${editingGift.title}"`);
+      if (prevGift.category !== editingGift.category) diffs.push(`Categoria: "${prevGift.category}" → "${editingGift.category}"`);
+      if (prevGift.priority !== editingGift.priority) diffs.push(`Prioridade: "${prevGift.priority || 'medium'}" → "${editingGift.priority}"`);
+      if (Number(prevGift.targetQuantity || 5) !== newTarget) diffs.push(`Meta: ${prevGift.targetQuantity || 5} un. → ${newTarget} un.`);
+      if (Number(prevGift.displayOrder || 999) !== newOrder) diffs.push(`Posição/Ordem: #${prevGift.displayOrder || 999} → #${newOrder}`);
+      if (prevGift.icon !== editingGift.icon) diffs.push(`Ícone: ${prevGift.icon || '🎁'} → ${editingGift.icon || '🎁'}`);
+    }
+
     await onUpdateGift(editingGift.id, {
       title: editingGift.title,
       category: editingGift.category,
       description: editingGift.description,
       icon: editingGift.icon,
       priority: editingGift.priority,
-      targetQuantity: Number(editingGift.targetQuantity) || 5,
-      displayOrder: Number(editingGift.displayOrder) || 999,
+      targetQuantity: newTarget,
+      displayOrder: newOrder,
     });
+    
+    storageService.addAdminLog({
+      action: 'Presente Editado',
+      details: diffs.length > 0
+        ? `Item "${giftTitle}" atualizado: ${diffs.join(' | ')}.`
+        : `Item "${giftTitle}" foi salvo sem alterações de campos.`,
+      category: 'gifts',
+    });
+
     setEditingGift(null);
+    setToastNotification({
+      type: 'success',
+      message: `Presente "${giftTitle}" atualizado com sucesso!`,
+    });
+    setTimeout(() => setToastNotification(null), 3500);
+  };
+
+  const handleAddGiftWithLog = async (newGift) => {
+    await onAddGift(newGift);
+    storageService.addAdminLog({
+      action: 'Novo Presente Adicionado',
+      details: `Item "${newGift.title}" adicionado à categoria "${newGift.category}" com meta de ${newGift.targetQuantity || 1} un.`,
+      category: 'gifts',
+    });
+  };
+
+  const handleDeleteGiftWithLog = async (giftId) => {
+    const targetGift = safeGifts.find(g => g.id === giftId);
+    await onDeleteGift(giftId);
+    storageService.addAdminLog({
+      action: 'Presente Excluído',
+      details: targetGift 
+        ? `Item "${targetGift.title}" (${targetGift.category}) foi removido da lista de presentes.` 
+        : 'Um item foi excluído da lista de presentes.',
+      category: 'gifts',
+    });
+  };
+
+  const handleResetGiftsWithLog = async () => {
+    await onResetGifts();
+    storageService.addAdminLog({
+      action: 'Lista de Presentes Resetada',
+      details: 'A lista de presentes foi restaurada para a configuração original de fábrica.',
+      category: 'gifts',
+    });
   };
 
   const handleSaveEditedRsvp = async () => {
@@ -151,16 +233,43 @@ export default function AdminPanel({
     const name = (editingRsvp.name || '').trim();
     if (!name) return;
 
+    const prevRsvp = safeRsvps.find(r => r.id === editingRsvp.id);
+
     setIsSavingRsvp(true);
     try {
+      const adults = Number(editingRsvp.adultsCount) || 1;
+      const children = Number(editingRsvp.childrenCount) || 0;
+      const companions = (editingRsvp.companionNames || []).map((n) => n.trim()).filter(Boolean);
+
+      const diffs = [];
+      if (prevRsvp) {
+        if (prevRsvp.name !== name) diffs.push(`Nome: "${prevRsvp.name}" → "${name}"`);
+        if (Number(prevRsvp.adultsCount || 1) !== adults) diffs.push(`Adultos: ${prevRsvp.adultsCount || 1} → ${adults}`);
+        if (Number(prevRsvp.childrenCount || 0) !== children) diffs.push(`Crianças: ${prevRsvp.childrenCount || 0} → ${children}`);
+        const prevCompanions = (prevRsvp.companionNames || []).filter(Boolean).join(', ');
+        const newCompanions = companions.join(', ');
+        if (prevCompanions !== newCompanions) diffs.push(`Acompanhantes: "${prevCompanions || 'Nenhum'}" → "${newCompanions || 'Nenhum'}"`);
+        if ((prevRsvp.phone || '') !== (editingRsvp.phone || '')) diffs.push(`Telefone: "${prevRsvp.phone || '-'}" → "${editingRsvp.phone || '-'}"`);
+        if ((prevRsvp.message || '') !== (editingRsvp.message || '')) diffs.push(`Mensagem alterada`);
+      }
+
       await onUpdateRSVP(editingRsvp.id, {
         name,
-        adultsCount: Number(editingRsvp.adultsCount) || 1,
-        childrenCount: Number(editingRsvp.childrenCount) || 0,
+        adultsCount: adults,
+        childrenCount: children,
         companionNames: (editingRsvp.companionNames || []).map((n) => n.trim()),
         phone: editingRsvp.phone || '',
         message: editingRsvp.message || '',
       });
+
+      storageService.addAdminLog({
+        action: 'Presença Editada',
+        details: diffs.length > 0
+          ? `Convidado "${name}" atualizado: ${diffs.join(' | ')}.`
+          : `Convidado "${name}" foi salvo sem alterações de campos.`,
+        category: 'rsvps',
+      });
+
       setEditingRsvp(null);
       setToastNotification({
         type: 'success',
@@ -179,12 +288,132 @@ export default function AdminPanel({
     }
   };
 
+  const handleDeleteRSVPWithLog = async (rsvpId) => {
+    const targetRsvp = safeRsvps.find(r => r.id === rsvpId);
+    await onDeleteRSVP(rsvpId);
+    storageService.addAdminLog({
+      action: 'Presença Excluída',
+      details: targetRsvp 
+        ? `Convidado "${targetRsvp.name}" (${targetRsvp.attending ? 'Confirmado' : 'Não virá'}) foi excluído da lista.`
+        : 'Um convidado foi excluído da lista de presenças.',
+      category: 'rsvps',
+    });
+  };
+
+  const handleApproveMessageWithLog = async (msgId) => {
+    const target = safeMessages.find(m => m.id === msgId);
+    await onApproveMessage(msgId);
+    storageService.addAdminLog({
+      action: 'Recado Aprovado',
+      details: target ? `Recado de "${target.author}" foi aprovado e publicado no mural.` : 'Um recado foi aprovado.',
+      category: 'messages',
+    });
+  };
+
+  const handleDeleteMessageWithLog = async (msgId) => {
+    const target = safeMessages.find(m => m.id === msgId);
+    await onDeleteMessage(msgId);
+    storageService.addAdminLog({
+      action: 'Recado Excluído',
+      details: target ? `Recado enviado por "${target.author}" foi excluído.` : 'Um recado foi excluído.',
+      category: 'messages',
+    });
+  };
+
+  const handleUpdateMessageWithLog = async (msgId, fields) => {
+    const target = safeMessages.find(m => m.id === msgId);
+    await onUpdateMessage(msgId, fields);
+
+    const diffs = [];
+    if (target && fields) {
+      if (fields.author && fields.author !== target.author) {
+        diffs.push(`Autor: "${target.author}" → "${fields.author}"`);
+      }
+      if (fields.text && fields.text !== target.text) {
+        diffs.push(`Texto: "${target.text.slice(0, 30)}..." → "${fields.text.slice(0, 30)}..."`);
+      }
+    }
+
+    storageService.addAdminLog({
+      action: 'Recado Editado',
+      details: diffs.length > 0
+        ? `Recado de "${target ? target.author : 'convidado'}" editado: ${diffs.join(' | ')}.`
+        : (target ? `Recado de "${target.author}" foi editado pelo administrador.` : 'Um recado foi alterado.'),
+      category: 'messages',
+    });
+  };
+
+  const handleSaveConfigWithLog = async (newConfig) => {
+    // Detectar campos modificados com valores anteriores e novos
+    const current = config || {};
+    const fieldLabels = {
+      babyName: 'Nome da Bebê',
+      parents: 'Nome dos Papais',
+      date: 'Data do Evento',
+      time: 'Horário',
+      displayDate: 'Data Formatada',
+      displayTime: 'Horário Formatado',
+      locationName: 'Nome do Local',
+      city: 'Cidade/Estado',
+      address: 'Endereço Completo',
+      mapUrl: 'Link do Google Maps',
+      pixKey: 'Chave PIX',
+      adminPinHash: 'Senha do Painel',
+    };
+
+    const changes = [];
+    Object.keys(fieldLabels).forEach((key) => {
+      const oldVal = current[key];
+      const newVal = newConfig[key];
+      if (key === 'adminPinHash') {
+        if (newVal && newVal !== oldVal) {
+          changes.push('Senha do Painel alterada');
+        }
+      } else if (String(oldVal || '').trim() !== String(newVal || '').trim()) {
+        const label = fieldLabels[key];
+        const prevText = oldVal ? `"${oldVal}"` : '(vazio)';
+        const newText = newVal ? `"${newVal}"` : '(vazio)';
+        changes.push(`${label}: ${prevText} → ${newText}`);
+      }
+    });
+
+    await onSaveConfig(newConfig);
+
+    const details = changes.length > 0
+      ? `Alterações: ${changes.join(' | ')}.`
+      : 'Configurações salvas sem modificações nos valores.';
+
+    storageService.addAdminLog({
+      action: 'Configurações Salvas',
+      details,
+      category: 'config',
+    });
+  };
+
+  const handleClearLogs = () => {
+    storageService.clearAdminLogs();
+    setToastNotification({
+      type: 'success',
+      message: 'Histórico de logs foi limpo com sucesso!',
+    });
+    setTimeout(() => setToastNotification(null), 3000);
+  };
+
+  const handleDeleteLog = (logId) => {
+    storageService.deleteAdminLog(logId);
+  };
+
   const handleExportCSV = () => {
     const csvUri = storageService.exportRSVPsToCSV();
     if (!csvUri) {
       alert('Ainda não há confirmações para exportar.');
       return;
     }
+    storageService.addAdminLog({
+      action: 'Presenças Exportadas',
+      details: 'Lista de confirmações de presença foi baixada em formato CSV.',
+      category: 'rsvps',
+    });
     const link = document.createElement('a');
     link.setAttribute('href', csvUri);
     link.setAttribute('download', `confirmacoes_cha_maite_${Date.now()}.csv`);
@@ -199,6 +428,11 @@ export default function AdminPanel({
       alert('Ainda não há presentes para exportar.');
       return;
     }
+    storageService.addAdminLog({
+      action: 'Relatório de Presentes Exportado',
+      details: 'Relatório de contribuições de presentes baixado em CSV.',
+      category: 'gifts',
+    });
     const link = document.createElement('a');
     link.setAttribute('href', csvUri);
     link.setAttribute('download', `relatorio_presentes_cha_maite_${Date.now()}.csv`);
@@ -227,6 +461,12 @@ export default function AdminPanel({
   const handleExportGiftsPDF = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
+
+    storageService.addAdminLog({
+      action: 'Relatório de Presentes Impresso',
+      details: 'Relatório formatado de contribuições de presentes gerado para impressão/PDF.',
+      category: 'gifts',
+    });
 
     const giftsWithPledges = safeGifts.filter((g) => pledges.some((p) => p.giftId === g.id));
     const totalPledges = pledges.length;
@@ -311,6 +551,13 @@ export default function AdminPanel({
   const handleExportPDF = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
+
+    storageService.addAdminLog({
+      action: 'Lista de Presenças Impressa',
+      details: 'Lista formatada de confirmações de presença gerada para impressão/PDF.',
+      category: 'rsvps',
+    });
+
     const totalAttending = attendingRSVPs.length;
     const notAttending = safeRsvps.filter((r) => !r.attending).length;
     const rows = safeRsvps.map((r) => `
@@ -396,6 +643,7 @@ export default function AdminPanel({
               rsvpsCount={safeRsvps.length}
               pendingMessagesCount={pendingMessages.length}
               approvedMessagesCount={approvedMessages.length}
+              logsCount={logs.length}
             />
 
             {/* Tab Body */}
@@ -422,7 +670,7 @@ export default function AdminPanel({
                   onExportPDF={handleExportPDF}
                   onExportCSV={handleExportCSV}
                   onEditRsvp={setEditingRsvp}
-                  onDeleteRSVP={onDeleteRSVP}
+                  onDeleteRSVP={handleDeleteRSVPWithLog}
                   onRequestConfirm={requestConfirm}
                 />
               )}
@@ -432,9 +680,9 @@ export default function AdminPanel({
                 <AdminGiftsManageTab
                   gifts={safeGifts}
                   pledges={pledges}
-                  onAddGift={onAddGift}
+                  onAddGift={handleAddGiftWithLog}
                   onEditGift={setEditingGift}
-                  onResetGifts={onResetGifts}
+                  onResetGifts={handleResetGiftsWithLog}
                   onRequestConfirm={requestConfirm}
                 />
               )}
@@ -443,7 +691,7 @@ export default function AdminPanel({
               {activeTab === 'config' && (
                 <AdminConfigTab
                   config={config}
-                  onSaveConfig={onSaveConfig}
+                  onSaveConfig={handleSaveConfigWithLog}
                 />
               )}
 
@@ -452,9 +700,19 @@ export default function AdminPanel({
                 <AdminMessagesTab
                   pendingMessages={pendingMessages}
                   approvedMessages={approvedMessages}
-                  onApproveMessage={onApproveMessage}
-                  onDeleteMessage={onDeleteMessage}
+                  onApproveMessage={handleApproveMessageWithLog}
+                  onDeleteMessage={handleDeleteMessageWithLog}
                   onEditMessage={setEditingMessage}
+                  onRequestConfirm={requestConfirm}
+                />
+              )}
+
+              {/* TAB 5: AUDIT LOGS & ACTIVITY HISTORY */}
+              {activeTab === 'logs' && (
+                <AdminLogsTab
+                  logs={logs}
+                  onClearLogs={handleClearLogs}
+                  onDeleteLog={handleDeleteLog}
                   onRequestConfirm={requestConfirm}
                 />
               )}
@@ -471,7 +729,7 @@ export default function AdminPanel({
         editingGift={editingGift}
         setEditingGift={setEditingGift}
         onSaveEditedGift={handleSaveEditedGift}
-        onDeleteGift={onDeleteGift}
+        onDeleteGift={handleDeleteGiftWithLog}
         onRequestConfirm={requestConfirm}
       />
 
@@ -489,7 +747,7 @@ export default function AdminPanel({
         setEditingMessage={setEditingMessage}
         isSavingMessage={isSavingMessage}
         setIsSavingMessage={setIsSavingMessage}
-        onUpdateMessage={onUpdateMessage}
+        onUpdateMessage={handleUpdateMessageWithLog}
       />
 
       {/* In-App Confirmation Modal */}

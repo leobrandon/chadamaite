@@ -13,6 +13,8 @@ import MobileFloatingCTA from './components/MobileFloatingCTA';
 import Footer from './components/Footer';
 import { storageService } from './services/storageService';
 import { useDarkMode } from './hooks/useDarkMode';
+import { ToastProvider } from './components/ui/ToastProvider';
+import FloatingAmbientParticles from './components/hero/FloatingAmbientParticles';
 
 // Lazy load AdminPanel to dramatically reduce initial guest bundle size
 const AdminPanel = lazy(() => import('./components/AdminPanel'));
@@ -187,9 +189,12 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-baby-pattern flex flex-col justify-between">
+    <ToastProvider>
+      <div className="min-h-screen bg-baby-pattern flex flex-col justify-between relative overflow-x-hidden">
+        {/* Full-site ambient floating elements (hearts, stars, clouds, sparkles, cute teddy bears) */}
+        <FloatingAmbientParticles />
       
-      {/* Top Navbar */}
+        {/* Top Navbar */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -315,6 +320,7 @@ export default function App() {
         onOpenAdmin={() => setIsAdminOpen(true)}
       />
 
-    </div>
+      </div>
+    </ToastProvider>
   );
 }

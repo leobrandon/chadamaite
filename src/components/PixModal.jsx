@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { X, Copy, Check, Heart, QrCode, Sparkles } from 'lucide-react';
+import { X, Copy, Check } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useToast } from './ui/ToastProvider';
 
 export default function PixModal({ isOpen, onClose, config }) {
+  const { addToast } = useToast();
   const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
@@ -10,6 +12,7 @@ export default function PixModal({ isOpen, onClose, config }) {
   const handleCopy = () => {
     navigator.clipboard.writeText(config.pixKey);
     setCopied(true);
+    addToast({ message: 'Chave Pix copiada com sucesso! 💖', type: 'copy' });
     confetti({
       particleCount: 40,
       spread: 50,

@@ -2,8 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Heart, Check, X, Gift, Sparkles, MessageCircle, Search, CheckCircle2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import RSVPInlineModal from './RSVPInlineModal';
+import { useToast } from './ui/ToastProvider';
+import UnwrappingRibbon from './ui/UnwrappingRibbon';
 
 export default function GiftModal({ gift, gifts = [], pledges = [], rsvps = [], onSaveRSVP, config, rsvpConfirmedName = '', isOpen, onClose, onConfirm, onAddPledge }) {
+  const { addToast } = useToast();
   const [guestName, setGuestName] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [confirmedQuantity, setConfirmedQuantity] = useState(1);
@@ -176,6 +179,7 @@ export default function GiftModal({ gift, gifts = [], pledges = [], rsvps = [], 
 
       setIsSubmitting(false);
       setIsSuccess(true);
+      addToast({ message: 'Presentinho reservado com carinho! 🎁', type: 'gift' });
     }, 250);
   };
 
@@ -189,6 +193,7 @@ export default function GiftModal({ gift, gifts = [], pledges = [], rsvps = [], 
     } else if (onConfirm) {
       await onConfirm(pendingPledges.mainGiftId, pendingPledges.guestName);
     }
+    addToast({ message: 'Presente e presença salvos com sucesso! 💖', type: 'success' });
     setPendingPledges(null);
   };
 
@@ -211,6 +216,9 @@ export default function GiftModal({ gift, gifts = [], pledges = [], rsvps = [], 
         role="dialog"
         aria-modal="true"
       >
+        {/* Animated Unwrapping Ribbon */}
+        <UnwrappingRibbon isOpen={isOpen} />
+
         {/* Top decorative header */}
         <div className="bg-gradient-to-r from-blush-400 via-blush-500 to-blush-400 p-5 sm:p-6 text-white text-center relative shrink-0">
           <button

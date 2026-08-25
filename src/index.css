@@ -5,6 +5,7 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
 }
