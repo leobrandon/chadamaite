@@ -606,8 +606,25 @@ export default function AdminPanel({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/80 dark:bg-black/85 backdrop-blur-md animate-fade-in">
-      <div className="bg-white dark:bg-slate-900 w-full sm:max-w-5xl rounded-t-[28px] sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-[94dvh] sm:h-auto sm:max-h-[90dvh] overscroll-contain transition-all">
+    <div 
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/80 dark:bg-black/85 backdrop-blur-md animate-fade-in"
+      onClick={(e) => {
+        // Fechar ao clicar fora (backdrop) apenas se o clique foi diretamente no fundo e nenhuma modal interna de confirmação/edição estiver aberta
+        if (
+          e.target === e.currentTarget &&
+          !editingGift &&
+          !editingRsvp &&
+          !editingMessage &&
+          !confirmModal.isOpen
+        ) {
+          onClose();
+        }
+      }}
+    >
+      <div 
+        className="bg-white dark:bg-slate-900 w-full sm:max-w-5xl rounded-t-[28px] sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-[94dvh] sm:h-auto sm:max-h-[90dvh] overscroll-contain transition-all"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Header */}
         <AdminHeader
