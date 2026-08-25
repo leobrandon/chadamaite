@@ -1,5 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Gift, Search, Sparkles, CheckCircle2, Lock, Heart, ChevronDown, ChevronUp } from 'lucide-react';
+import { motion } from 'motion/react';
+import LiquidProgressBar from './ui/LiquidProgressBar';
+import ShimmerButton from './ui/ShimmerButton';
+import CloudHeadingReveal from './ui/CloudHeadingReveal';
 import { INITIAL_CATEGORIES } from '../data/initialGifts';
 
 export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmin, isLoading = false }) {
@@ -46,19 +50,15 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
     <section id="presentes" className="py-16 md:py-20 relative">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Header */}
-        <div className="text-center max-w-2xl mx-auto mb-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blush-100/80 text-blush-700 text-xs font-bold uppercase tracking-wider mb-3">
-            <Gift className="w-3.5 h-3.5" />
-            <span>Lista de Presentes & Combos da Maitê</span>
-          </div>
-          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-slate-800 tracking-tight">
-            Escolha o seu Combo de Presente
-          </h2>
-          <p className="text-slate-600 text-sm sm:text-base mt-3 leading-relaxed">
-            Como funciona: Escolha o tamanho do pacote de fraldas e, em seguida, selecione um mimo especial (lenços umedecidos, pomadinhas, roupinhas, etc.) para acompanhar com todo carinho! 💕
-          </p>
-        </div>
+        {/* Header with Cloud Carousel Reveal */}
+        <CloudHeadingReveal
+          badge="Lista de Presentes & Combos da Maitê"
+          badgeIcon={Gift}
+          title="Escolha o seu"
+          highlight="Combo de Presente 🎁"
+          subtitle="Como funciona: Escolha o tamanho do pacote de fraldas e, em seguida, selecione um mimo especial (lenços umedecidos, pomadinhas, roupinhas, etc.) para acompanhar com todo carinho! 💕"
+          className="text-center max-w-2xl mx-auto mb-10"
+        />
 
         {/* Search & Filter Controls */}
         <div className="max-w-4xl mx-auto mb-8 space-y-4">
@@ -184,102 +184,121 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
           </div>
         ) : filteredGifts.length > 0 ? (
           <div className="flex flex-wrap justify-center gap-5 sm:gap-6">
-            {filteredGifts.map((gift) => {
+            {filteredGifts.map((gift, index) => {
               const giftPledges = pledges.filter(p => p.giftId === gift.id);
               const totalPledged = giftPledges.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
               const targetQty = Number(gift.targetQuantity) || 5;
               const isCompleted = totalPledged >= targetQty;
 
               return (
-                <div
+                <motion.div
                   key={gift.id}
-                  className={`glass-card rounded-3xl p-5 sm:p-6 flex flex-col justify-between transition-all duration-300 relative overflow-hidden border-blush-100/90 w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] ${
-                    isCompleted
-                      ? 'bg-white/70 opacity-95'
-                      : 'hover:-translate-y-1 hover:shadow-lg transition-all duration-300'
-                  }`}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-50px' }}
+                  transition={{ duration: 0.35, delay: Math.min(index * 0.06, 0.3) }}
+                  className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)]"
                 >
-                  {/* Top card row */}
-                  <div>
-                    <div className="flex items-start justify-between gap-3 mb-4">
-                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-sm bg-blush-50 text-blush-600 border border-blush-100 shrink-0">
-                        {gift.icon || '🎁'}
+                  <div
+                    className={`glass-card rounded-3xl p-5 sm:p-6 flex flex-col justify-between h-full transition-all duration-300 ease-out relative overflow-hidden border border-blush-100/90 dark:border-slate-800 ${
+                      isCompleted
+                        ? 'bg-white/70 dark:bg-slate-900/70 opacity-95'
+                        : 'hover:-translate-y-1 hover:shadow-xl hover:shadow-blush-500/10 hover:border-blush-300 dark:hover:border-blush-700'
+                    }`}
+                  >
+                    {/* Top card row */}
+                    <div>
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-sm bg-blush-50 dark:bg-slate-800 text-blush-600 dark:text-blush-400 border border-blush-100 dark:border-slate-700 shrink-0">
+                          {gift.icon || '🎁'}
+                        </div>
+
+                        <div className="flex flex-col items-end gap-1.5">
+                          <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blush-100 dark:bg-blush-950/80 text-blush-700 dark:text-blush-300 border border-blush-200 dark:border-blush-800 shadow-xs flex items-center gap-1">
+                            🎁 Combo: Fralda + Mimo
+                          </span>
+
+                          {gift.priority === 'high' && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
+                              ★ Preferência
+                            </span>
+                          )}
+                          {gift.priority === 'medium' && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blush-100 dark:bg-blush-950 text-blush-700 dark:text-blush-300">
+                              Desejável
+                            </span>
+                          )}
+                          {gift.priority === 'low' && (
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                              Opcional
+                            </span>
+                          )}
+
+                          {isCompleted && (
+                            <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-sage-50 dark:bg-sage-950/80 text-sage-700 dark:text-sage-300 border border-sage-200/80 dark:border-sage-800 flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3 text-sage-600 dark:text-sage-400" /> Completo ✨
+                            </span>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="flex flex-col items-end gap-1.5">
-                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blush-100 text-blush-700 border border-blush-200 shadow-sm flex items-center gap-1">
-                          🎁 Combo: Fralda + Mimo
-                        </span>
+                      <h3 className="font-serif text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100 mb-1.5 leading-snug">
+                        {gift.title}
+                      </h3>
 
-                        {gift.priority === 'high' && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                            ★ Preferência
-                          </span>
-                        )}
-                        {gift.priority === 'medium' && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blush-100 text-blush-700">
-                            Desejável
-                          </span>
-                        )}
-                        {gift.priority === 'low' && (
-                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                            Opcional
-                          </span>
-                        )}
-
-                        {isCompleted && (
-                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-sage-50 text-sage-700 border border-sage-200/80 flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3 text-sage-600" /> Completo ✨
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <h3 className="font-serif text-lg sm:text-xl font-bold text-slate-800 mb-1.5 leading-snug">
-                      {gift.title}
-                    </h3>
-
-                    {gift.description && (
-                      <p className="text-slate-600 text-xs sm:text-sm leading-relaxed mb-4">
-                        {gift.description}
-                      </p>
-                    )}
-
-                    <div className="mt-2 mb-2 bg-blush-50/50 rounded-lg p-2.5 border border-blush-100/50">
-                      <p className="text-blush-600 text-xs font-medium flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        + Inclui 1 Mimo à sua escolha no próximo passo ✨
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Bottom Action Area */}
-                  <div className="pt-3 border-t border-slate-100/70 mt-3">
-                    {isCompleted ? (
-                      <div className="space-y-1.5">
-                        <p className="text-center text-[11px] text-sage-700 font-medium italic">
-                          Combo já completo por outros convidados ✨
+                      {gift.description && (
+                        <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm leading-relaxed mb-4">
+                          {gift.description}
                         </p>
-                        <button
-                          disabled
-                          aria-disabled="true"
-                          className="w-full py-3 px-4 rounded-2xl font-semibold text-xs sm:text-sm bg-slate-100 text-slate-400 border border-slate-200/80 cursor-not-allowed flex items-center justify-center gap-2 select-none shadow-none"
-                        >
-                          <Lock className="w-3.5 h-3.5 text-slate-400" />
-                          <span>Limite deste combo já foi preenchido 💖</span>
-                        </button>
+                      )}
+
+                      {/* Animated Progress Indicator */}
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                          <span>Progresso do Combo</span>
+                          <span className="font-bold text-blush-600 dark:text-blush-400">
+                            {totalPledged} de {targetQty}
+                          </span>
+                        </div>
+                        <LiquidProgressBar current={totalPledged} total={targetQty} />
                       </div>
-                    ) : (
-                      <button
-                        onClick={() => onSelectGift(gift)}
-                        className="w-full py-3 px-4 rounded-2xl active:scale-[0.98] font-bold text-xs sm:text-sm bg-blush-500 hover:bg-blush-600 text-white shadow-md shadow-blush-500/20 hover:shadow-blush-500/30 transition flex items-center justify-center gap-2 group cursor-pointer"
-                      >
-                        <Heart className="w-4 h-4 group-hover:scale-125 transition-transform fill-white" />
-                        <span>Vou dar este Combo (Fralda + Mimo) 💖</span>
-                      </button>
-                    )}
+
+                      <div className="mt-2 mb-2 bg-blush-50/50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-blush-100/50 dark:border-slate-700">
+                        <p className="text-blush-600 dark:text-blush-400 text-xs font-medium flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          + Inclui 1 Mimo à sua escolha no próximo passo ✨
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Bottom Action Area */}
+                    <div className="pt-3 border-t border-slate-100/70 dark:border-slate-800 mt-3">
+                      {isCompleted ? (
+                        <div className="space-y-1.5">
+                          <p className="text-center text-[11px] text-sage-700 dark:text-sage-300 font-medium italic">
+                            Combo já completo por outros convidados ✨
+                          </p>
+                          <button
+                            disabled
+                            aria-disabled="true"
+                            className="w-full py-3 px-4 rounded-2xl font-semibold text-xs sm:text-sm bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200/80 dark:border-slate-700 cursor-not-allowed flex items-center justify-center gap-2 select-none shadow-none"
+                          >
+                            <Lock className="w-3.5 h-3.5 text-slate-400" />
+                            <span>Limite deste combo já foi preenchido 💖</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <ShimmerButton
+                          onClick={() => onSelectGift(gift)}
+                          className="w-full py-3 px-4 rounded-2xl font-bold text-xs sm:text-sm bg-blush-500 hover:bg-blush-600 text-white shadow-md shadow-blush-500/20 hover:shadow-blush-500/30 flex items-center justify-center gap-2 group cursor-pointer"
+                        >
+                          <Heart className="w-4 h-4 group-hover:scale-125 transition-transform fill-white" />
+                          <span>Vou dar este Combo (Fralda + Mimo) 💖</span>
+                        </ShimmerButton>
+                      )}
+                    </div>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>

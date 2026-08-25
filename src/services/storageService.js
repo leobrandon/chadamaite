@@ -8,6 +8,7 @@ const KEYS = {
   CONFIG: 'cha_maite_config_v1',
   MESSAGES: 'cha_maite_messages_v1',
   PLEDGES: 'cha_maite_pledges_v1',
+  LOGS: 'cha_maite_admin_logs_v1',
 };
 
 // Robust ID Generator using crypto.randomUUID with standard fallback
@@ -1002,9 +1003,18 @@ export const storageService = {
 
   deletePledge: async (pledgeId) => {
     const pledges = storageService.getPledges();
+    const pledgeToDelete = pledges.find(p => p.id === pledgeId);
     const updated = pledges.filter(p => p.id !== pledgeId);
     localStorage.setItem(KEYS.PLEDGES, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent('pledges_updated', { detail: updated }));
+
+    if (pledgeToDelete) {
+      storageService.addAdminLog({
+        action: 'Contribuição Cancelada',
+        details: `Contribuição de "${pledgeToDelete.giverName}" (${pledgeToDelete.quantity} un.) foi removida pelo administrador.`,
+        category: 'gifts',
+      });
+    }
 
     if (isSupabaseConfigured && supabase) {
       try {
@@ -1014,5 +1024,75 @@ export const storageService = {
       }
     }
     return updated;
+  },
+
+  // REGISTRO DE ATIVIDADES E AUDITORIA (LOGS)
+  getAdminLogs: () => {
+    try {
+      const saved = localStorage.getItem(KEYS.LOGS);
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  },
+
+  addAdminLog: ({ action, details, category = 'system', author = 'Administrador' }) => {
+    try {
+      const currentLogs = storageService.getAdminLogs();
+      const now = new Date();
+      const newLog = {
+        id: generateUniqueId('log'),
+        timestamp: now.toISOString(),
+        formattedTime: now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        formattedDate: now.toLocaleDateString('pt-BR'),
+        action: String(action || 'Ação do Sistema').trim(),
+        details: String(details || '').trim(),
+        category, // 'gifts' | 'rsvps' | 'messages' | 'config' | 'system'
+        author: String(author || 'Administrador').trim(),
+      };
+
+      // Limitar a 500 registros para otimizar espaço e performance
+      const updatedLogs = [newLog, ...currentLogs].slice(0, 500);
+      localStorage.setItem(KEYS.LOGS, JSON.stringify(updatedLogs));
+      window.dispatchEvent(new CustomEvent('admin_logs_updated', { detail: updatedLogs }));
+      return newLog;
+    } catch (err) {
+      console.warn('Não foi possível gravar o log administrativo:', err);
+      return null;
+    }
+  },
+
+  deleteAdminLog: (logId) => {
+    const currentLogs = storageService.getAdminLogs();
+    const updated = currentLogs.filter(l => l.id !== logId);
+    localStorage.setItem(KEYS.LOGS, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent('admin_logs_updated', { detail: updated }));
+    return updated;
+  },
+
+  clearAdminLogs: () => {
+    localStorage.setItem(KEYS.LOGS, JSON.stringify([]));
+    window.dispatchEvent(new CustomEvent('admin_logs_updated', { detail: [] }));
+    return [];
+  },
+
+  exportAdminLogsToCSV: () => {
+    const logs = storageService.getAdminLogs();
+    if (!logs.length) return null;
+
+    const headers = ['Data', 'Horário', 'Categoria', 'Ação Realizada', 'Detalhes da Alteração', 'Responsável'];
+    const rows = logs.map(log => [
+      `"${log.formattedDate || new Date(log.timestamp).toLocaleDateString('pt-BR')}"`,
+      `"${log.formattedTime || new Date(log.timestamp).toLocaleTimeString('pt-BR')}"`,
+      `"${log.category.toUpperCase()}"`,
+      `"${(log.action || '').replace(/"/g, '""')}"`,
+      `"${(log.details || '').replace(/"/g, '""')}"`,
+      `"${(log.author || 'Administrador').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(';'), ...rows.map(e => e.join(';'))].join('\n');
+    return encodeURI(csvContent);
   }
 };

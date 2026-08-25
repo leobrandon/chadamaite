@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
-import { CalendarCheck, Users, Heart, Sparkles, Send, CheckCircle2, Smile } from 'lucide-react';
+import { CalendarCheck, Users, Send, Smile } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import GiftSuggestModal from './GiftSuggestModal';
 import { formatPhone, handlePhoneKeyDown } from '../utils/phoneMask';
+import SuccessCelebration from './ui/SuccessCelebration';
+import ShimmerButton from './ui/ShimmerButton';
+import { useToast } from './ui/ToastProvider';
+import CloudHeadingReveal from './ui/CloudHeadingReveal';
 
 export default function RSVPSection({ config, onSaveRSVP, gifts = [], pledges = [], onSelectGift }) {
+  const { addToast } = useToast();
   const [attending, setAttending] = useState(true);
   const [name, setName] = useState('');
   const [adultsCount, setAdultsCount] = useState(1);
@@ -53,7 +58,7 @@ export default function RSVPSection({ config, onSaveRSVP, gifts = [], pledges = 
     if (attending) {
       const isAnyCompanionEmpty = companionNames.some(n => !n.trim());
       if (isAnyCompanionEmpty) {
-        alert('Por favor, preencha o nome de todos os acompanhantes e crianças.');
+        addToast({ message: 'Por favor, preencha o nome de todos os acompanhantes.', type: 'info' });
         return;
       }
     }
@@ -85,6 +90,10 @@ export default function RSVPSection({ config, onSaveRSVP, gifts = [], pledges = 
 
     try {
       await onSaveRSVP(rsvpData);
+      addToast({ 
+        message: attending ? 'Presença confirmada com sucesso! 🎉' : 'Resposta registrada com sucesso! 💖', 
+        type: 'success' 
+      });
     } catch (err) {
       console.error('Erro ao enviar RSVP:', err);
     } finally {
@@ -108,60 +117,47 @@ export default function RSVPSection({ config, onSaveRSVP, gifts = [], pledges = 
     <section id="rsvp" className="py-16 md:py-24 bg-gradient-to-b from-transparent via-blush-50/50 to-transparent relative">
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
         
-        {/* Section Header */}
-        <div className="text-center max-w-xl mx-auto mb-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blush-100/80 text-blush-700 text-xs font-bold uppercase tracking-wider mb-3">
-            <CalendarCheck className="w-3.5 h-3.5" />
-            <span>Confirmação de Presença</span>
-          </div>
-          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-slate-800 tracking-tight">
-            Você vai ao Chá da Maitê?
-          </h2>
-          <p className="text-slate-600 text-sm sm:text-base mt-3">
-            Por favor, confirme sua presença para organizarmos tudo com muito amor e conforto para você e sua família!
-          </p>
-        </div>
+        {/* Section Header with Cloud Reveal */}
+        <CloudHeadingReveal
+          badge="Confirmação de Presença"
+          badgeIcon={CalendarCheck}
+          title="Você vai ao"
+          highlight="Chá da Maitê? 🌸"
+          subtitle="Por favor, confirme sua presença para organizarmos tudo com muito amor e conforto para você e sua família!"
+          className="text-center max-w-xl mx-auto mb-10"
+        />
 
         {/* Card Form */}
         <div className="glass-card p-6 sm:p-10 rounded-3xl shadow-xl border border-blush-200/90 relative overflow-hidden">
           
           {isSubmitted ? (
-            /* Success State */
-            <div className="text-center py-8 sm:py-12 space-y-4 animate-fade-in">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-inner">
-                <CheckCircle2 className="w-10 h-10 sm:w-12 sm:h-12" />
-              </div>
-              <h3 className="font-serif text-2xl sm:text-3xl font-bold text-slate-800">
-                {attending ? 'Presença Confirmada com Sucesso! 🎉' : 'Obrigado por nos avisar! 💖'}
-              </h3>
-              <p className="text-slate-600 text-sm sm:text-base max-w-md mx-auto leading-relaxed">
-                {attending ? (
-                  <>
-                    Que alegria ter você conosco! Os papais <strong>{config.parents}</strong> e a pequena <strong>{config.babyName}</strong> mal podem esperar para te abraçar.
-                  </>
-                ) : (
-                  <>
-                    Sentiremos muito sua falta, mas guardamos seu carinho no coração!
-                  </>
-                )}
-              </p>
-
-              <div className="pt-6 space-y-3">
+            /* Success State with Animation */
+            <SuccessCelebration
+              title={attending ? 'Presença Confirmada com Sucesso! 🎉' : 'Obrigado por nos avisar! 💖'}
+              subtitle={
+                attending
+                  ? `Que alegria ter você conosco! Os papais ${config.parents} e a pequena ${config.babyName} mal podem esperar para te abraçar.`
+                  : 'Sentiremos muito sua falta, mas guardamos seu carinho com muito amor!'
+              }
+            >
+              <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <button
+                  type="button"
                   onClick={() => setShowGiftSuggest(true)}
-                  className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-blush-500 hover:bg-blush-600 text-white font-bold text-sm shadow-lg shadow-blush-500/25 transition mx-auto flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-blush-500 hover:bg-blush-600 text-white font-bold text-sm shadow-lg shadow-blush-500/25 transition flex items-center justify-center gap-2 cursor-pointer"
                 >
                   🎁 Também quero escolher um presentinho!
                 </button>
 
                 <button
+                  type="button"
                   onClick={handleReset}
-                  className="px-6 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
+                  className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold transition cursor-pointer"
                 >
                   Enviar outra confirmação
                 </button>
               </div>
-            </div>
+            </SuccessCelebration>
           ) : (
             /* RSVP Form */
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -337,14 +333,14 @@ export default function RSVPSection({ config, onSaveRSVP, gifts = [], pledges = 
               </div>
 
               {/* Submit Button */}
-              <button
+              <ShimmerButton
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-4 px-6 rounded-2xl bg-blush-500 hover:bg-blush-600 active:scale-[0.98] text-white font-bold text-sm sm:text-base shadow-lg shadow-blush-500/25 transition flex items-center justify-center gap-2"
+                className="w-full py-4 px-6 rounded-2xl bg-blush-500 hover:bg-blush-600 active:scale-[0.98] text-white font-bold text-sm sm:text-base shadow-lg shadow-blush-500/25 transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Send className="w-5 h-5" />
                 <span>{isSubmitting ? 'Enviando confirmação...' : 'Confirmar Minha Resposta'}</span>
-              </button>
+              </ShimmerButton>
 
             </form>
           )}

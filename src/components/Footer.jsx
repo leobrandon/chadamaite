@@ -1,7 +1,13 @@
 import React from 'react';
-import { Heart, Sparkles, Shield, Share2 } from 'lucide-react';
+import { Heart, Shield, Share2 } from 'lucide-react';
+import { useToast } from './ui/ToastProvider';
 
 export default function Footer({ config, onOpenAdmin }) {
+  const { addToast } = useToast();
+
+  const handleShareClick = () => {
+    addToast({ message: 'Abrindo compartilhamento do WhatsApp! 💌', type: 'info' });
+  };
   const getShareUrl = () => {
     const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
     const shareText = `Olá! Veja o convite e lista de presentes do Chá de Bebê da Maitê: ${currentUrl}`;
@@ -37,6 +43,7 @@ export default function Footer({ config, onOpenAdmin }) {
             href={getShareUrl()}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={handleShareClick}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition"
           >
             <Share2 className="w-3.5 h-3.5" />
