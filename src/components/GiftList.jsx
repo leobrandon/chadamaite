@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Gift, Search, Sparkles, CheckCircle2, Lock, Heart, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion } from 'motion/react';
-import LiquidProgressBar from './ui/LiquidProgressBar';
 import ShimmerButton from './ui/ShimmerButton';
 import CloudHeadingReveal from './ui/CloudHeadingReveal';
 import { INITIAL_CATEGORIES } from '../data/initialGifts';
@@ -251,17 +250,6 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
                           {gift.description}
                         </p>
                       )}
-
-                      {/* Animated Progress Indicator */}
-                      <div className="mb-3">
-                        <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
-                          <span>Progresso do Combo</span>
-                          <span className="font-bold text-blush-600 dark:text-blush-400">
-                            {totalPledged} de {targetQty}
-                          </span>
-                        </div>
-                        <LiquidProgressBar current={totalPledged} total={targetQty} />
-                      </div>
 
                       <div className="mt-2 mb-2 bg-blush-50/50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-blush-100/50 dark:border-slate-700">
                         <p className="text-blush-600 dark:text-blush-400 text-xs font-medium flex items-center gap-1.5">
