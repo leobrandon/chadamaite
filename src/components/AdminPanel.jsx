@@ -18,7 +18,7 @@ import AdminLogsTab from './admin/AdminLogsTab';
 import AdminEditGiftModal from './admin/modals/AdminEditGiftModal';
 import AdminEditRsvpModal from './admin/modals/AdminEditRsvpModal';
 import AdminEditMessageModal from './admin/modals/AdminEditMessageModal';
-import { verifyAdminPin } from '../utils/security';
+import { verifyAdminPin, hashPassword } from '../utils/security';
 import { formatPhone } from '../utils/phoneMask';
 
 export default function AdminPanel({ 
@@ -122,11 +122,15 @@ export default function AdminPanel({
     if (isValid) {
       try {
         sessionStorage.setItem('cha_maite_admin_auth', 'true');
+        const computedHash = await hashPassword(entered);
+        sessionStorage.setItem('cha_maite_admin_pin_hash', computedHash);
       } catch {
         // ignore sessionStorage errors
       }
       setIsAuthenticated(true);
       setPinError(false);
+      // Recarregar os RSVPs da nuvem usando as credenciais administrativas recém-autenticadas
+      storageService.fetchRSVPsFromCloud();
     } else {
       setPinError(true);
     }
@@ -135,6 +139,7 @@ export default function AdminPanel({
   const handleLock = () => {
     try {
       sessionStorage.removeItem('cha_maite_admin_auth');
+      sessionStorage.removeItem('cha_maite_admin_pin_hash');
     } catch {
       // ignore
     }
@@ -412,8 +417,14 @@ export default function AdminPanel({
     document.body.removeChild(link);
   };
 
+  // Safe Array Defensive Guards
+  const safeGifts = Array.isArray(gifts) ? gifts : [];
+  const safePledges = Array.isArray(pledges) ? pledges : [];
+  const safeRsvps = Array.isArray(rsvps) ? rsvps : [];
+  const safeMessages = Array.isArray(messages) ? messages : [];
+
   const handleExportGiftsCSV = () => {
-    const csvUri = storageService.exportGiftsToCSV();
+    const csvUri = storageService.exportGiftsToCSV(safeGifts, safePledges);
     if (!csvUri) {
       alert('Ainda não há presentes para exportar.');
       return;
@@ -430,11 +441,6 @@ export default function AdminPanel({
     link.click();
     document.body.removeChild(link);
   };
-
-  // Safe Array Defensive Guards
-  const safeGifts = Array.isArray(gifts) ? gifts : [];
-  const safeRsvps = Array.isArray(rsvps) ? rsvps : [];
-  const safeMessages = Array.isArray(messages) ? messages : [];
 
   // Metrics
   const attendingRSVPs = safeRsvps.filter((r) => r && r.attending);

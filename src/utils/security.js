@@ -51,3 +51,44 @@ export async function verifyAdminPin(inputPin, storedHash) {
 
   return false;
 }
+
+/**
+ * Sanitiza texto de entrada removendo tags HTML, caracteres de controle e limitando o tamanho
+ * @param {string} str - Texto a ser sanitizado
+ * @param {number} maxLength - Tamanho máximo permitido (default 500)
+ * @returns {string} Texto limpo e seguro
+ */
+export function sanitizeText(str, maxLength = 500) {
+  if (str === null || str === undefined) return '';
+  let clean = String(str)
+    // Remove tags HTML (<script>, <img>, <b>, etc.)
+    .replace(/<[^>]*>/g, '')
+    // Remove caracteres nulos e de controle invisíveis
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+    .trim();
+  
+  if (clean.length > maxLength) {
+    clean = clean.slice(0, maxLength).trim();
+  }
+  return clean;
+}
+
+/**
+ * Sanitiza nomes próprios, limitando tamanho e removendo caracteres perigosos
+ * @param {string} name - Nome a ser sanitizado
+ * @param {number} maxLength - Tamanho máximo (default 80)
+ * @returns {string} Nome limpo
+ */
+export function sanitizeName(name, maxLength = 80) {
+  if (!name) return '';
+  let clean = String(name)
+    .replace(/<[^>]*>/g, '')
+    .replace(/[\u0000-\u001F\u007F]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  if (clean.length > maxLength) {
+    clean = clean.slice(0, maxLength).trim();
+  }
+  return clean;
+}

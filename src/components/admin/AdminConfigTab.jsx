@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Check, Eye, EyeOff, Lock } from 'lucide-react';
+import { Check, Eye, EyeOff } from 'lucide-react';
 import { hashPassword } from '../../utils/security';
 
 export default function AdminConfigTab({ config, onSaveConfig }) {

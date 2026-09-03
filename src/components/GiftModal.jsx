@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Heart, Check, X, Gift, Sparkles, MessageCircle, Search, CheckCircle2 } from 'lucide-react';
+import { Check, X, Sparkles, MessageCircle, Search, CheckCircle2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import RSVPInlineModal from './RSVPInlineModal';
 import { useToast } from './ui/ToastProvider';
 import UnwrappingRibbon from './ui/UnwrappingRibbon';
 
-export default function GiftModal({ gift, gifts = [], pledges = [], rsvps = [], onSaveRSVP, config, rsvpConfirmedName = '', isOpen, onClose, onConfirm, onAddPledge }) {
+export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [], onSaveRSVP, config, rsvpConfirmedName = '', isOpen, onClose, onConfirm, onAddPledge }) {
   const { addToast } = useToast();
   const [guestName, setGuestName] = useState('');
   const [quantity, setQuantity] = useState(1);

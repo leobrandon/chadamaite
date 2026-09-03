@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { MessageCircleHeart, Send, ChevronLeft, ChevronRight, Search, Sparkles, CheckCircle2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { formatRelativeOrExactDate } from '../utils/dateUtils';
 import HeartBurstButton from './ui/HeartBurstButton';
