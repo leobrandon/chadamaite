@@ -233,7 +233,7 @@ export default function App() {
           onSaveRSVP={handleSaveRSVP}
           gifts={safeGifts}
           pledges={safePledges}
-          onSelectGift={handleSelectGift}
+          onAddPledge={handleAddPledge}
         />
 
         {/* Guestbook / Messages Wall */}
