@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { CalendarCheck, Users, Send, Smile } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import GiftSuggestModal from './GiftSuggestModal';
+import PostRsvpComboModal from './PostRsvpComboModal';
 import { formatPhone, handlePhoneKeyDown } from '../utils/phoneMask';
 import SuccessCelebration from './ui/SuccessCelebration';
 import ShimmerButton from './ui/ShimmerButton';
 import { useToast } from './ui/ToastProvider';
 import CloudHeadingReveal from './ui/CloudHeadingReveal';
 
-export default function RSVPSection({ config, onSaveRSVP, gifts = [], pledges = [], onSelectGift }) {
+export default function RSVPSection({ config, onSaveRSVP, gifts = [], pledges = [], onAddPledge }) {
   const { addToast } = useToast();
   const [attending, setAttending] = useState(true);
   const [name, setName] = useState('');
@@ -20,7 +20,8 @@ export default function RSVPSection({ config, onSaveRSVP, gifts = [], pledges = 
   
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showGiftSuggest, setShowGiftSuggest] = useState(false);
+  const [showPostRsvpModal, setShowPostRsvpModal] = useState(false);
+  const [lastSubmittedGuest, setLastSubmittedGuest] = useState(null);
 
   // Sync companion fields with total people
   const handleAdultsChange = (delta) => {
@@ -94,6 +95,11 @@ export default function RSVPSection({ config, onSaveRSVP, gifts = [], pledges = 
         message: attending ? 'Presença confirmada com sucesso! 🎉' : 'Resposta registrada com sucesso! 💖', 
         type: 'success' 
       });
+      setLastSubmittedGuest({
+        name: rsvpData.name,
+        attending: rsvpData.attending,
+      });
+      setShowPostRsvpModal(true);
     } catch (err) {
       console.error('Erro ao enviar RSVP:', err);
     } finally {
@@ -110,7 +116,8 @@ export default function RSVPSection({ config, onSaveRSVP, gifts = [], pledges = 
     setPhone('');
     setMessage('');
     setIsSubmitted(false);
-    setShowGiftSuggest(false);
+    setShowPostRsvpModal(false);
+    setLastSubmittedGuest(null);
   };
 
   return (
@@ -141,14 +148,6 @@ export default function RSVPSection({ config, onSaveRSVP, gifts = [], pledges = 
               }
             >
               <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowGiftSuggest(true)}
-                  className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-blush-500 hover:bg-blush-600 text-white font-bold text-sm shadow-lg shadow-blush-500/25 transition flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  🎁 Também quero escolher um presentinho!
-                </button>
-
                 <button
                   type="button"
                   onClick={handleReset}
@@ -349,15 +348,15 @@ export default function RSVPSection({ config, onSaveRSVP, gifts = [], pledges = 
 
       </div>
       
-      <GiftSuggestModal
-        isOpen={showGiftSuggest}
-        onClose={() => setShowGiftSuggest(false)}
+      <PostRsvpComboModal
+        isOpen={showPostRsvpModal}
+        onClose={() => setShowPostRsvpModal(false)}
+        attending={lastSubmittedGuest?.attending ?? attending}
+        guestName={lastSubmittedGuest?.name ?? name}
         gifts={gifts}
         pledges={pledges}
-        onSelectGift={(gift) => {
-          setShowGiftSuggest(false);
-          if (onSelectGift) onSelectGift(gift);
-        }}
+        onAddPledge={onAddPledge}
+        config={config}
       />
     </section>
   );
