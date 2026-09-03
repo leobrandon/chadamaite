@@ -359,46 +359,36 @@ export default function PostRsvpComboModal({
 
               <div className="space-y-2.5 pt-1">
                 {availableFraldas.length > 0 ? (
-                  availableFraldas.map(fralda => {
-                    const pList = (pledges || []).filter(p => p.giftId === fralda.id);
-                    const totalPledged = pList.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
-                    const target = Number(fralda.targetQuantity) || 5;
-                    const remaining = Math.max(1, target - totalPledged);
-
-                    return (
-                      <div
-                        key={fralda.id}
-                        onClick={() => handleSelectFralda(fralda)}
-                        className="bg-white border-2 border-slate-200 hover:border-blush-400 hover:bg-blush-50/60 p-4 rounded-2xl transition-all cursor-pointer flex items-center gap-3.5 group shadow-xs hover:shadow-md"
-                      >
-                        <div className="w-12 h-12 rounded-xl bg-blush-50 text-blush-600 flex items-center justify-center text-2xl shrink-0 group-hover:scale-105 transition-transform">
-                          {fralda.icon || '👶'}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h5 className="font-bold text-slate-800 text-sm sm:text-base group-hover:text-blush-700 transition">
-                              {fralda.title}
-                            </h5>
-                          </div>
-                          {fralda.description && (
-                            <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
-                              {fralda.description}
-                            </p>
-                          )}
-                          <p className="text-[11px] text-slate-400 mt-1">
-                            Disponíveis: <strong className="text-blush-600">{remaining} {remaining === 1 ? 'cota' : 'cotas'}</strong> ({totalPledged} de {target} preenchidas)
-                          </p>
-                        </div>
-
-                        <div className="shrink-0">
-                          <span className="px-3 py-1.5 rounded-xl bg-blush-100/70 group-hover:bg-blush-500 group-hover:text-white text-blush-700 font-bold text-xs transition">
-                            Escolher →
-                          </span>
-                        </div>
+                  availableFraldas.map(fralda => (
+                    <div
+                      key={fralda.id}
+                      onClick={() => handleSelectFralda(fralda)}
+                      className="bg-white border-2 border-slate-200 hover:border-blush-400 hover:bg-blush-50/60 p-4 rounded-2xl transition-all cursor-pointer flex items-center gap-3.5 group shadow-xs hover:shadow-md"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-blush-50 text-blush-600 flex items-center justify-center text-2xl shrink-0 group-hover:scale-105 transition-transform">
+                        {fralda.icon || '👶'}
                       </div>
-                    );
-                  })
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h5 className="font-bold text-slate-800 text-sm sm:text-base group-hover:text-blush-700 transition">
+                            {fralda.title}
+                          </h5>
+                        </div>
+                        {fralda.description && (
+                          <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                            {fralda.description}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="shrink-0">
+                        <span className="px-3 py-1.5 rounded-xl bg-blush-100/70 group-hover:bg-blush-500 group-hover:text-white text-blush-700 font-bold text-xs transition">
+                          Escolher →
+                        </span>
+                      </div>
+                    </div>
+                  ))
                 ) : (
                   <div className="text-center p-6 bg-slate-50 rounded-2xl text-slate-500 text-sm">
                     Todas as cotas de fraldas já foram preenchidas por outros convidados!
@@ -406,19 +396,11 @@ export default function PostRsvpComboModal({
                 )}
               </div>
 
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => setStep('invite')}
-                  className="text-xs text-slate-500 hover:text-slate-800 font-medium"
-                >
-                  ← Voltar ao início
-                </button>
-
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-center">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="text-xs text-slate-500 hover:text-slate-700 underline font-medium"
+                  className="text-xs text-slate-500 hover:text-slate-700 underline font-medium cursor-pointer transition"
                 >
                   Mais tarde eu confirmo
                 </button>

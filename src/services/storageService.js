@@ -24,6 +24,15 @@ export function generateUniqueId(prefix = 'id') {
   });
 }
 
+// Filtro para impedir que registros criados durante testes poluam o painel de convidados e cotas
+export function isTestGuest(nameOrAuthor) {
+  if (!nameOrAuthor) return false;
+  const n = String(nameOrAuthor).trim().toLowerCase();
+  if (n === 'teste' || n.startsWith('teste ') || n.includes('teste convidado') || n.includes('teste app')) return true;
+  if (n === 'carlos eduardo' || n === 'mariana silva') return true;
+  return false;
+}
+
 // Helper: map DB column names to camelCase and vice-versa
 function mapConfigFromDB(row) {
   if (!row) return INITIAL_EVENT_CONFIG;
@@ -642,7 +651,7 @@ export const storageService = {
     try {
       const { data, error } = await supabase.from('rsvps').select('*').order('created_at', { ascending: false });
       if (error) throw error;
-      const mapped = (data || []).map(mapRSVPFromDB);
+      const mapped = (data || []).map(mapRSVPFromDB).filter(r => !isTestGuest(r.name));
       localStorage.setItem(KEYS.RSVPS, JSON.stringify(mapped));
       window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: mapped }));
       return mapped;
@@ -658,10 +667,12 @@ export const storageService = {
       if (!saved) return [];
       const parsed = JSON.parse(saved);
       if (!Array.isArray(parsed)) return [];
-      return parsed.map((r) => ({
-        ...r,
-        phone: formatPhone(r.phone || ''),
-      }));
+      return parsed
+        .filter(r => !isTestGuest(r.name))
+        .map((r) => ({
+          ...r,
+          phone: formatPhone(r.phone || ''),
+        }));
     } catch {
       return [];
     }
@@ -1089,7 +1100,7 @@ export const storageService = {
     try {
       const { data, error } = await supabase.from('gift_pledges').select('*').order('created_at', { ascending: true });
       if (error) throw error;
-      const mapped = (data || []).map(mapPledgeFromDB);
+      const mapped = (data || []).map(mapPledgeFromDB).filter(p => !isTestGuest(p.giverName));
       localStorage.setItem(KEYS.PLEDGES, JSON.stringify(mapped));
       return mapped;
     } catch (err) {
@@ -1101,7 +1112,10 @@ export const storageService = {
   getPledges: () => {
     try {
       const saved = localStorage.getItem(KEYS.PLEDGES);
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter(p => !isTestGuest(p.giverName));
     } catch {
       return [];
     }
