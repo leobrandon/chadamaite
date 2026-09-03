@@ -452,7 +452,7 @@ export const INITIAL_EVENT_CONFIG = {
   address: 'R. EMA-01, Quadra 07 Lote 28 - Lot. Alphaville Res., Goiânia - GO, 74370-720',
   city: 'Goiânia - GO',
   mapUrl: 'https://maps.app.goo.gl/6c8WqWsfqNx4kpXFA',
-  pixKey: '70436237156',
+  pixKey: 'chadamaitelp@gmail.com',
   pixName: 'Leonardo / Isabella',
   adminPinHash: 'e815b24d314219266fbae1d11292d9d23bb2befbd5d0dc3f7a2422edc354413c',
   welcomeMessage: 'Estamos muito felizes em compartilhar esse momento tão especial com você! Preparamos tudo com muito amor e carinho para esperar a nossa Maitê.',

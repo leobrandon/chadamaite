@@ -1,6 +1,7 @@
 import { INITIAL_GIFTS, INITIAL_EVENT_CONFIG, INITIAL_MESSAGES } from '../data/initialGifts';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { formatPhone } from '../utils/phoneMask';
+import { DEFAULT_ADMIN_PIN_HASH, sanitizeText, sanitizeName } from '../utils/security';
 
 const KEYS = {
   GIFTS: 'cha_maite_gifts_v1',
@@ -643,6 +644,7 @@ export const storageService = {
       if (error) throw error;
       const mapped = (data || []).map(mapRSVPFromDB);
       localStorage.setItem(KEYS.RSVPS, JSON.stringify(mapped));
+      window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: mapped }));
       return mapped;
     } catch (err) {
       console.error('Erro ao carregar RSVPs do Supabase:', err);
@@ -667,18 +669,32 @@ export const storageService = {
 
   saveRSVP: async (rsvpData) => {
     const rsvps = storageService.getRSVPs();
+    const safeName = sanitizeName(rsvpData.name || '', 80);
+    const safePhone = formatPhone(rsvpData.phone || '');
+    const safeMessage = sanitizeText(rsvpData.message || '', 500);
+    const safeCompanions = Array.isArray(rsvpData.companionNames)
+      ? rsvpData.companionNames.map(c => sanitizeName(c, 80)).filter(Boolean)
+      : [];
+    const safeAdults = Math.max(1, Math.min(20, Number(rsvpData.adultsCount) || 1));
+    const safeChildren = Math.max(0, Math.min(20, Number(rsvpData.childrenCount) || 0));
+
     const newEntry = {
       id: generateUniqueId('rsvp'),
       createdAt: new Date().toISOString(),
-      ...rsvpData,
-      phone: formatPhone(rsvpData.phone || ''),
+      name: safeName,
+      attending: Boolean(rsvpData.attending),
+      adultsCount: rsvpData.attending ? safeAdults : 0,
+      childrenCount: rsvpData.attending ? safeChildren : 0,
+      companionNames: rsvpData.attending ? safeCompanions : [],
+      phone: safePhone,
+      message: safeMessage,
     };
 
-    const hasMessage = Boolean(rsvpData.message && rsvpData.message.trim());
+    const hasMessage = Boolean(safeMessage && safeMessage.trim());
     const newMsg = hasMessage ? {
       id: generateUniqueId('msg'),
-      author: rsvpData.name || 'Amigo com carinho',
-      text: rsvpData.message.trim(),
+      author: safeName || 'Amigo com carinho',
+      text: safeMessage,
       date: 'Agora mesmo',
       createdAt: new Date().toISOString(),
       likes: 0,
@@ -805,10 +821,13 @@ export const storageService = {
   addMessage: async (msgData, autoApprove = false) => {
     const messages = storageService.getMessages();
     const nowIso = new Date().toISOString();
+    const safeAuthor = sanitizeName(msgData.author || 'Amigo com carinho', 80);
+    const safeText = sanitizeText(msgData.text || '', 500);
+
     const newMsg = {
       id: generateUniqueId('msg'),
-      author: msgData.author || 'Amigo com carinho',
-      text: msgData.text,
+      author: safeAuthor || 'Amigo com carinho',
+      text: safeText,
       date: nowIso,
       createdAt: nowIso,
       likes: 0,
@@ -915,40 +934,150 @@ export const storageService = {
     return updated;
   },
 
-  // EXPORTAÇÕES PARA CSV / EXCEL
+  // EXPORTAÇÕES PARA CSV / EXCEL COM PROTEÇÃO CONTRA FORMULA INJECTION
   exportRSVPsToCSV: () => {
     const rsvps = storageService.getRSVPs();
     if (!rsvps.length) return null;
 
+    // Função de sanitização contra injeção de fórmulas CSV (OWASP)
+    const safeCsv = (val) => {
+      if (val === null || val === undefined) return '""';
+      let str = String(val).trim();
+      if (!str || str === '-') return '"-"';
+      if (/^[=+\-@\t\r]/.test(str)) {
+        str = `'${str}`;
+      }
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+
+    const formatDate = (dateVal) => {
+      if (!dateVal) return '-';
+      try {
+        const d = new Date(dateVal);
+        return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('pt-BR');
+      } catch {
+        return '-';
+      }
+    };
+
     const headers = ['Data Envio', 'Nome Principal', 'Vai ao Chá?', 'Adultos', 'Crianças', 'Acompanhantes', 'Telefone', 'Recado'];
     const rows = rsvps.map(r => [
-      new Date(r.createdAt || Date.now()).toLocaleDateString('pt-BR'),
-      `"${r.name.replace(/"/g, '""')}"`,
+      safeCsv(formatDate(r.createdAt || Date.now())),
+      safeCsv(r.name),
       r.attending ? 'SIM' : 'NÃO',
-      r.adultsCount || 1,
-      r.childrenCount || 0,
-      `"${(r.companionNames || []).join(', ').replace(/"/g, '""')}"`,
-      `"${formatPhone(r.phone || '')}"`,
-      `"${(r.message || '').replace(/"/g, '""')}"`
+      Number(r.adultsCount) || 1,
+      Number(r.childrenCount) || 0,
+      safeCsv((r.companionNames || []).join(', ')),
+      safeCsv(formatPhone(r.phone || '')),
+      safeCsv(r.message || '')
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(';'), ...rows.map(e => e.join(';'))].join('\n');
     return encodeURI(csvContent);
   },
 
-  exportGiftsToCSV: () => {
-    const gifts = storageService.getGifts();
-    if (!gifts.length) return null;
+  exportGiftsToCSV: (customGifts = null, customPledges = null) => {
+    const gifts = Array.isArray(customGifts) && customGifts.length > 0 
+      ? customGifts 
+      : storageService.getGifts();
+    const pledges = Array.isArray(customPledges) 
+      ? customPledges 
+      : storageService.getPledges();
 
-    const headers = ['Presente', 'Categoria', 'Status', 'Quem vai dar (Presenteador)', 'Data da Reserva', 'Detalhes/Tamanho'];
-    const rows = gifts.map(g => [
-      `"${g.title.replace(/"/g, '""')}"`,
-      `"${g.category.replace(/"/g, '""')}"`,
-      g.status === 'reserved' ? 'RESERVADO' : 'DISPONÍVEL',
-      `"${(g.reservedBy || '-').replace(/"/g, '""')}"`,
-      g.reservedAt ? new Date(g.reservedAt).toLocaleDateString('pt-BR') : '-',
-      `"${(g.description || '').replace(/"/g, '""')}"`
-    ]);
+    if (!gifts.length && !pledges.length) return null;
+
+    const safeCsv = (val) => {
+      if (val === null || val === undefined) return '""';
+      let str = String(val).trim();
+      if (!str || str === '-') return '"-"';
+      if (/^[=+\-@\t\r]/.test(str)) {
+        str = `'${str}`;
+      }
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+
+    const formatDate = (dateVal) => {
+      if (!dateVal) return '-';
+      try {
+        const d = new Date(dateVal);
+        return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('pt-BR');
+      } catch {
+        return '-';
+      }
+    };
+
+    const headers = [
+      'Presente',
+      'Categoria',
+      'Status / Meta',
+      'Quem vai dar (Presenteador)',
+      'Quantidade',
+      'Data da Reserva',
+      'Detalhes/Tamanho'
+    ];
+
+    const rows = [];
+    const sortedGifts = [...gifts].sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999));
+
+    sortedGifts.forEach((gift) => {
+      const giftPledges = (pledges || []).filter((p) => p && (p.giftId === gift.id || p.gift_id === gift.id));
+      const targetQty = Number(gift.targetQuantity) || 5;
+      const totalUnits = giftPledges.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
+      const isCompleted = totalUnits >= targetQty;
+      const progressPercent = Math.min(100, Math.round((totalUnits / targetQty) * 100));
+
+      if (giftPledges.length > 0) {
+        // Se houver contribuições registradas por convidados, listar cada uma
+        giftPledges.forEach((p) => {
+          rows.push([
+            safeCsv(gift.title),
+            safeCsv(gift.category),
+            safeCsv(isCompleted ? 'META ATINGIDA' : `${totalUnits}/${targetQty} un. (${progressPercent}%)`),
+            safeCsv(p.giverName || p.giver_name || 'Convidado'),
+            safeCsv(`${Number(p.quantity) || 1} un.`),
+            safeCsv(formatDate(p.createdAt || p.created_at)),
+            safeCsv(gift.description || '')
+          ]);
+        });
+      } else if (gift.reservedBy || gift.status === 'reserved') {
+        // Suporte a reservas diretas legadas
+        rows.push([
+          safeCsv(gift.title),
+          safeCsv(gift.category),
+          safeCsv('RESERVADO'),
+          safeCsv(gift.reservedBy || 'Convidado'),
+          safeCsv('1 un.'),
+          safeCsv(formatDate(gift.reservedAt)),
+          safeCsv(gift.description || '')
+        ]);
+      } else {
+        // Presente disponível sem contribuições ainda
+        rows.push([
+          safeCsv(gift.title),
+          safeCsv(gift.category),
+          safeCsv('DISPONÍVEL'),
+          safeCsv('-'),
+          safeCsv('-'),
+          safeCsv('-'),
+          safeCsv(gift.description || '')
+        ]);
+      }
+    });
+
+    // Incluir contribuições que possam referenciar presentes excluídos ou renomeados
+    const knownGiftIds = new Set(sortedGifts.map((g) => g.id));
+    const orphanedPledges = (pledges || []).filter((p) => p && !knownGiftIds.has(p.giftId || p.gift_id));
+    orphanedPledges.forEach((p) => {
+      rows.push([
+        safeCsv(`Item #${p.giftId || p.gift_id}`),
+        safeCsv('Outros'),
+        safeCsv('CONTRIBUIÇÃO'),
+        safeCsv(p.giverName || p.giver_name || 'Convidado'),
+        safeCsv(`${Number(p.quantity) || 1} un.`),
+        safeCsv(formatDate(p.createdAt || p.created_at)),
+        safeCsv('-')
+      ]);
+    });
 
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(';'), ...rows.map(e => e.join(';'))].join('\n');
     return encodeURI(csvContent);
@@ -980,11 +1109,14 @@ export const storageService = {
 
   addPledge: async (giftId, giverName, quantity) => {
     const pledges = storageService.getPledges();
+    const safeGiverName = sanitizeName(giverName || 'Amigo do Chá', 80);
+    const safeQuantity = Math.max(1, Math.min(999, parseInt(quantity, 10) || 1));
+
     const newPledge = {
       id: generateUniqueId('pledge'),
       giftId,
-      giverName,
-      quantity,
+      giverName: safeGiverName,
+      quantity: safeQuantity,
       createdAt: new Date().toISOString(),
     };
     const updated = [...pledges, newPledge];
@@ -1092,14 +1224,24 @@ export const storageService = {
     const logs = storageService.getAdminLogs();
     if (!logs.length) return null;
 
+    const safeCsv = (val) => {
+      if (val === null || val === undefined) return '""';
+      let str = String(val).trim();
+      if (!str || str === '-') return '"-"';
+      if (/^[=+\-@\t\r]/.test(str)) {
+        str = `'${str}`;
+      }
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+
     const headers = ['Data', 'Horário', 'Categoria', 'Ação Realizada', 'Detalhes da Alteração', 'Responsável'];
     const rows = logs.map(log => [
-      `"${log.formattedDate || new Date(log.timestamp).toLocaleDateString('pt-BR')}"`,
-      `"${log.formattedTime || new Date(log.timestamp).toLocaleTimeString('pt-BR')}"`,
-      `"${log.category.toUpperCase()}"`,
-      `"${(log.action || '').replace(/"/g, '""')}"`,
-      `"${(log.details || '').replace(/"/g, '""')}"`,
-      `"${(log.author || 'Administrador').replace(/"/g, '""')}"`
+      safeCsv(log.formattedDate || new Date(log.timestamp).toLocaleDateString('pt-BR')),
+      safeCsv(log.formattedTime || new Date(log.timestamp).toLocaleTimeString('pt-BR')),
+      safeCsv(log.category ? log.category.toUpperCase() : 'SISTEMA'),
+      safeCsv(log.action || ''),
+      safeCsv(log.details || ''),
+      safeCsv(log.author || 'Administrador')
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(';'), ...rows.map(e => e.join(';'))].join('\n');
