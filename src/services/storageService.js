@@ -1260,5 +1260,91 @@ export const storageService = {
 
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(';'), ...rows.map(e => e.join(';'))].join('\n');
     return encodeURI(csvContent);
+  },
+
+  exportFullDatabaseJSON: async () => {
+    let dump = {
+      exported_at: new Date().toISOString(),
+      app: 'Chá da Maitê',
+      tables: {}
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const [cfg, gft, pld, rsv, msg] = await Promise.all([
+          supabase.from('event_config').select('*'),
+          supabase.from('gifts').select('*'),
+          supabase.from('gift_pledges').select('*'),
+          supabase.from('rsvps').select('*'),
+          supabase.from('messages').select('*')
+        ]);
+        dump.tables.event_config = cfg.data || [];
+        dump.tables.gifts = gft.data || [];
+        dump.tables.gift_pledges = pld.data || [];
+        dump.tables.rsvps = rsv.data || [];
+        dump.tables.messages = msg.data || [];
+      } catch (err) {
+        console.error('Erro ao buscar do Supabase para exportação, usando dados locais:', err);
+        dump.tables = {
+          event_config: [storageService.getConfig()],
+          gifts: storageService.getGifts(),
+          gift_pledges: storageService.getPledges(),
+          rsvps: storageService.getRSVPs(),
+          messages: storageService.getMessages()
+        };
+      }
+    } else {
+      dump.tables = {
+        event_config: [storageService.getConfig()],
+        gifts: storageService.getGifts(),
+        gift_pledges: storageService.getPledges(),
+        rsvps: storageService.getRSVPs(),
+        messages: storageService.getMessages()
+      };
+    }
+
+    return JSON.stringify(dump, null, 2);
+  },
+
+  exportFullDatabaseSQL: async () => {
+    const jsonStr = await storageService.exportFullDatabaseJSON();
+    const dump = JSON.parse(jsonStr);
+
+    function escapeSql(val) {
+      if (val === null || val === undefined) return 'NULL';
+      if (typeof val === 'boolean') return val ? 'true' : 'false';
+      if (typeof val === 'number') return val;
+      if (Array.isArray(val)) {
+        if (val.length === 0) return "'{}'::text[]";
+        const arrStr = val.map(name => '"' + String(name).replace(/"/g, '\\"') + '"').join(',');
+        return `'{${arrStr.replace(/'/g, "''")}}'::text[]`;
+      }
+      if (typeof val === 'object') {
+        return "'" + JSON.stringify(val).replace(/'/g, "''") + "'::jsonb";
+      }
+      return "'" + String(val).replace(/'/g, "''") + "'";
+    }
+
+    let sql = `-- ====================================================================\n`;
+    sql += `-- BACKUP DO BANCO DE DADOS - CHÁ DA MAITÊ\n`;
+    sql += `-- Data: ${dump.exported_at}\n`;
+    sql += `-- ====================================================================\n\n`;
+
+    const tables = ['event_config', 'gifts', 'gift_pledges', 'rsvps', 'messages'];
+    for (const tbl of tables) {
+      const rows = dump.tables[tbl] || [];
+      sql += `-- Tabela: ${tbl} (${rows.length} registros)\n`;
+      for (const row of rows) {
+        const cols = Object.keys(row);
+        const vals = cols.map(c => escapeSql(row[c]));
+        const updateClause = cols.filter(c => c !== 'id').map(c => `${c} = EXCLUDED.${c}`).join(', ');
+        sql += `INSERT INTO public.${tbl} (${cols.join(', ')})\nVALUES (${vals.join(', ')})\nON CONFLICT (id) DO UPDATE SET ${updateClause};\n`;
+      }
+      sql += `\n`;
+    }
+
+    return sql;
   }
 };
+
+export default storageService;
