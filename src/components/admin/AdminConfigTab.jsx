@@ -1,12 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { Check, Eye, EyeOff } from 'lucide-react';
+import { Check, Eye, EyeOff, Database, Download, FileCode } from 'lucide-react';
 import { hashPassword } from '../../utils/security';
+import storageService from '../../services/storageService';
 
 export default function AdminConfigTab({ config, onSaveConfig }) {
   const [tempConfig, setTempConfig] = useState(config || {});
   const [newPin, setNewPin] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [configSaved, setConfigSaved] = useState(false);
+  const [exportingType, setExportingType] = useState(null);
+
+  const handleDownloadBackup = async (format) => {
+    try {
+      setExportingType(format);
+      const dateStr = new Date().toISOString().slice(0, 10);
+      let content = '';
+      let mimeType = '';
+      let filename = '';
+
+      if (format === 'json') {
+        content = await storageService.exportFullDatabaseJSON();
+        mimeType = 'application/json;charset=utf-8';
+        filename = `backup_cha_da_maite_${dateStr}.json`;
+      } else {
+        content = await storageService.exportFullDatabaseSQL();
+        mimeType = 'application/sql;charset=utf-8';
+        filename = `backup_cha_da_maite_${dateStr}.sql`;
+      }
+
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Erro ao gerar backup:', err);
+      alert('Erro ao exportar dados do banco.');
+    } finally {
+      setExportingType(null);
+    }
+  };
 
   useEffect(() => {
     if (config) {
@@ -235,6 +272,43 @@ export default function AdminConfigTab({ config, onSaveConfig }) {
           )}
         </div>
       </form>
+
+      {/* Seção de Backup e Exportação Completa */}
+      <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
+        <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+          <div className="flex items-center gap-2 mb-1.5">
+            <Database className="w-5 h-5 text-blush-500" />
+            <h3 className="text-sm font-bold text-slate-800 dark:text-white">
+              Backup & Exportação Completa do Banco
+            </h3>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
+            Exporte uma cópia completa de todos os dados salvos no banco de dados (Configurações do evento, lista de presentes, cotas de fraldas/mimos preenchidas, lista de convidados RSVP e mensagens do mural).
+          </p>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              disabled={exportingType !== null}
+              onClick={() => handleDownloadBackup('json')}
+              className="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-800 dark:text-white text-xs font-semibold shadow-xs flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
+            >
+              <Download className="w-4 h-4 text-blush-500" />
+              <span>{exportingType === 'json' ? 'Gerando JSON...' : 'Baixar Dump (.JSON)'}</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={exportingType !== null}
+              onClick={() => handleDownloadBackup('sql')}
+              className="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-800 dark:text-white text-xs font-semibold shadow-xs flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
+            >
+              <FileCode className="w-4 h-4 text-emerald-500" />
+              <span>{exportingType === 'sql' ? 'Gerando SQL...' : 'Baixar Dump (.SQL Supabase)'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

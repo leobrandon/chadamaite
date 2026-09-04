@@ -1,0 +1,1122 @@
+{
+  "exported_at": "2026-09-03T11:07:02.450Z",
+  "database_url": "https://zdlkbyttbyzextamkhwv.supabase.co",
+  "tables": {
+    "event_config": [
+      {
+        "id": "default_config",
+        "baby_name": "Maitê",
+        "parents": "Leonardo & Isabella",
+        "event_date": "2026-10-17",
+        "event_time": "18:00",
+        "display_date": "Sábado, 17 de Outubro de 2026",
+        "display_time": "A partir das 18:00h",
+        "location_name": "Espaço LC Eventos",
+        "address": "R. EMA-01, Quadra 07 Lote 28 - Lot. Alphaville Res., Goiânia - GO, 74370-720",
+        "city": "Goiânia - GO",
+        "map_url": "https://maps.app.goo.gl/6c8WqWsfqNx4kpXFA",
+        "pix_key": "70436237156",
+        "pix_name": "Leonardo / Isabella",
+        "admin_pin": "16101928",
+        "welcome_message": "Estamos muito felizes em compartilhar esse momento tão especial com você! Preparamos tudo com muito amor e carinho para esperar a nossa Maitê.",
+        "updated_at": "2026-08-16T01:51:39.957662+00:00"
+      }
+    ],
+    "gifts": [
+      {
+        "id": "gift-5",
+        "title": "Kit Lenços Umedecidos",
+        "category": "Higiene & Banho",
+        "description": "Sem perfume ou à base d’água (ex: Pampers Wipes, Huggies Pure, Bepantol Baby). [meta:50]",
+        "icon": "✨",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "high",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-7",
+        "title": "Pomadas para Assaduras (Bepantol Baby / Hipoglós)",
+        "category": "Higiene & Banho",
+        "description": "Cuidado essencial para proteger a pele sensível da Maitê. [meta:8]",
+        "icon": "🧴",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "high",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-6",
+        "title": "Kit Shampoo e Sabonete Líquido Neutro para Bebê",
+        "category": "Higiene & Banho",
+        "description": "Linha Granado Bebê, Mustela ou Johnson’s Hora do Sono. [meta:5]",
+        "icon": "🛁",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "high",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-9",
+        "title": "Kit Cuidados do Bebê (Tesourinha, Cortador, Lixa e Escova)",
+        "category": "Higiene & Banho",
+        "description": "Kit de manicure e escovinha de cerdas naturais para recém-nascido. [meta:1]",
+        "icon": "✂️",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "medium",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-12",
+        "title": "Kit Mamadeiras Anticólica (Avent Philips ou MAM)",
+        "category": "Alimentação",
+        "description": "Com bico pétala ou sistema anticólica para conforto da Maitê. [meta:1]",
+        "icon": "🍼",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "medium",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-25",
+        "title": "Kit Body Manga Curta e Mijões (Tam. M / G)",
+        "category": "Roupas & Acessórios",
+        "description": "Peças básicas e confortáveis 100% algodão suedine. [meta:5]",
+        "icon": "👚",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "high",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-26",
+        "title": "Macacão com Zíper (Tam. M ou G)",
+        "category": "Roupas & Acessórios",
+        "description": "Macacão com zíper, agiliza a troca de fraldas. [meta:5]",
+        "icon": "👗",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "medium",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-17",
+        "title": "Kit Fraldinhas de Boca e Paninhos de Ombro (Bordadas/Estampadas)",
+        "category": "Quarto & Enxoval",
+        "description": "Kit com 5 a 6 paninhos 100% algodão super absorventes. [meta:7]",
+        "icon": "🧵",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "medium",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-11",
+        "title": "Aspirador Nasal de Sucção (NoseFrida ou similar)",
+        "category": "Higiene & Banho",
+        "description": "Salvação para os dias de narizinho trancado. [meta:2]",
+        "icon": "💨",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "medium",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-23",
+        "title": "Canguru Ergonômico / Sling de Algodão",
+        "category": "Passeio & Segurança",
+        "description": "Facilita passeios mantendo o bebê coladinho com os pais. [meta:1]",
+        "icon": "🤍",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "low",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-19",
+        "title": "Som Ruído Branco",
+        "category": "Quarto & Enxoval",
+        "description": "Som ruído branco para a Maitê. [meta:1]",
+        "icon": "💡",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "low",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-27",
+        "title": "Kit Meias, Luvinhas e Faixas de Cabelo Delicadas",
+        "category": "Roupas & Acessórios",
+        "description": "Acessórios macios e charmosos para enfeitar a princesinha. [meta:3]",
+        "icon": "🎀",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "medium",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-31",
+        "title": "Tapete de Atividades",
+        "category": "Brinquedos & Mimos",
+        "description": "Estimula o desenvolvimento sensorial e motor da bebê. [meta:1]",
+        "icon": "🎪",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "low",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-16",
+        "title": "Jogo de Lençol para Berço 100% Algodão (Rosa / Neutro)",
+        "category": "Quarto & Enxoval",
+        "description": "Toque suave de percal ou malha para noites tranquilas. [meta:3]",
+        "icon": "🛏️",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "high",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-8",
+        "title": "Toalha de Banho com Capuz Infantil Macia",
+        "category": "Higiene & Banho",
+        "description": "Toalha aveludada 100% algodão com capuz fofo. [meta:3]",
+        "icon": "🦢",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "medium",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-18",
+        "title": "Manta Quentinha / Cobertor de Microfibra Antialérgico",
+        "category": "Quarto & Enxoval",
+        "description": "Manta macia e quentinha em tons delicados. [meta:3]",
+        "icon": "🧸",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "high",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-29",
+        "title": "Naninha de Pelúcia / Paninho de Apego Antialérgico",
+        "category": "Brinquedos & Mimos",
+        "description": "Companheira fofinha para os soninhos e momentos de carinho. [meta:2]",
+        "icon": "🐰",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "low",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-30",
+        "title": "Chocalho e Mordedor Macio com Água Gelável",
+        "category": "Brinquedos & Mimos",
+        "description": "Alivia o desconforto do nascimento dos primeiros dentinhos. [meta:1]",
+        "icon": "🔔",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "low",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-32",
+        "title": "Livrinho Sensorial de Pano / Banho",
+        "category": "Brinquedos & Mimos",
+        "description": "Com texturas e cores para estimular a curiosidade da Maitê. [meta:1]",
+        "icon": "📖",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "low",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-3",
+        "title": "Pacote de Fraldas Tam. M (Pampers / Huggies)",
+        "category": "Fraldas",
+        "description": "Tamanho M (6 a 9kg), o tamanho que a bebê mais vai usar. [meta:32] [order:2]",
+        "icon": "🎀",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "high",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      },
+      {
+        "id": "gift-4",
+        "title": "Pacote de Fraldas Tam. G (Pampers / Huggies)",
+        "category": "Fraldas",
+        "description": "Tamanho G (9 a 12kg) para quando a Maitê estiver mais crescidinha. [meta:20] [order:3]",
+        "icon": "🧸",
+        "status": "available",
+        "reserved_by": "",
+        "reserved_at": null,
+        "priority": "medium",
+        "created_at": "2026-08-16T01:58:45.315223+00:00"
+      }
+    ],
+    "gift_pledges": [
+      {
+        "id": "pledge-26388f03-94c1-4455-bb4a-d93f4eb46add",
+        "gift_id": "gift-3",
+        "giver_name": "Rafaella e Victor",
+        "quantity": 3,
+        "created_at": "2026-08-16T23:03:21.754396+00:00"
+      },
+      {
+        "id": "pledge-07651d5d-d3cc-4914-b633-95dafc8e7ad7",
+        "gift_id": "gift-6",
+        "giver_name": "Rafaella e Victor",
+        "quantity": 1,
+        "created_at": "2026-08-16T23:03:21.75225+00:00"
+      },
+      {
+        "id": "pledge-68be2f27-eeb9-4133-a103-504552c982db",
+        "gift_id": "gift-5",
+        "giver_name": "Jéssica e Marcelo",
+        "quantity": 1,
+        "created_at": "2026-08-16T23:05:53.215466+00:00"
+      },
+      {
+        "id": "pledge-10acede4-c69b-47e0-9361-56219c59d5b8",
+        "gift_id": "gift-7",
+        "giver_name": "Maria Eduarda",
+        "quantity": 1,
+        "created_at": "2026-08-16T23:45:22.597172+00:00"
+      },
+      {
+        "id": "pledge-686abf50-d33b-485e-b698-a1640fae1b55",
+        "gift_id": "gift-4",
+        "giver_name": "Maria Eduarda",
+        "quantity": 1,
+        "created_at": "2026-08-16T23:45:22.597196+00:00"
+      },
+      {
+        "id": "pledge-a4fee764-81c9-48d9-82fe-bd40b4f69d6f",
+        "gift_id": "gift-3",
+        "giver_name": "Vitoria",
+        "quantity": 1,
+        "created_at": "2026-08-17T10:27:48.487492+00:00"
+      },
+      {
+        "id": "pledge-c91e59ed-eef8-48df-82b5-6a920d6ad338",
+        "gift_id": "gift-27",
+        "giver_name": "Vitoria",
+        "quantity": 1,
+        "created_at": "2026-08-17T10:27:48.956291+00:00"
+      },
+      {
+        "id": "pledge-a9867384-4097-4cd0-b552-11bf40cc2bf6",
+        "gift_id": "gift-3",
+        "giver_name": "Luiza Goyaz",
+        "quantity": 1,
+        "created_at": "2026-08-17T14:57:50.968114+00:00"
+      },
+      {
+        "id": "pledge-d3bd1fab-51f7-4438-b25b-33368d22f4a3",
+        "gift_id": "gift-5",
+        "giver_name": "Luiza Goyaz",
+        "quantity": 1,
+        "created_at": "2026-08-17T14:57:51.373019+00:00"
+      },
+      {
+        "id": "pledge-4d62be63-3cc2-48f1-85b1-ac0f5d464059",
+        "gift_id": "gift-5",
+        "giver_name": "Leonardo",
+        "quantity": 1,
+        "created_at": "2026-08-17T15:06:03.12766+00:00"
+      },
+      {
+        "id": "pledge-9a620255-c25c-4033-9c9e-7d63a1727571",
+        "gift_id": "gift-3",
+        "giver_name": "Kelvin, Paula é Lisa",
+        "quantity": 1,
+        "created_at": "2026-08-17T16:44:10.158341+00:00"
+      },
+      {
+        "id": "pledge-980567de-228b-4f70-9d2d-9c464da745fb",
+        "gift_id": "gift-5",
+        "giver_name": "Kelvin, Paula é Lisa",
+        "quantity": 1,
+        "created_at": "2026-08-17T16:44:11.150536+00:00"
+      },
+      {
+        "id": "pledge-b5163ce9-2bb8-4dba-83f3-fc7b4fce130a",
+        "gift_id": "gift-3",
+        "giver_name": "Gabriel Henrique Menezes Silva",
+        "quantity": 1,
+        "created_at": "2026-08-17T20:57:13.66861+00:00"
+      },
+      {
+        "id": "pledge-fa4a33ee-ece6-4b20-983e-b4be7e705838",
+        "gift_id": "gift-5",
+        "giver_name": "Gabriel Henrique Menezes Silva",
+        "quantity": 1,
+        "created_at": "2026-08-17T20:57:14.157105+00:00"
+      },
+      {
+        "id": "pledge-dc6623af-08ee-4f9d-bdd3-f41f1af48ead",
+        "gift_id": "gift-3",
+        "giver_name": "Ivanete Batista",
+        "quantity": 1,
+        "created_at": "2026-08-17T22:15:06.456904+00:00"
+      },
+      {
+        "id": "pledge-a9dec0c2-aa3e-43db-8cd1-de50a8449c24",
+        "gift_id": "gift-5",
+        "giver_name": "Ivanete Batista",
+        "quantity": 1,
+        "created_at": "2026-08-17T22:15:06.940048+00:00"
+      },
+      {
+        "id": "pledge-a15b353c-581b-4e28-a87d-fc6e94dadc8c",
+        "gift_id": "gift-3",
+        "giver_name": "Filipe e família",
+        "quantity": 1,
+        "created_at": "2026-08-18T13:49:50.154999+00:00"
+      },
+      {
+        "id": "pledge-fa52546a-0061-495b-bc68-075a71fb675f",
+        "gift_id": "gift-5",
+        "giver_name": "Filipe e família",
+        "quantity": 1,
+        "created_at": "2026-08-18T13:49:50.659936+00:00"
+      },
+      {
+        "id": "pledge-6ce2ed9c-bcc8-456f-9a37-dc9cfd2a2b1d",
+        "gift_id": "gift-3",
+        "giver_name": "Adélia",
+        "quantity": 1,
+        "created_at": "2026-08-18T22:28:28.701464+00:00"
+      },
+      {
+        "id": "pledge-279290b7-1fb9-4b86-9cee-8a8c26ea781d",
+        "gift_id": "gift-7",
+        "giver_name": "Adélia",
+        "quantity": 1,
+        "created_at": "2026-08-18T22:28:29.112466+00:00"
+      },
+      {
+        "id": "pledge-9cb346dc-605c-44aa-bd24-6659e993c0c2",
+        "gift_id": "gift-3",
+        "giver_name": "Dhulia",
+        "quantity": 1,
+        "created_at": "2026-08-26T15:33:16.780548+00:00"
+      },
+      {
+        "id": "pledge-30db5fda-6e82-460c-8979-faf6f50ce21e",
+        "gift_id": "gift-5",
+        "giver_name": "Dhulia",
+        "quantity": 1,
+        "created_at": "2026-08-26T15:33:17.195672+00:00"
+      },
+      {
+        "id": "pledge-dbb735bf-2d27-432b-856e-b9bd75beed7c",
+        "gift_id": "gift-3",
+        "giver_name": "Teste convidado",
+        "quantity": 1,
+        "created_at": "2026-09-03T01:50:13.476443+00:00"
+      },
+      {
+        "id": "pledge-113e1f63-d817-41c4-9c2d-9823f2cc1ad7",
+        "gift_id": "gift-5",
+        "giver_name": "Teste convidado",
+        "quantity": 1,
+        "created_at": "2026-09-03T01:50:13.850008+00:00"
+      },
+      {
+        "id": "pledge-58735a2c-1a8b-4f81-86c5-5510afb5f94a",
+        "gift_id": "gift-3",
+        "giver_name": "Carlos Eduardo",
+        "quantity": 1,
+        "created_at": "2026-09-03T02:25:51.86361+00:00"
+      },
+      {
+        "id": "pledge-44485dbf-600c-4e23-8109-65bafe97c34e",
+        "gift_id": "gift-5",
+        "giver_name": "Carlos Eduardo",
+        "quantity": 1,
+        "created_at": "2026-09-03T02:25:52.283013+00:00"
+      }
+    ],
+    "rsvps": [
+      {
+        "id": "rsvp-a41818aa-7962-48cf-aece-bf76e50a64aa",
+        "name": "Maria Jose Das Neves Silva",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 1,
+        "companion_names": [
+          "Ayla Yusuf Neves"
+        ],
+        "phone": "62991944802",
+        "message": "",
+        "created_at": "2026-08-16T22:50:08.19593+00:00"
+      },
+      {
+        "id": "rsvp-864ab951-9276-4a0c-9cbf-0e755b2e8c15",
+        "name": "Luiza Goyaz",
+        "attending": true,
+        "adults_count": 2,
+        "children_count": 0,
+        "companion_names": [
+          "Ok!"
+        ],
+        "phone": "62983179424",
+        "message": "Amo vocês!",
+        "created_at": "2026-08-16T22:58:09.233865+00:00"
+      },
+      {
+        "id": "rsvp-505eb353-ee69-4da1-97fd-898e58d9ba4b",
+        "name": "Renato Brandão",
+        "attending": true,
+        "adults_count": 2,
+        "children_count": 0,
+        "companion_names": [
+          "Stella"
+        ],
+        "phone": "62995458923",
+        "message": "",
+        "created_at": "2026-08-16T23:07:29.637161+00:00"
+      },
+      {
+        "id": "rsvp-72e709c6-b9f9-4ad8-85f4-5de8b497dc47",
+        "name": "Jéssica Bispo",
+        "attending": true,
+        "adults_count": 2,
+        "children_count": 0,
+        "companion_names": [
+          "Marcelo"
+        ],
+        "phone": "",
+        "message": "",
+        "created_at": "2026-08-16T23:10:38.8324+00:00"
+      },
+      {
+        "id": "rsvp-cb656975-002c-4119-9486-562d0f50d85c",
+        "name": "Rafaella Barros",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "62996144863",
+        "message": "Maitê, você já é uma bênção escolhida por Deus e muito amada antes mesmo de chegar. “Antes de formá-lo no ventre, eu a escolhi.” Jr 1:5 .. Estarei sempre aqui por você! Você foi escolhida por Deus e presenteada aos papais certos 🩷 Aos meus amigos, a quem Deus confiou essa linda missão: que a família de vocês, que agora se inicia, seja sempre cercada de amor, respeito, fé e cumplicidade. Que Deus os capacite a cada dia e os guie nessa nova caminhada, e que nunca falte amor!!🩷 eu amo vocês!!",
+        "created_at": "2026-08-16T23:10:42.935398+00:00"
+      },
+      {
+        "id": "rsvp-1bb3cd4d-97bc-4c08-a156-8b73808b39d5",
+        "name": "Solange A A Ramos Brandão",
+        "attending": true,
+        "adults_count": 2,
+        "children_count": 0,
+        "companion_names": [
+          "Ruy Gonçalves Brandão"
+        ],
+        "phone": "62985679449",
+        "message": "Maitê, estamos te esperando com muito  e carinho. Que Deus te abençoe e te dê muita saúde, e felicidade! 🙌🙌🙏🙏👏👏👏👏",
+        "created_at": "2026-08-16T23:13:12.982028+00:00"
+      },
+      {
+        "id": "rsvp-b379235d-1cea-45c9-aacc-cce2b83e4c2c",
+        "name": "Stéfano silva",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "62986411610",
+        "message": "Um milagre que se tornou a maior felicidade da Isa, é nítido que Deus está envolvido desde o princípio desse sonho. \nQue essa princesa seja muito bem educada pelos papais e muito abençoada por Deus.",
+        "created_at": "2026-08-16T23:26:02.116572+00:00"
+      },
+      {
+        "id": "rsvp-3fea1d36-a127-4969-a8d3-a3f5cf482407",
+        "name": "Victor Alves",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "62999667007",
+        "message": "",
+        "created_at": "2026-08-16T23:34:44.623772+00:00"
+      },
+      {
+        "id": "rsvp-1f16fa6a-840a-49fc-8d66-e897ed953a6d",
+        "name": "Hércules Gideons",
+        "attending": true,
+        "adults_count": 2,
+        "children_count": 0,
+        "companion_names": [
+          "Adaleny Dayane"
+        ],
+        "phone": "",
+        "message": "Jogo feliz em poder participar desse momento com vocês ❤️🎉",
+        "created_at": "2026-08-16T23:36:56.208036+00:00"
+      },
+      {
+        "id": "rsvp-b8599e13-6526-414f-8ad1-faf44b4bbf83",
+        "name": "José Ricardo Brandão",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "62991759498",
+        "message": "Parabéns que Deus e Nossa Senhora abençoe vcs",
+        "created_at": "2026-08-16T23:46:18.790964+00:00"
+      },
+      {
+        "id": "rsvp-6d454f1a-a6fe-445d-9414-6f3a938b3bda",
+        "name": "Amanda Gonçalves de Oliveira",
+        "attending": true,
+        "adults_count": 2,
+        "children_count": 0,
+        "companion_names": [
+          "Werick Oliveira Santos"
+        ],
+        "phone": "",
+        "message": "",
+        "created_at": "2026-08-17T00:28:07.289644+00:00"
+      },
+      {
+        "id": "rsvp-30d99724-cf24-49ac-9d89-d016b429fd28",
+        "name": "Isadora Vieira",
+        "attending": true,
+        "adults_count": 2,
+        "children_count": 0,
+        "companion_names": [
+          "Vinicius"
+        ],
+        "phone": "62993666726",
+        "message": "Que a família de Nazaré abençoe o lar de vocês e que a benção de nossa senhora grávida venha descer sobre sua gestação e sobre o seu parto para que seja tão abençoado quanto a vinda do nosso menino Jesus foi e é em nossas vidas. \nAmo vocês demais e contem comigo sempre ❤️",
+        "created_at": "2026-08-17T00:52:30.612654+00:00"
+      },
+      {
+        "id": "rsvp-d0681e23-38ea-4af0-a0e5-fc2550722e73",
+        "name": "Gabrielly Nogueira",
+        "attending": true,
+        "adults_count": 5,
+        "children_count": 0,
+        "companion_names": [
+          "Rozane",
+          "Isabella",
+          "Rafael",
+          "Ivanete"
+        ],
+        "phone": "62996423262",
+        "message": "",
+        "created_at": "2026-08-17T01:25:49.057594+00:00"
+      },
+      {
+        "id": "rsvp-f7113a3b-635e-447f-ae84-fed29b1a5640",
+        "name": "Anna Flávia da silva Brandão",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "",
+        "message": "Que venha com muita saúde ❤️",
+        "created_at": "2026-08-17T01:59:37.956828+00:00"
+      },
+      {
+        "id": "rsvp-aba38dd9-3f80-4d5c-b922-4176ff10ab64",
+        "name": "Vitoria",
+        "attending": true,
+        "adults_count": 2,
+        "children_count": 0,
+        "companion_names": [
+          "Kenedy"
+        ],
+        "phone": "(62) 68235-1303",
+        "message": "",
+        "created_at": "2026-08-17T10:27:48.176674+00:00"
+      },
+      {
+        "id": "rsvp-5acfc45f-52cb-4347-b333-6f50ed147740",
+        "name": "Thais Viana de Jesus",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "(62) 98532-0281",
+        "message": "",
+        "created_at": "2026-08-17T12:06:35.540059+00:00"
+      },
+      {
+        "id": "rsvp-dfb382a0-d40c-4ab9-88ac-8d8bf1e6958f",
+        "name": "Raynara Stephany",
+        "attending": true,
+        "adults_count": 2,
+        "children_count": 0,
+        "companion_names": [
+          "Cleia Dalva"
+        ],
+        "phone": "",
+        "message": "Que a chegada da Maitê traga ainda mais amor, alegria e luz para a vida de vocês. Que ela venha com muita saúde e seja cercada de amor em cada fase da vida. Desejo muitas bênçãos e momentos inesquecíveis para essa família linda! 🤍✨",
+        "created_at": "2026-08-17T13:22:48.41322+00:00"
+      },
+      {
+        "id": "rsvp-99240fa1-448f-4fd7-9b52-f0aef176a342",
+        "name": "Leonardo Vieira",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "62995148080",
+        "message": "",
+        "created_at": "2026-08-17T15:06:42.811082+00:00"
+      },
+      {
+        "id": "rsvp-395ab024-0174-4fdb-983c-3a827b179387",
+        "name": "Gabriel Henrique Menezes Silva",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "(62) 99953-1746",
+        "message": "Que venha com muita saúde e seja alegria de todos ao seu redor",
+        "created_at": "2026-08-17T20:56:12.637407+00:00"
+      },
+      {
+        "id": "rsvp-694406cc-e817-452d-8e6f-b2b574341e2d",
+        "name": "Ivanete Batista",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "",
+        "message": "",
+        "created_at": "2026-08-17T22:14:10.277196+00:00"
+      },
+      {
+        "id": "rsvp-f163af34-3fc9-4993-a176-72f7fb9dc168",
+        "name": "Kelvin Fayyad",
+        "attending": true,
+        "adults_count": 2,
+        "children_count": 1,
+        "companion_names": [
+          "Paula",
+          "Lisa"
+        ],
+        "phone": "(62) 98505-2009",
+        "message": "",
+        "created_at": "2026-08-17T17:43:38.886059+00:00"
+      },
+      {
+        "id": "rsvp-89d86b63-3f82-4f12-b7f6-743a2a958acf",
+        "name": "Nayany Aparecida de Oliveira",
+        "attending": true,
+        "adults_count": 2,
+        "children_count": 0,
+        "companion_names": [
+          "Allana Caetano"
+        ],
+        "phone": "(62) 98284-1625",
+        "message": "",
+        "created_at": "2026-08-18T13:51:11.804+00:00"
+      },
+      {
+        "id": "rsvp-506b23e2-befa-460b-808f-feac41079104",
+        "name": "Adélia Pires de Barros",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "(62) 99697-5955",
+        "message": "Que venha com muita saúde bebezinha",
+        "created_at": "2026-08-18T22:28:28.251+00:00"
+      },
+      {
+        "id": "rsvp-8d57c84e-bcf1-4b0a-99b5-418ebeb06284",
+        "name": "Dhulia Hemily dos Santos Menezes",
+        "attending": false,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "",
+        "message": "",
+        "created_at": "2026-08-26T15:33:52.763+00:00"
+      },
+      {
+        "id": "rsvp-db15e92c-29d4-49d5-8e5e-71378c99091e",
+        "name": "Fabiana",
+        "attending": true,
+        "adults_count": 3,
+        "children_count": 0,
+        "companion_names": [
+          "Heliomar",
+          "Felipe"
+        ],
+        "phone": "(62) 99811-4723",
+        "message": "Maitê já é muito amada por todos nós!",
+        "created_at": "2026-08-26T22:42:34.506+00:00"
+      },
+      {
+        "id": "rsvp-2912304b-9fdf-4f00-8ee9-bccafc72a74e",
+        "name": "Tio San",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "",
+        "message": "",
+        "created_at": "2026-08-29T20:22:05.907+00:00"
+      },
+      {
+        "id": "rsvp-9bdb30be-096b-4420-9087-d98a1afa080c",
+        "name": "Victoria de Oliveira Costa",
+        "attending": true,
+        "adults_count": 2,
+        "children_count": 1,
+        "companion_names": [
+          "Saymon",
+          "Eloá"
+        ],
+        "phone": "(62) 98319-8369",
+        "message": "Estou muito ansiosa para a sua chegada! Titia/ madrinha te ama muito.",
+        "created_at": "2026-08-16T22:32:36.110698+00:00"
+      },
+      {
+        "id": "rsvp-9a2f2af1-9440-4092-b88c-f57cbe977d70",
+        "name": "Kamilla Santos",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "(62) 99912-9998",
+        "message": "",
+        "created_at": "2026-08-29T21:44:04.318+00:00"
+      },
+      {
+        "id": "rsvp-428825b1-6561-43bc-8fdd-2ac4006ef05d",
+        "name": "Adriana Batista",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "(62) 99312-5592",
+        "message": "Com certeza vc já é muito amada e esperada princesinha, a titia avó já te ama de montão e não vê a hora de te conhecer pessoalmente e te dar muito amor e carinho bonequinha!😍❤️💕Deus trará vc com saúde e linda como sua mamãe!!!😘",
+        "created_at": "2026-09-01T12:10:36.146+00:00"
+      },
+      {
+        "id": "rsvp-3dbe18cf-976d-40ed-a6a2-191ee3cdb7ba",
+        "name": "Filipe e família",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "(62) 99544-5696",
+        "message": "Vai ser um prazer pra vocês ter a minha presença",
+        "created_at": "2026-08-18T13:49:48.688+00:00"
+      },
+      {
+        "id": "rsvp-c7c28f95-8817-43cd-b0ab-9834a745d34a",
+        "name": "Teste convidado",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "",
+        "message": "",
+        "created_at": "2026-09-03T01:50:01.242+00:00"
+      },
+      {
+        "id": "rsvp-425aa689-d59a-4695-8915-7f29cb37c896",
+        "name": "Mariana Silva",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "",
+        "message": "",
+        "created_at": "2026-09-03T02:24:47.24+00:00"
+      },
+      {
+        "id": "rsvp-73ad0271-7a06-4c24-be83-7a206823849d",
+        "name": "Carlos Eduardo",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "",
+        "message": "",
+        "created_at": "2026-09-03T02:25:21.013+00:00"
+      },
+      {
+        "id": "rsvp-815ba231-578c-49a7-a56a-9d478617fe65",
+        "name": "Teste",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "",
+        "message": "",
+        "created_at": "2026-09-03T02:41:12.948+00:00"
+      },
+      {
+        "id": "rsvp-b8c79c24-8384-4f95-82e5-cae0c89c00d9",
+        "name": "Teste",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "",
+        "message": "",
+        "created_at": "2026-09-03T02:41:21.388+00:00"
+      },
+      {
+        "id": "rsvp-a9101a33-6c60-4961-8618-e05d7caa269a",
+        "name": "Teste",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "",
+        "message": "",
+        "created_at": "2026-09-03T02:41:36.111+00:00"
+      },
+      {
+        "id": "rsvp-42f56a04-cf82-4602-83f0-5cc3816c7ff2",
+        "name": "Teste",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "",
+        "message": "",
+        "created_at": "2026-09-03T02:43:25.904+00:00"
+      },
+      {
+        "id": "rsvp-bed95647-8c6e-4af7-93e4-4bb1deb1d5e7",
+        "name": "Teste",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "",
+        "message": "",
+        "created_at": "2026-09-03T02:47:42.098+00:00"
+      },
+      {
+        "id": "rsvp-b9e9d1c1-3d20-448a-9397-412ca700de46",
+        "name": "Teste",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "",
+        "message": "",
+        "created_at": "2026-09-03T02:55:47.795+00:00"
+      }
+    ],
+    "messages": [
+      {
+        "id": "msg-2818f5fb-3ea8-4249-9433-d4a64bdb7d72",
+        "author": "Stéfano silva",
+        "text": "Que essa princesa cresça guardada e abençoada por Deus. Que o amor que sentimos pela Isa e pelo Léo possa refletir nessa neném ❤️",
+        "date": "Agora mesmo",
+        "likes": 2,
+        "status": "approved",
+        "created_at": "2026-08-16T23:29:38.353+00:00"
+      },
+      {
+        "id": "msg-6c672fb9-0e9c-499f-b46f-c49bf4d95e78",
+        "author": "Victoria de Oliveira Costa",
+        "text": "Estou muito ansiosa para a sua chegada! Titia/ madrinha te ama muito.",
+        "date": "Agora mesmo",
+        "likes": 5,
+        "status": "approved",
+        "created_at": "2026-08-16T19:48:18.341+00:00"
+      },
+      {
+        "id": "msg-2cec6b19-d9c0-4461-97ba-0877d1888c89",
+        "author": "Tio Kelvin",
+        "text": "Minha sobrinha lindona, que vc venha com muita saúde, pq de beleza e carisma eu sei que vai puxar o titio! \nNão dê ouvidos ao seu pai e não vai na onda da sua mãe. Fica uma dica de ouro.",
+        "date": "Agora mesmo",
+        "likes": 2,
+        "status": "approved",
+        "created_at": "2026-08-17T14:54:37.519+00:00"
+      },
+      {
+        "id": "msg-eb7d57b7-392b-4d93-bf5f-872f5bd029c6",
+        "author": "Raynara Stephany",
+        "text": "Que a chegada da Maitê traga ainda mais amor, alegria e luz para a vida de vocês. Que ela venha com muita saúde e seja cercada de amor em cada fase da vida. Desejo muitas bênçãos e momentos inesquecíveis para essa família linda! 🤍✨",
+        "date": "Agora mesmo",
+        "likes": 1,
+        "status": "approved",
+        "created_at": "2026-08-17T13:22:47.771+00:00"
+      },
+      {
+        "id": "msg-ac4e3404-2499-436e-ae50-35edddd9a300",
+        "author": "Adriana Batista",
+        "text": "Com certeza vc já é muito amada e esperada princesinha, a titia avó já te ama de montão e não vê a hora de te conhecer pessoalmente e te dar muito amor e carinho bonequinha!😍❤️💕Deus trará vc com saúde e linda como sua mamãe!!!😘",
+        "date": "Agora mesmo",
+        "likes": 1,
+        "status": "approved",
+        "created_at": "2026-09-01T12:10:36.147+00:00"
+      },
+      {
+        "id": "msg-23b4fd08-22d0-414b-bf47-cd1a42e7ef10",
+        "author": "Filipe e família",
+        "text": "Vai ser um prazer pra vocês ter a minha presença",
+        "date": "Agora mesmo",
+        "likes": 1,
+        "status": "approved",
+        "created_at": "2026-08-18T13:49:48.688+00:00"
+      },
+      {
+        "id": "msg-7ea92cf8-7401-4d41-87ef-f9fed249912d",
+        "author": "Rafaella Barros",
+        "text": "Maitê, você já é uma bênção escolhida por Deus e muito amada antes mesmo de chegar. “Antes de formá-lo no ventre, eu a escolhi.” Jr 1:5 .. Estarei sempre aqui por você! Você foi escolhida por Deus e presenteada aos papais certos 🩷 Aos meus amigos, a quem Deus confiou essa linda missão: que a família de vocês, que agora se inicia, seja sempre cercada de amor, respeito, fé e cumplicidade. Que Deus os capacite a cada dia e os guie nessa nova caminhada, e que nunca falte amor!!🩷 eu amo vocês!!",
+        "date": "Agora mesmo",
+        "likes": 3,
+        "status": "approved",
+        "created_at": "2026-08-16T23:10:43.076+00:00"
+      },
+      {
+        "id": "msg-4a7229b6-2d94-4b1c-9b89-4cb58d88f8f7",
+        "author": "Hércules Gideons",
+        "text": "Jogo feliz em poder participar desse momento com vocês ❤️🎉",
+        "date": "Agora mesmo",
+        "likes": 3,
+        "status": "approved",
+        "created_at": "2026-08-16T23:36:55.705+00:00"
+      },
+      {
+        "id": "msg-7a8b708f-2342-4c9a-9c81-3e5638b4cc17",
+        "author": "Solange A A Ramos Brandão",
+        "text": "Maitê, estamos te esperando com muito amor e carinho. Que Deus te abençoe e te dê muita saúde, e felicidade! 🙌🙌🙏🙏👏👏👏👏",
+        "date": "Agora mesmo",
+        "likes": 3,
+        "status": "approved",
+        "created_at": "2026-08-16T23:18:44.189+00:00"
+      },
+      {
+        "id": "msg-3dd1b38b-f519-48de-b013-9d590e0ad594",
+        "author": "Papai e Mamãe",
+        "text": "Site criado com muito carinho para o chá da nossa Maitê. Te amamos, filha!",
+        "date": "Agora mesmo",
+        "likes": 8,
+        "status": "approved",
+        "created_at": "2026-08-16T19:14:08.724+00:00"
+      },
+      {
+        "id": "msg-298b02db-6dd2-4c4e-9516-6c62ec38bb9c",
+        "author": "Adélia Pires de Barros",
+        "text": "Que venha com muita saúde bebezinha",
+        "date": "Agora mesmo",
+        "likes": 1,
+        "status": "approved",
+        "created_at": "2026-08-18T22:28:28.251+00:00"
+      },
+      {
+        "id": "msg-c6bb5115-22e1-4447-8a90-240b05469917",
+        "author": "Anna Flávia da silva Brandão",
+        "text": "Que venha com muita saúde ❤️",
+        "date": "Agora mesmo",
+        "likes": 2,
+        "status": "approved",
+        "created_at": "2026-08-17T01:59:37.714+00:00"
+      },
+      {
+        "id": "msg-900923db-0701-4708-97b8-de4609286f7c",
+        "author": "Isadora Vieira",
+        "text": "Que a família de Nazaré abençoe o lar de vocês e que a benção de nossa senhora grávida venha descer sobre sua gestação e sobre o seu parto para que seja tão abençoado quanto a vinda do nosso menino Jesus foi e é em nossas vidas. \nAmo vocês demais e contem comigo sempre ❤️",
+        "date": "Agora mesmo",
+        "likes": 3,
+        "status": "approved",
+        "created_at": "2026-08-17T00:52:30.119+00:00"
+      },
+      {
+        "id": "msg-1ce7fcc2-cb44-455b-a5cd-e4fb33249ded",
+        "author": "Célio",
+        "text": "Vovozinho te espera com muito carinho",
+        "date": "Agora mesmo",
+        "likes": 2,
+        "status": "approved",
+        "created_at": "2026-08-17T00:05:03.999+00:00"
+      },
+      {
+        "id": "msg-09475ec2-6bb6-459e-9ee3-a62d0e5e25d2",
+        "author": "José Ricardo Brandão",
+        "text": "Parabéns que Deus e Nossa Senhora abençoe vcs",
+        "date": "Agora mesmo",
+        "likes": 2,
+        "status": "approved",
+        "created_at": "2026-08-16T23:46:17.865+00:00"
+      },
+      {
+        "id": "msg-ca747330-d628-4f75-9eab-e55e3b0e42bd",
+        "author": "Gabriel Henrique Menezes Silva",
+        "text": "Que venha com muita saúde e seja alegria de todos ao seu redor",
+        "date": "Agora mesmo",
+        "likes": 1,
+        "status": "approved",
+        "created_at": "2026-08-17T20:56:12.358+00:00"
+      },
+      {
+        "id": "msg-55249c30-3c77-45ee-949e-1be22dacd4ba",
+        "author": "Stéfano silva",
+        "text": "Um milagre que se tornou a maior felicidade da Isa, é nítido que Deus está envolvido desde o princípio desse sonho. \nQue essa princesa seja muito bem educada pelos papais e muito abençoada por Deus.",
+        "date": "Agora mesmo",
+        "likes": 4,
+        "status": "approved",
+        "created_at": "2026-08-16T23:26:01.499+00:00"
+      },
+      {
+        "id": "msg-cf60180a-1289-4f18-a307-dd0843ee0fc8",
+        "author": "Luiza Goyaz",
+        "text": "Amo vocês!",
+        "date": "Agora mesmo",
+        "likes": 2,
+        "status": "approved",
+        "created_at": "2026-08-16T22:58:09.353+00:00"
+      },
+      {
+        "id": "msg-da6875a1-6a42-4a01-b694-22c7b01f50c9",
+        "author": "Ayla",
+        "text": "Esperamos por você Maitê ansiosamente, bjs da priminha Ayla",
+        "date": "Agora mesmo",
+        "likes": 2,
+        "status": "approved",
+        "created_at": "2026-08-16T22:54:57.422+00:00"
+      },
+      {
+        "id": "msg-295d31cc-071c-4fbf-87b5-540960d53087",
+        "author": "Titio Saymon",
+        "text": "Titio te ama muito princesa, estarei aqui sempre que precisar, ainda mais sendo seu tio e padrinho...♡",
+        "date": "Agora mesmo",
+        "likes": 2,
+        "status": "approved",
+        "created_at": "2026-08-16T20:21:04.933+00:00"
+      },
+      {
+        "id": "msg-cd9839ee-2131-421d-923c-d8db948ff5df",
+        "author": "Fabiana",
+        "text": "Maitê já é muito amada por todos nós!",
+        "date": "Agora mesmo",
+        "likes": 1,
+        "status": "approved",
+        "created_at": "2026-08-26T22:42:34.512+00:00"
+      }
+    ]
+  }
+}
