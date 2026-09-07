@@ -53,6 +53,32 @@ export default function AdminPanel({
   const [pinError, setPinError] = useState(false);
   const [activeTab, setActiveTab] = useState('gifts-report'); // 'gifts-report' | 'rsvps' | 'gifts' | 'config' | 'messages' | 'logs'
   const [logs, setLogs] = useState(() => storageService.getAdminLogs());
+  const [isRefreshingCloud, setIsRefreshingCloud] = useState(false);
+
+  // Sincronização completa de todas as tabelas em tempo real
+  const refreshAllCloudData = async () => {
+    setIsRefreshingCloud(true);
+    try {
+      await Promise.allSettled([
+        storageService.fetchRSVPsFromCloud(),
+        storageService.fetchPledgesFromCloud(),
+        storageService.fetchGiftsFromCloud(),
+        storageService.fetchMessagesFromCloud(),
+        storageService.fetchConfigFromCloud(),
+      ]);
+    } catch (err) {
+      console.error('Erro ao sincronizar nuvem no painel:', err);
+    } finally {
+      setIsRefreshingCloud(false);
+    }
+  };
+
+  // Carregar dados frescos da nuvem ao abrir o painel se já autenticado
+  useEffect(() => {
+    if (isOpen && isAuthenticated) {
+      refreshAllCloudData();
+    }
+  }, [isOpen, isAuthenticated]);
 
   // Listen to logs updates in real time
   useEffect(() => {
@@ -129,8 +155,8 @@ export default function AdminPanel({
       }
       setIsAuthenticated(true);
       setPinError(false);
-      // Recarregar os RSVPs da nuvem usando as credenciais administrativas recém-autenticadas
-      storageService.fetchRSVPsFromCloud();
+      // Recarregar todos os dados frescos da nuvem imediatamente após login
+      refreshAllCloudData();
     } else {
       setPinError(true);
     }
@@ -627,6 +653,8 @@ export default function AdminPanel({
           isAuthenticated={isAuthenticated}
           onLock={handleLock}
           onClose={onClose}
+          onRefresh={refreshAllCloudData}
+          isRefreshing={isRefreshingCloud}
         />
 
         {/* Auth Barrier */}

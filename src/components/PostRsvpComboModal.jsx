@@ -761,7 +761,7 @@ export default function PostRsvpComboModal({
                   onClick={onClose}
                   className="w-full py-3 px-5 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-[0.98] text-slate-700 font-bold text-xs sm:text-sm transition"
                 >
-                  Concluir e Voltar ao Site
+                  Concluir ✨
                 </button>
               </div>
             </div>

@@ -244,8 +244,8 @@ export const storageService = {
     try {
       console.log('⚡ Conectando ao banco em tempo real Supabase...');
 
-      // Carregar dados iniciais da nuvem
-      const [configData, giftsData, rsvpsData, messagesData, pledgesData] = await Promise.all([
+      // Carregar dados iniciais da nuvem com resiliência total
+      const results = await Promise.allSettled([
         storageService.fetchConfigFromCloud(),
         storageService.fetchGiftsFromCloud(),
         storageService.fetchRSVPsFromCloud(),
@@ -253,14 +253,16 @@ export const storageService = {
         storageService.fetchPledgesFromCloud(),
       ]);
 
-      if (onDataUpdate) {
-        onDataUpdate({
-          config: configData,
-          gifts: giftsData,
-          rsvps: rsvpsData,
-          messages: messagesData,
-          pledges: pledgesData,
-        });
+      const [configRes, giftsRes, rsvpsRes, messagesRes, pledgesRes] = results;
+      const initialPayload = {};
+      if (configRes.status === 'fulfilled' && configRes.value) initialPayload.config = configRes.value;
+      if (giftsRes.status === 'fulfilled' && giftsRes.value) initialPayload.gifts = giftsRes.value;
+      if (rsvpsRes.status === 'fulfilled' && rsvpsRes.value) initialPayload.rsvps = rsvpsRes.value;
+      if (messagesRes.status === 'fulfilled' && messagesRes.value) initialPayload.messages = messagesRes.value;
+      if (pledgesRes.status === 'fulfilled' && pledgesRes.value) initialPayload.pledges = pledgesRes.value;
+
+      if (onDataUpdate && Object.keys(initialPayload).length > 0) {
+        onDataUpdate(initialPayload);
       }
 
       // Batching & Debounce state for realtime postgres changes
@@ -380,6 +382,7 @@ export const storageService = {
       }
       const mapped = mapConfigFromDB(data);
       localStorage.setItem(KEYS.CONFIG, JSON.stringify(mapped));
+      window.dispatchEvent(new CustomEvent('config_updated', { detail: mapped }));
       return mapped;
     } catch {
       return storageService.getConfig();
@@ -437,6 +440,7 @@ export const storageService = {
       }
       const mapped = data.map(mapGiftFromDB);
       localStorage.setItem(KEYS.GIFTS, JSON.stringify(mapped));
+      window.dispatchEvent(new CustomEvent('gifts_updated', { detail: mapped }));
       return mapped;
     } catch (err) {
       console.error('Erro ao carregar presentes do Supabase:', err);
@@ -809,6 +813,7 @@ export const storageService = {
 
       const mapped = (data || []).map(mapMessageFromDB).filter(Boolean);
       localStorage.setItem(KEYS.MESSAGES, JSON.stringify(mapped));
+      window.dispatchEvent(new CustomEvent('messages_updated', { detail: mapped }));
       return mapped;
     } catch (err) {
       console.error('Erro ao carregar mensagens do Supabase:', err);
@@ -1102,6 +1107,7 @@ export const storageService = {
       if (error) throw error;
       const mapped = (data || []).map(mapPledgeFromDB).filter(p => !isTestGuest(p.giverName));
       localStorage.setItem(KEYS.PLEDGES, JSON.stringify(mapped));
+      window.dispatchEvent(new CustomEvent('pledges_updated', { detail: mapped }));
       return mapped;
     } catch (err) {
       console.error('Erro ao carregar pledges do Supabase:', err);
@@ -1280,9 +1286,9 @@ export const storageService = {
         ]);
         dump.tables.event_config = cfg.data || [];
         dump.tables.gifts = gft.data || [];
-        dump.tables.gift_pledges = pld.data || [];
-        dump.tables.rsvps = rsv.data || [];
-        dump.tables.messages = msg.data || [];
+        dump.tables.gift_pledges = (pld.data || []).filter(p => !isTestGuest(p.giver_name));
+        dump.tables.rsvps = (rsv.data || []).filter(r => !isTestGuest(r.name));
+        dump.tables.messages = (msg.data || []).filter(m => !isTestGuest(m.author));
       } catch (err) {
         console.error('Erro ao buscar do Supabase para exportação, usando dados locais:', err);
         dump.tables = {
