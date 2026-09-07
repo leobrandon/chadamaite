@@ -1,7 +1,7 @@
 import React from 'react';
-import { Shield, Lock, X } from 'lucide-react';
+import { Shield, Lock, X, RefreshCw } from 'lucide-react';
 
-export default function AdminHeader({ isAuthenticated, onLock, onClose }) {
+export default function AdminHeader({ isAuthenticated, onLock, onClose, onRefresh, isRefreshing }) {
   return (
     <div className="bg-slate-900 px-4 py-3.5 sm:p-6 text-white shrink-0 relative">
       {/* Mobile top pill indicator for bottom-sheet aesthetic */}
@@ -23,6 +23,19 @@ export default function AdminHeader({ isAuthenticated, onLock, onClose }) {
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {isAuthenticated && onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              className="px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition min-h-[36px] disabled:opacity-60"
+              title="Sincronizar dados em tempo real da nuvem"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-blush-400 shrink-0 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">{isRefreshing ? 'Sincronizando...' : 'Atualizar'}</span>
+            </button>
+          )}
+
           {isAuthenticated && (
             <button
               type="button"
