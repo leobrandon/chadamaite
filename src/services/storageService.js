@@ -1,6 +1,7 @@
 import { INITIAL_GIFTS, INITIAL_EVENT_CONFIG, INITIAL_MESSAGES } from '../data/initialGifts';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { formatPhone } from '../utils/phoneMask';
+import { formatRelativeOrExactDate } from '../utils/dateUtils';
 import { DEFAULT_ADMIN_PIN_HASH, sanitizeText, sanitizeName } from '../utils/security';
 
 const KEYS = {
@@ -288,6 +289,7 @@ export const storageService = {
                 }
                 case 'rsvps': {
                   updatePayload.rsvps = await storageService.fetchRSVPsFromCloud();
+                  updatePayload.messages = await storageService.fetchMessagesFromCloud();
                   break;
                 }
                 case 'messages': {
@@ -707,13 +709,15 @@ export const storageService = {
 
     const hasMessage = Boolean(safeMessage && safeMessage.trim());
     const newMsg = hasMessage ? {
-      id: generateUniqueId('msg'),
+      id: `msg-${newEntry.id}`,
       author: safeName || 'Amigo com carinho',
       text: safeMessage,
       date: 'Agora mesmo',
-      createdAt: new Date().toISOString(),
+      createdAt: newEntry.createdAt,
       likes: 0,
       status: 'pending',
+      rsvpId: newEntry.id,
+      origin: 'rsvp',
     } : null;
 
     if (isSupabaseConfigured && supabase) {
@@ -752,6 +756,20 @@ export const storageService = {
   deleteRSVP: async (rsvpId) => {
     const rsvps = storageService.getRSVPs();
     const updated = rsvps.filter(r => r.id !== rsvpId);
+
+    // Também remove e dispensa recado associado a este RSVP se houver
+    const msgId = `msg-${rsvpId}`;
+    const dismissed = storageService.getDismissedMessageIds();
+    if (!dismissed.includes(msgId)) dismissed.push(msgId);
+    if (!dismissed.includes(rsvpId)) dismissed.push(rsvpId);
+    localStorage.setItem('cha_maite_dismissed_messages_v1', JSON.stringify(dismissed));
+
+    const messages = storageService.getMessages();
+    const updatedMsgs = messages.filter(m => m.id !== msgId && m.rsvpId !== rsvpId);
+    if (updatedMsgs.length !== messages.length) {
+      localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updatedMsgs));
+      window.dispatchEvent(new CustomEvent('messages_updated', { detail: updatedMsgs }));
+    }
 
     if (isSupabaseConfigured && supabase) {
       try {
@@ -804,17 +822,83 @@ export const storageService = {
     return updated;
   },
 
+  getDismissedMessageIds: () => {
+    try {
+      const saved = localStorage.getItem('cha_maite_dismissed_messages_v1');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  },
+
   // MENSAGENS / MURAL DE CARINHO
   fetchMessagesFromCloud: async () => {
     if (!isSupabaseConfigured || !supabase) return storageService.getMessages();
     try {
-      const { data, error } = await supabase.from('messages').select('*').order('created_at', { ascending: false });
-      if (error) throw error;
+      // 1. Buscar recados aprovados na tabela messages e RSVPs na tabela rsvps em paralelo
+      const [messagesRes, rsvpsRes] = await Promise.all([
+        supabase.from('messages').select('*').order('created_at', { ascending: false }),
+        supabase.from('rsvps').select('id, name, message, created_at').order('created_at', { ascending: false })
+      ]);
 
-      const mapped = (data || []).map(mapMessageFromDB).filter(Boolean);
-      localStorage.setItem(KEYS.MESSAGES, JSON.stringify(mapped));
-      window.dispatchEvent(new CustomEvent('messages_updated', { detail: mapped }));
-      return mapped;
+      if (messagesRes.error) throw messagesRes.error;
+
+      const dbMessages = (messagesRes.data || []).map(mapMessageFromDB).filter(Boolean);
+      const rsvps = rsvpsRes.data || [];
+      const dismissedIds = storageService.getDismissedMessageIds();
+
+      // 2. Extrair recados deixados durante confirmação de presença (RSVP)
+      const rsvpsWithMsg = rsvps.filter(r => r && r.message && typeof r.message === 'string' && r.message.trim().length > 0);
+
+      const pendingFromRsvps = [];
+      for (const r of rsvpsWithMsg) {
+        const rsvpMsgId = `msg-${r.id}`;
+        // Verificar se já foi dispensado/rejeitado pelo administrador
+        if (dismissedIds.includes(rsvpMsgId) || dismissedIds.includes(r.id)) {
+          continue;
+        }
+
+        // Verificar se já existe recado aprovado correspondente no banco
+        const alreadyApproved = dbMessages.some(m => {
+          if (m.id === rsvpMsgId || m.id === r.id) return true;
+          if (m.author && r.name && m.author.trim().toLowerCase() === r.name.trim().toLowerCase()) {
+            return true;
+          }
+          if (m.text && r.message && m.text.trim().toLowerCase() === r.message.trim().toLowerCase()) {
+            return true;
+          }
+          return false;
+        });
+
+        if (!alreadyApproved) {
+          pendingFromRsvps.push({
+            id: rsvpMsgId,
+            rsvpId: r.id,
+            author: r.name ? r.name.trim() : 'Convidado',
+            text: r.message.trim(),
+            date: formatRelativeOrExactDate(r.created_at) || 'Recente',
+            createdAt: r.created_at || new Date().toISOString(),
+            likes: 0,
+            status: 'pending',
+            origin: 'rsvp',
+          });
+        }
+      }
+
+      // 3. Preservar também recados pendentes locais que não estejam dispensados nem no banco
+      const currentLocalMsgs = storageService.getMessages();
+      const localPending = currentLocalMsgs.filter(m => 
+        m && m.status === 'pending' && 
+        !dismissedIds.includes(m.id) &&
+        !dbMessages.some(dbm => dbm.id === m.id) &&
+        !pendingFromRsvps.some(pr => pr.id === m.id)
+      );
+
+      // 4. Consolidar lista completa
+      const combined = [...dbMessages, ...pendingFromRsvps, ...localPending];
+      localStorage.setItem(KEYS.MESSAGES, JSON.stringify(combined));
+      window.dispatchEvent(new CustomEvent('messages_updated', { detail: combined }));
+      return combined;
     } catch (err) {
       console.error('Erro ao carregar mensagens do Supabase:', err);
       return storageService.getMessages();
@@ -868,18 +952,33 @@ export const storageService = {
 
   approveMessage: async (msgId) => {
     const messages = storageService.getMessages();
-    
+    const target = messages.find(m => m.id === msgId);
+    if (!target) return messages;
+
+    const approvedMsg = {
+      ...target,
+      status: 'approved',
+      date: target.date || 'Agora mesmo',
+      createdAt: target.createdAt || new Date().toISOString(),
+    };
+
     if (isSupabaseConfigured && supabase) {
       try {
-        const { error } = await supabase.from('messages').update({ status: 'approved' }).eq('id', msgId);
-        if (error) throw error;
+        const payload = mapMessageToDB(approvedMsg);
+        const { error } = await supabase.from('messages').upsert([payload], { onConflict: 'id' });
+        if (error) {
+          console.warn('Upsert falhou ao aprovar recado, tentando insert:', error);
+          const insertRes = await supabase.from('messages').insert([payload]);
+          if (insertRes.error) {
+            console.error('Erro no insert de recado aprovado:', insertRes.error);
+          }
+        }
       } catch (err) {
         console.error('Erro ao aprovar mensagem no Supabase:', err);
-        return messages;
       }
     }
 
-    const updated = messages.map(m => m.id === msgId ? { ...m, status: 'approved' } : m);
+    const updated = messages.map(m => m.id === msgId ? approvedMsg : m);
     localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent('messages_updated', { detail: updated }));
     return updated;
@@ -908,14 +1007,24 @@ export const storageService = {
 
   deleteMessage: async (msgId) => {
     const messages = storageService.getMessages();
+    const target = messages.find(m => m.id === msgId);
+
+    // Se o recado veio de um RSVP ou possui rsvpId, registra nos dispensados
+    if (target?.rsvpId || msgId.startsWith('msg-rsvp-')) {
+      const dismissed = storageService.getDismissedMessageIds();
+      if (!dismissed.includes(msgId)) dismissed.push(msgId);
+      if (target?.rsvpId && !dismissed.includes(target.rsvpId)) dismissed.push(target.rsvpId);
+      localStorage.setItem('cha_maite_dismissed_messages_v1', JSON.stringify(dismissed));
+    }
 
     if (isSupabaseConfigured && supabase) {
       try {
         const { error } = await supabase.from('messages').delete().eq('id', msgId);
-        if (error) throw error;
+        if (error) {
+          console.warn('Aviso ao deletar recado no Supabase:', error);
+        }
       } catch (err) {
         console.error('Erro ao deletar mensagem no Supabase:', err);
-        return messages;
       }
     }
 
@@ -930,21 +1039,23 @@ export const storageService = {
     const target = messages.find(m => m.id === msgId);
     if (!target) return messages;
 
-    const dbFields = {};
-    if (fields.author !== undefined) dbFields.author = fields.author;
-    if (fields.text !== undefined) dbFields.text = fields.text;
+    const updatedMsg = { ...target, ...fields };
 
     if (isSupabaseConfigured && supabase) {
       try {
-        const { error } = await supabase.from('messages').update(dbFields).eq('id', msgId);
-        if (error) throw error;
+        if (target.status === 'approved') {
+          const dbFields = {};
+          if (fields.author !== undefined) dbFields.author = fields.author;
+          if (fields.text !== undefined) dbFields.text = fields.text;
+          const { error } = await supabase.from('messages').update(dbFields).eq('id', msgId);
+          if (error) throw error;
+        }
       } catch (err) {
         console.error('Erro ao atualizar mensagem no Supabase:', err);
-        return messages;
       }
     }
 
-    const updated = messages.map(m => m.id === msgId ? { ...m, ...dbFields } : m);
+    const updated = messages.map(m => m.id === msgId ? updatedMsg : m);
     localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent('messages_updated', { detail: updated }));
     return updated;
