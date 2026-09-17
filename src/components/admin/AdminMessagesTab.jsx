@@ -123,6 +123,11 @@ export default function AdminMessagesTab({
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
                           Pendente
                         </span>
+                        {(msg.origin === 'rsvp' || msg.rsvpId) && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-50 dark:bg-pink-950/60 text-pink-700 dark:text-pink-300 border border-pink-200 dark:border-pink-800">
+                            via RSVP
+                          </span>
+                        )}
                         <button
                           onClick={() => onEditMessage({ id: msg.id, author: msg.author, text: msg.text })}
                           className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-blush-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-blush-600 transition min-h-[32px] min-w-[32px] flex items-center justify-center"
