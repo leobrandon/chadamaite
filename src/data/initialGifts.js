@@ -354,3 +354,5 @@ export const BABY_EMOJIS = [
   { emoji: "🦷", label: "🦷 Mordedor" },
   { emoji: "🚗", label: "🚗 Passeio / Carro" },
 ];
+
+export { INITIAL_RSVPS, INITIAL_PLEDGES } from './initialRsvpsAndPledges.js';
