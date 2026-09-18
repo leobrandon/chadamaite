@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit2, X, Check } from 'lucide-react';
+import { Edit2, X, Check, Trash2 } from 'lucide-react';
 
 export default function AdminEditMessageModal({
   editingMessage,
@@ -7,6 +7,8 @@ export default function AdminEditMessageModal({
   isSavingMessage,
   setIsSavingMessage,
   onUpdateMessage,
+  onDeleteMessage,
+  onRequestConfirm,
 }) {
   if (!editingMessage) return null;
 
@@ -80,22 +82,55 @@ export default function AdminEditMessageModal({
             <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 text-right">{editingMessage.text.length}/1000 caracteres</p>
           </div>
 
-          <div className="flex gap-2 pt-1">
-            <button
-              type="submit"
-              disabled={isSavingMessage}
-              className="flex-1 py-3 rounded-2xl bg-blush-500 hover:bg-blush-600 active:scale-[0.98] text-white font-bold text-sm shadow-md shadow-blush-500/20 transition flex items-center justify-center gap-1.5 disabled:opacity-60"
-            >
-              <Check className="w-4 h-4" />
-              {isSavingMessage ? 'Salvando...' : 'Salvar Recado'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditingMessage(null)}
-              className="px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-sm transition"
-            >
-              Cancelar
-            </button>
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            {onDeleteMessage && (
+              <button
+                type="button"
+                onClick={() => {
+                  const authorName = editingMessage?.author ? `"${editingMessage.author}"` : 'este recado';
+                  const confirmOpts = {
+                    title: 'Excluir Recado',
+                    message: `Tem certeza que deseja excluir permanentemente o recado de ${authorName}? Esta ação é definitiva e não poderá ser desfeita.`,
+                    confirmText: 'Sim, Excluir',
+                    cancelText: 'Cancelar',
+                    isDestructive: true,
+                    onConfirm: () => {
+                      onDeleteMessage(editingMessage.id);
+                      setEditingMessage(null);
+                    },
+                  };
+                  if (typeof onRequestConfirm === 'function') {
+                    onRequestConfirm(confirmOpts);
+                  } else if (window.confirm(`${confirmOpts.title}\n\n${confirmOpts.message}`)) {
+                    onDeleteMessage(editingMessage.id);
+                    setEditingMessage(null);
+                  }
+                }}
+                className="px-3.5 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-300 font-bold text-xs transition flex items-center gap-1.5"
+                title="Excluir este recado permanentemente"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Excluir</span>
+              </button>
+            )}
+
+            <div className="flex gap-2 ml-auto">
+              <button
+                type="button"
+                onClick={() => setEditingMessage(null)}
+                className="px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs sm:text-sm transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={isSavingMessage}
+                className="px-5 py-2.5 rounded-2xl bg-blush-500 hover:bg-blush-600 active:scale-[0.98] text-white font-bold text-xs sm:text-sm shadow-md shadow-blush-500/20 transition flex items-center justify-center gap-1.5 disabled:opacity-60"
+              >
+                <Check className="w-4 h-4" />
+                {isSavingMessage ? 'Salvando...' : 'Salvar Recado'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

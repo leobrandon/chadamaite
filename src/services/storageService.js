@@ -29,8 +29,68 @@ export function generateUniqueId(prefix = 'id') {
 export function isTestGuest(nameOrAuthor) {
   if (!nameOrAuthor) return false;
   const n = String(nameOrAuthor).trim().toLowerCase();
-  if (n === 'teste' || n.startsWith('teste ') || n.includes('teste convidado') || n.includes('teste app')) return true;
+  if (
+    n === 'teste' ||
+    n === 'tester' ||
+    n === 'test' ||
+    n.startsWith('teste ') ||
+    n.startsWith('test ') ||
+    n.includes('teste convidado') ||
+    n.includes('teste app') ||
+    n.includes('teste aprovado') ||
+    n.includes('teste aprovacao')
+  ) {
+    return true;
+  }
   if (n === 'carlos eduardo' || n === 'mariana silva') return true;
+  return false;
+}
+
+// Identificador universal para filtrar recados excluídos e recados de teste
+export function isExcludedOrTestMessage(m) {
+  if (!m) return true;
+  const author = String(m.author || '').trim().toLowerCase();
+  const text = String(m.text || '').trim().toLowerCase();
+  const id = String(m.id || '').trim().toLowerCase();
+
+  // Recados marcados como excluídos no banco de dados
+  if (
+    author.includes('[excluido]') ||
+    author.includes('[deleted]') ||
+    text.includes('[excluido]') ||
+    text.includes('[deleted]')
+  ) {
+    return true;
+  }
+
+  // IDs conhecidos de testes do mural
+  if (
+    id === 'test1-1789646180102' ||
+    id === 'test-approval-check-1' ||
+    id === 'msg-test-upsert-1789646339583' ||
+    id.startsWith('test-') ||
+    id.startsWith('test1-') ||
+    id.includes('-test-')
+  ) {
+    return true;
+  }
+
+  // Autores de teste
+  if (isTestGuest(author) || author === 'tester' || author === 'teste' || author.startsWith('teste ')) {
+    return true;
+  }
+
+  // Textos de testes
+  if (
+    text.startsWith('mensagem aprovada') ||
+    text.startsWith('mensagem de teste') ||
+    text.startsWith('recado de teste') ||
+    text === 'teste' ||
+    text === 'test'
+  ) {
+    return true;
+  }
+
   return false;
 }
 
@@ -823,11 +883,24 @@ export const storageService = {
   },
 
   getDismissedMessageIds: () => {
+    const defaultDismissed = [
+      'test1-1789646180102',
+      'test-approval-check-1',
+      'msg-test-upsert-1789646339583',
+    ];
     try {
       const saved = localStorage.getItem('cha_maite_dismissed_messages_v1');
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return defaultDismissed;
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        defaultDismissed.forEach((id) => {
+          if (!parsed.includes(id)) parsed.push(id);
+        });
+        return parsed;
+      }
+      return defaultDismissed;
     } catch {
-      return [];
+      return defaultDismissed;
     }
   },
 
@@ -835,7 +908,9 @@ export const storageService = {
   fetchMessagesFromCloud: async () => {
     if (!isSupabaseConfigured || !supabase) return storageService.getMessages();
     try {
-      // 1. Buscar recados aprovados na tabela messages e RSVPs na tabela rsvps em paralelo
+      const dismissedIds = storageService.getDismissedMessageIds();
+
+      // 1. Buscar recados na tabela messages e RSVPs na tabela rsvps em paralelo
       const [messagesRes, rsvpsRes] = await Promise.all([
         supabase.from('messages').select('*').order('created_at', { ascending: false }),
         supabase.from('rsvps').select('id, name, message, created_at').order('created_at', { ascending: false })
@@ -843,12 +918,28 @@ export const storageService = {
 
       if (messagesRes.error) throw messagesRes.error;
 
-      const dbMessages = (messagesRes.data || []).map(mapMessageFromDB).filter(Boolean);
+      // Filtrar mensagens vindas do banco garantindo que nenhuma mensagem excluída ou dispensada permaneça
+      const dbMessages = (messagesRes.data || [])
+        .map(mapMessageFromDB)
+        .filter(Boolean)
+        .filter((m) =>
+          !isExcludedOrTestMessage(m) &&
+          !dismissedIds.includes(m.id) &&
+          (!m.rsvpId || !dismissedIds.includes(m.rsvpId))
+        );
+
       const rsvps = rsvpsRes.data || [];
-      const dismissedIds = storageService.getDismissedMessageIds();
 
       // 2. Extrair recados deixados durante confirmação de presença (RSVP)
-      const rsvpsWithMsg = rsvps.filter(r => r && r.message && typeof r.message === 'string' && r.message.trim().length > 0);
+      const rsvpsWithMsg = rsvps.filter(
+        (r) =>
+          r &&
+          r.message &&
+          typeof r.message === 'string' &&
+          r.message.trim().length > 0 &&
+          !isTestGuest(r.name) &&
+          !isExcludedOrTestMessage({ author: r.name, text: r.message, id: r.id })
+      );
 
       const pendingFromRsvps = [];
       for (const r of rsvpsWithMsg) {
@@ -871,7 +962,7 @@ export const storageService = {
         });
 
         if (!alreadyApproved) {
-          pendingFromRsvps.push({
+          const candidate = {
             id: rsvpMsgId,
             rsvpId: r.id,
             author: r.name ? r.name.trim() : 'Convidado',
@@ -881,7 +972,10 @@ export const storageService = {
             likes: 0,
             status: 'pending',
             origin: 'rsvp',
-          });
+          };
+          if (!isExcludedOrTestMessage(candidate)) {
+            pendingFromRsvps.push(candidate);
+          }
         }
       }
 
@@ -889,6 +983,7 @@ export const storageService = {
       const currentLocalMsgs = storageService.getMessages();
       const localPending = currentLocalMsgs.filter(m => 
         m && m.status === 'pending' && 
+        !isExcludedOrTestMessage(m) &&
         !dismissedIds.includes(m.id) &&
         !dbMessages.some(dbm => dbm.id === m.id) &&
         !pendingFromRsvps.some(pr => pr.id === m.id)
@@ -907,12 +1002,19 @@ export const storageService = {
 
   getMessages: () => {
     try {
+      const dismissedIds = storageService.getDismissedMessageIds();
       const saved = localStorage.getItem(KEYS.MESSAGES);
       if (saved) {
         const parsed = JSON.parse(saved);
-        return parsed.map(m => ({ ...m, status: m.status || 'approved' }));
+        if (Array.isArray(parsed)) {
+          return parsed
+            .filter((m) => m && !isExcludedOrTestMessage(m) && !dismissedIds.includes(m.id))
+            .map((m) => ({ ...m, status: m.status || 'approved' }));
+        }
       }
-      return INITIAL_MESSAGES.map(m => ({ ...m, status: 'approved' }));
+      return INITIAL_MESSAGES
+        .filter((m) => !isExcludedOrTestMessage(m) && !dismissedIds.includes(m.id))
+        .map((m) => ({ ...m, status: 'approved' }));
     } catch {
       return INITIAL_MESSAGES.map(m => ({ ...m, status: 'approved' }));
     }
@@ -1006,29 +1108,77 @@ export const storageService = {
   },
 
   deleteMessage: async (msgId) => {
+    if (!msgId) return storageService.getMessages();
+
     const messages = storageService.getMessages();
     const target = messages.find(m => m.id === msgId);
 
-    // Se o recado veio de um RSVP ou possui rsvpId, registra nos dispensados
-    if (target?.rsvpId || msgId.startsWith('msg-rsvp-')) {
-      const dismissed = storageService.getDismissedMessageIds();
-      if (!dismissed.includes(msgId)) dismissed.push(msgId);
-      if (target?.rsvpId && !dismissed.includes(target.rsvpId)) dismissed.push(target.rsvpId);
-      localStorage.setItem('cha_maite_dismissed_messages_v1', JSON.stringify(dismissed));
-    }
+    // 1. Sempre registrar o ID nos dispensados/excluídos permanentemente
+    const dismissed = storageService.getDismissedMessageIds();
+    if (!dismissed.includes(msgId)) dismissed.push(msgId);
 
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { error } = await supabase.from('messages').delete().eq('id', msgId);
-        if (error) {
-          console.warn('Aviso ao deletar recado no Supabase:', error);
+    let relatedRsvpId = target?.rsvpId;
+    if (!relatedRsvpId && typeof msgId === 'string') {
+      if (msgId.startsWith('msg-rsvp-')) {
+        relatedRsvpId = msgId.replace(/^msg-/, '');
+      } else if (msgId.startsWith('msg-')) {
+        const candidate = msgId.replace(/^msg-/, '');
+        if (candidate.startsWith('rsvp-')) {
+          relatedRsvpId = candidate;
         }
-      } catch (err) {
-        console.error('Erro ao deletar mensagem no Supabase:', err);
       }
     }
 
-    const updated = messages.filter(m => m.id !== msgId);
+    if (relatedRsvpId && !dismissed.includes(relatedRsvpId)) {
+      dismissed.push(relatedRsvpId);
+    }
+    const rsvpMsgId = relatedRsvpId ? `msg-${relatedRsvpId}` : null;
+    if (rsvpMsgId && !dismissed.includes(rsvpMsgId)) {
+      dismissed.push(rsvpMsgId);
+    }
+
+    localStorage.setItem('cha_maite_dismissed_messages_v1', JSON.stringify(dismissed));
+
+    // 2. Persistência no Supabase com redundância contra RLS
+    if (isSupabaseConfigured && supabase) {
+      try {
+        // Marcação definitiva no banco usando UPDATE (permitido pela política RLS)
+        await supabase
+          .from('messages')
+          .update({
+            author: '[EXCLUIDO]',
+            text: '[EXCLUIDO]',
+            status: 'approved',
+          })
+          .eq('id', msgId);
+
+        // Tentativa de deleção física caso a política de delete esteja habilitada
+        await supabase.from('messages').delete().eq('id', msgId);
+
+        // Limpa texto da mensagem no RSVP caso exista para não recriar
+        if (relatedRsvpId) {
+          await supabase
+            .from('rsvps')
+            .update({ message: '' })
+            .eq('id', relatedRsvpId);
+        } else if (target?.author && target?.text) {
+          await supabase
+            .from('rsvps')
+            .update({ message: '' })
+            .ilike('name', target.author.trim())
+            .eq('message', target.text.trim());
+        }
+      } catch (err) {
+        console.error('Erro ao processar exclusão no Supabase:', err);
+      }
+    }
+
+    // 3. Atualizar localmente
+    const updated = messages.filter(
+      (m) =>
+        m.id !== msgId &&
+        (!relatedRsvpId || (m.id !== rsvpMsgId && m.rsvpId !== relatedRsvpId))
+    );
     localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent('messages_updated', { detail: updated }));
     return updated;
