@@ -146,7 +146,10 @@ export default function App() {
 
   // Messages actions
   const handleAddMessage = async (msgData) => {
-    await storageService.addMessage(msgData);
+    const newMsg = await storageService.addMessage(msgData);
+    if (newMsg) {
+      setMessages(storageService.getMessages());
+    }
   };
 
   const handleApproveMessage = async (msgId) => {
