@@ -69,6 +69,15 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
     }
   });
 
+  // Estado para controlar quais cartões de mensagem estão expandidos (Ler mais)
+  const [expandedMessageIds, setExpandedMessageIds] = useState([]);
+
+  const toggleExpandMessage = (msgId) => {
+    setExpandedMessageIds((prev) =>
+      prev.includes(msgId) ? prev.filter((id) => id !== msgId) : [...prev, msgId]
+    );
+  };
+
   const safeMessages = useMemo(() => Array.isArray(messages) ? messages : [], [messages]);
   
   // Apenas mensagens aprovadas e válidas (não excluídas/não testes)
@@ -296,11 +305,14 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
         {/* Messages Cards Grid (Mural de Cartões de Carinho) */}
         {paginatedMessages.length > 0 ? (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
               {paginatedMessages.map((msg, index) => {
                 const theme = CARD_THEMES[index % CARD_THEMES.length];
                 const isLiked = likedMessageIds.includes(msg.id);
                 const displayDate = formatRelativeOrExactDate(msg.date, msg.createdAt);
+                const isExpanded = expandedMessageIds.includes(msg.id);
+                const messageText = msg.text || '';
+                const isLongText = messageText.length > 140 || messageText.split('\n').filter(Boolean).length > 3;
 
                 return (
                   <motion.div
@@ -308,17 +320,19 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: Math.min(index * 0.04, 0.2) }}
-                    className="h-full"
+                    className="w-full"
                   >
                     <div
-                      className={`relative p-5 sm:p-6 rounded-3xl border shadow-xs flex flex-col justify-between hover:-translate-y-1 hover:shadow-lg hover:shadow-blush-500/10 hover:border-blush-300 dark:hover:border-blush-700/80 transition-all duration-200 ease-out min-h-[190px] h-full ${theme.bg}`}
+                      className={`relative p-5 sm:p-6 rounded-3xl border shadow-xs flex flex-col justify-between hover:-translate-y-1 hover:shadow-lg hover:shadow-blush-500/10 hover:border-blush-300 dark:hover:border-blush-700/80 transition-all duration-200 ease-out w-full ${
+                        isExpanded ? 'min-h-[250px] sm:min-h-[260px] h-auto' : 'h-[250px] sm:h-[260px]'
+                      } ${theme.bg}`}
                     >
                       {/* Delicate tape badge at top */}
                       <div className={`w-12 h-2.5 rounded-full ${theme.tapeBg} absolute -top-1.5 left-1/2 -translate-x-1/2 shadow-2xs border border-white/60 dark:border-white/10`} />
 
-                      <div>
+                      <div className="flex-1 flex flex-col min-h-0">
                         {/* Author Header */}
-                        <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center justify-between mb-2.5 shrink-0">
                           <div className="flex items-center gap-2.5 min-w-0">
                             <span className={`w-8 h-8 rounded-full ${theme.avatarBg} flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs`}>
                               {(msg.author || 'A').charAt(0).toUpperCase()}
@@ -338,15 +352,27 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                         </div>
 
                         {/* Message Body */}
-                        <div className="relative pt-1">
-                          <p className="text-slate-700 dark:text-slate-200 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-normal">
+                        <div className="relative pt-0.5 flex-1 flex flex-col justify-between min-h-0">
+                          <p className={`text-slate-700 dark:text-slate-200 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-normal ${
+                            !isExpanded && isLongText ? 'line-clamp-4' : ''
+                          }`}>
                             "{msg.text}"
                           </p>
+
+                          {isLongText && (
+                            <button
+                              type="button"
+                              onClick={() => toggleExpandMessage(msg.id)}
+                              className="mt-1.5 text-xs font-semibold text-blush-600 dark:text-blush-400 hover:text-blush-700 dark:hover:text-blush-300 transition-colors inline-block cursor-pointer focus:outline-none self-start"
+                            >
+                              {isExpanded ? 'Ler menos' : 'Ler mais'}
+                            </button>
+                          )}
                         </div>
                       </div>
 
                       {/* Card Footer */}
-                      <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
+                      <div className="mt-3 pt-2.5 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between shrink-0">
                         <span className={`text-[11px] font-semibold ${theme.badgeText} flex items-center gap-1`}>
                           <Sparkles className="w-3 h-3" />
                           <span>Com amor</span>
