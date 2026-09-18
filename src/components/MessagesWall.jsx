@@ -323,27 +323,34 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                     transition={{ 
                       duration: 0.3, 
                       delay: Math.min(index * 0.04, 0.2),
-                      layout: { duration: 0.35, ease: [0.16, 1, 0.3, 1] }
+                      layout: { duration: 0.45, ease: [0.16, 1, 0.3, 1] }
                     }}
                     className="w-full"
                   >
                     <motion.div
                       layout
-                      transition={{ layout: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } }}
-                      className={`relative p-5 sm:p-6 rounded-3xl border shadow-xs flex flex-col justify-between hover:shadow-lg hover:shadow-blush-500/10 hover:border-blush-300 dark:hover:border-blush-700/80 transition-shadow duration-200 w-full ${
+                      transition={{ 
+                        layout: { 
+                          duration: 0.45, 
+                          ease: [0.16, 1, 0.3, 1] 
+                        } 
+                      }}
+                      className={`relative p-5 sm:p-6 rounded-3xl border shadow-xs flex flex-col justify-between hover:shadow-lg hover:shadow-blush-500/10 hover:border-blush-300 dark:hover:border-blush-700/80 transition-shadow duration-300 w-full ${
                         isExpanded ? 'min-h-[250px] sm:min-h-[260px] h-auto' : 'h-[250px] sm:h-[260px]'
                       } ${theme.bg}`}
                     >
                       {/* Delicate tape badge at top */}
                       <motion.div 
                         layout="position"
-                        className={`w-12 h-2.5 rounded-full ${theme.tapeBg} absolute -top-1.5 left-1/2 -translate-x-1/2 shadow-2xs border border-white/60 dark:border-white/10`} 
+                        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                        className={`w-12 h-2.5 rounded-full ${theme.tapeBg} absolute -top-1.5 left-1/2 -translate-x-1/2 shadow-2xs border border-white/60 dark:border-white/10 pointer-events-none`} 
                       />
 
                       <div className="flex-1 flex flex-col min-h-0">
                         {/* Author Header */}
                         <motion.div 
                           layout="position"
+                          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                           className="flex items-center justify-between mb-2.5 shrink-0"
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
@@ -365,12 +372,10 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                         </motion.div>
 
                         {/* Message Body */}
-                        <motion.div 
-                          layout
-                          className="relative pt-0.5 flex-1 flex flex-col justify-between min-h-0"
-                        >
+                        <div className="relative pt-0.5 flex-1 flex flex-col justify-between min-h-0">
                           <motion.p 
                             layout="position"
+                            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                             className={`text-slate-700 dark:text-slate-200 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-normal ${
                               !isExpanded && isLongText ? 'line-clamp-4' : ''
                             }`}
@@ -381,20 +386,22 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                           {isLongText && (
                             <motion.button
                               layout="position"
+                              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                               type="button"
-                              whileTap={{ scale: 0.95 }}
+                              whileTap={{ scale: 0.96 }}
                               onClick={() => toggleExpandMessage(msg.id)}
                               className="mt-1.5 text-xs font-semibold text-blush-600 dark:text-blush-400 hover:text-blush-700 dark:hover:text-blush-300 transition-colors inline-block cursor-pointer focus:outline-none self-start py-0.5"
                             >
                               {isExpanded ? 'Ler menos' : 'Ler mais'}
                             </motion.button>
                           )}
-                        </motion.div>
+                        </div>
                       </div>
 
                       {/* Card Footer */}
                       <motion.div 
                         layout="position"
+                        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                         className="mt-3 pt-2.5 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between shrink-0"
                       >
                         <span className={`text-[11px] font-semibold ${theme.badgeText} flex items-center gap-1`}>
