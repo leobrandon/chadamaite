@@ -25,28 +25,18 @@ export function generateUniqueId(prefix = 'id') {
   });
 }
 
-// Filtro para impedir que registros criados durante testes poluam o painel de convidados e cotas
+// Filtro para registros obsoletos de demonstração que não devem poluir o painel
 export function isTestGuest(nameOrAuthor) {
   if (!nameOrAuthor) return false;
   const n = String(nameOrAuthor).trim().toLowerCase();
-  if (
-    n === 'teste' ||
-    n === 'tester' ||
-    n === 'test' ||
-    n.startsWith('teste ') ||
-    n.startsWith('test ') ||
-    n.includes('teste convidado') ||
-    n.includes('teste app') ||
-    n.includes('teste aprovado') ||
-    n.includes('teste aprovacao')
-  ) {
+  // Apenas mocks antigos específicos de demonstração que foram descartados
+  if (n === 'carlos eduardo (mock inicial)' || n === 'mariana silva (mock inicial)') {
     return true;
   }
-  if (n === 'carlos eduardo' || n === 'mariana silva') return true;
   return false;
 }
 
-// Identificador universal para filtrar recados excluídos e recados de teste
+// Identificador universal para filtrar recados excluídos definitivamente
 export function isExcludedOrTestMessage(m) {
   if (!m) return true;
   const author = String(m.author || '').trim().toLowerCase();
@@ -63,31 +53,16 @@ export function isExcludedOrTestMessage(m) {
     return true;
   }
 
-  // IDs conhecidos de testes do mural
-  if (
-    id === 'test1-1789646180102' ||
-    id === 'test-approval-check-1' ||
-    id === 'msg-test-upsert-1789646339583' ||
-    id.startsWith('test-') ||
-    id.startsWith('test1-') ||
-    id.includes('-test-')
-  ) {
-    return true;
-  }
-
-  // Autores de teste
-  if (isTestGuest(author) || author === 'tester' || author === 'teste' || author.startsWith('teste ')) {
-    return true;
-  }
-
-  // Textos de testes
-  if (
-    text.startsWith('mensagem aprovada') ||
-    text.startsWith('mensagem de teste') ||
-    text.startsWith('recado de teste') ||
-    text === 'teste' ||
-    text === 'test'
-  ) {
+  // IDs legados que foram descartados e marcados como removidos
+  const legacyRemovedIds = [
+    'test1-1789646180102',
+    'test-approval-check-1',
+    'msg-test-upsert-1789646339583',
+    'msg-probe-appr',
+    'msg-test-ynyc5q',
+    'msg-test-probe-x6ad8',
+  ];
+  if (legacyRemovedIds.includes(id)) {
     return true;
   }
 
@@ -717,7 +692,9 @@ export const storageService = {
     try {
       const { data, error } = await supabase.from('rsvps').select('*').order('created_at', { ascending: false });
       if (error) throw error;
-      const mapped = (data || []).map(mapRSVPFromDB).filter(r => !isTestGuest(r.name));
+      const mapped = (data || [])
+        .map(mapRSVPFromDB)
+        .filter(r => !isTestGuest(r.name) && r.phone !== 'mural_only' && !String(r.id || '').startsWith('rsvp-msg-'));
       localStorage.setItem(KEYS.RSVPS, JSON.stringify(mapped));
       window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: mapped }));
       return mapped;
@@ -734,7 +711,7 @@ export const storageService = {
       const parsed = JSON.parse(saved);
       if (!Array.isArray(parsed)) return [];
       return parsed
-        .filter(r => !isTestGuest(r.name))
+        .filter(r => !isTestGuest(r.name) && r.phone !== 'mural_only' && !String(r.id || '').startsWith('rsvp-msg-'))
         .map((r) => ({
           ...r,
           phone: formatPhone(r.phone || ''),
@@ -930,32 +907,36 @@ export const storageService = {
 
       const rsvps = rsvpsRes.data || [];
 
-      // 2. Extrair recados deixados durante confirmação de presença (RSVP)
+      // 2. Extrair recados pendentes deixados durante confirmação de presença (RSVP) ou pelo Mural
       const rsvpsWithMsg = rsvps.filter(
         (r) =>
           r &&
           r.message &&
           typeof r.message === 'string' &&
           r.message.trim().length > 0 &&
-          !isTestGuest(r.name) &&
           !isExcludedOrTestMessage({ author: r.name, text: r.message, id: r.id })
       );
 
       const pendingFromRsvps = [];
       for (const r of rsvpsWithMsg) {
-        const rsvpMsgId = `msg-${r.id}`;
+        const isFromMural = r.phone === 'mural_only' || String(r.id || '').startsWith('rsvp-msg-');
+        const resolvedMsgId = isFromMural ? r.id.replace(/^rsvp-/, '') : `msg-${r.id}`;
+
         // Verificar se já foi dispensado/rejeitado pelo administrador
-        if (dismissedIds.includes(rsvpMsgId) || dismissedIds.includes(r.id)) {
+        if (
+          dismissedIds.includes(resolvedMsgId) ||
+          dismissedIds.includes(r.id) ||
+          dismissedIds.includes(`msg-${r.id}`) ||
+          dismissedIds.includes(`rsvp-${resolvedMsgId}`)
+        ) {
           continue;
         }
 
         // Verificar se já existe recado aprovado correspondente no banco
         const alreadyApproved = dbMessages.some(m => {
-          if (m.id === rsvpMsgId || m.id === r.id) return true;
-          if (m.author && r.name && m.author.trim().toLowerCase() === r.name.trim().toLowerCase()) {
-            return true;
-          }
-          if (m.text && r.message && m.text.trim().toLowerCase() === r.message.trim().toLowerCase()) {
+          if (m.id === resolvedMsgId || m.id === r.id || m.id === `msg-${r.id}`) return true;
+          if (m.author && r.name && m.author.trim().toLowerCase() === r.name.trim().toLowerCase() &&
+              m.text && r.message && m.text.trim().toLowerCase() === r.message.trim().toLowerCase()) {
             return true;
           }
           return false;
@@ -963,15 +944,15 @@ export const storageService = {
 
         if (!alreadyApproved) {
           const candidate = {
-            id: rsvpMsgId,
+            id: resolvedMsgId,
             rsvpId: r.id,
-            author: r.name ? r.name.trim() : 'Convidado',
+            author: r.name ? r.name.trim() : 'Amigo com carinho',
             text: r.message.trim(),
             date: formatRelativeOrExactDate(r.created_at) || 'Recente',
             createdAt: r.created_at || new Date().toISOString(),
             likes: 0,
             status: 'pending',
-            origin: 'rsvp',
+            origin: isFromMural ? 'mural' : 'rsvp',
           };
           if (!isExcludedOrTestMessage(candidate)) {
             pendingFromRsvps.push(candidate);
@@ -1034,13 +1015,28 @@ export const storageService = {
       createdAt: nowIso,
       likes: 0,
       status: autoApprove ? 'approved' : 'pending',
+      origin: 'mural',
     };
 
     if (isSupabaseConfigured && supabase) {
       try {
-        const payload = mapMessageToDB(newMsg);
-        const { error } = await supabase.from('messages').insert([payload]);
-        if (error) throw error;
+        if (newMsg.status === 'approved') {
+          const payload = mapMessageToDB(newMsg);
+          await supabase.from('messages').insert([payload]);
+        } else {
+          // Se o recado for pendente de moderação, sincronizar via rsvps (canal de leitura público em tempo real)
+          // para garantir que apareça instantaneamente no painel administrativo de qualquer dispositivo
+          await supabase.from('rsvps').insert([{
+            id: `rsvp-${newMsg.id}`,
+            name: newMsg.author,
+            attending: false,
+            adults_count: 0,
+            children_count: 0,
+            phone: 'mural_only',
+            message: newMsg.text,
+            created_at: nowIso,
+          }]);
+        }
       } catch (err) {
         console.error('Erro ao adicionar mensagem no Supabase:', err);
       }
@@ -1075,6 +1071,11 @@ export const storageService = {
             console.error('Erro no insert de recado aprovado:', insertRes.error);
           }
         }
+
+        // Se veio do canal de sincronização rsvps (mural ou rsvp-msg), remove o registro temporário
+        const rsvpKey = target.rsvpId || `rsvp-${target.id}`;
+        await supabase.from('rsvps').delete().eq('id', rsvpKey);
+        await supabase.from('rsvps').delete().eq('id', `rsvp-${msgId}`);
       } catch (err) {
         console.error('Erro ao aprovar mensagem no Supabase:', err);
       }
@@ -1155,8 +1156,13 @@ export const storageService = {
         // Tentativa de deleção física caso a política de delete esteja habilitada
         await supabase.from('messages').delete().eq('id', msgId);
 
+        // Remove canal temporário rsvps se criado pelo mural
+        const directRsvpId = `rsvp-${msgId}`;
+        await supabase.from('rsvps').delete().eq('id', directRsvpId);
+
         // Limpa texto da mensagem no RSVP caso exista para não recriar
         if (relatedRsvpId) {
+          await supabase.from('rsvps').delete().eq('id', relatedRsvpId);
           await supabase
             .from('rsvps')
             .update({ message: '' })
