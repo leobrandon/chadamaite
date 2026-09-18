@@ -317,22 +317,35 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                 return (
                   <motion.div
                     key={msg.id}
+                    layout
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: Math.min(index * 0.04, 0.2) }}
+                    transition={{ 
+                      duration: 0.3, 
+                      delay: Math.min(index * 0.04, 0.2),
+                      layout: { duration: 0.35, ease: [0.16, 1, 0.3, 1] }
+                    }}
                     className="w-full"
                   >
-                    <div
-                      className={`relative p-5 sm:p-6 rounded-3xl border shadow-xs flex flex-col justify-between hover:-translate-y-1 hover:shadow-lg hover:shadow-blush-500/10 hover:border-blush-300 dark:hover:border-blush-700/80 transition-all duration-200 ease-out w-full ${
+                    <motion.div
+                      layout
+                      transition={{ layout: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } }}
+                      className={`relative p-5 sm:p-6 rounded-3xl border shadow-xs flex flex-col justify-between hover:shadow-lg hover:shadow-blush-500/10 hover:border-blush-300 dark:hover:border-blush-700/80 transition-shadow duration-200 w-full ${
                         isExpanded ? 'min-h-[250px] sm:min-h-[260px] h-auto' : 'h-[250px] sm:h-[260px]'
                       } ${theme.bg}`}
                     >
                       {/* Delicate tape badge at top */}
-                      <div className={`w-12 h-2.5 rounded-full ${theme.tapeBg} absolute -top-1.5 left-1/2 -translate-x-1/2 shadow-2xs border border-white/60 dark:border-white/10`} />
+                      <motion.div 
+                        layout="position"
+                        className={`w-12 h-2.5 rounded-full ${theme.tapeBg} absolute -top-1.5 left-1/2 -translate-x-1/2 shadow-2xs border border-white/60 dark:border-white/10`} 
+                      />
 
                       <div className="flex-1 flex flex-col min-h-0">
                         {/* Author Header */}
-                        <div className="flex items-center justify-between mb-2.5 shrink-0">
+                        <motion.div 
+                          layout="position"
+                          className="flex items-center justify-between mb-2.5 shrink-0"
+                        >
                           <div className="flex items-center gap-2.5 min-w-0">
                             <span className={`w-8 h-8 rounded-full ${theme.avatarBg} flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs`}>
                               {(msg.author || 'A').charAt(0).toUpperCase()}
@@ -349,30 +362,41 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                             </div>
                           </div>
                           <span className="text-lg select-none">💌</span>
-                        </div>
+                        </motion.div>
 
                         {/* Message Body */}
-                        <div className="relative pt-0.5 flex-1 flex flex-col justify-between min-h-0">
-                          <p className={`text-slate-700 dark:text-slate-200 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-normal ${
-                            !isExpanded && isLongText ? 'line-clamp-4' : ''
-                          }`}>
+                        <motion.div 
+                          layout
+                          className="relative pt-0.5 flex-1 flex flex-col justify-between min-h-0"
+                        >
+                          <motion.p 
+                            layout="position"
+                            className={`text-slate-700 dark:text-slate-200 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-normal ${
+                              !isExpanded && isLongText ? 'line-clamp-4' : ''
+                            }`}
+                          >
                             "{msg.text}"
-                          </p>
+                          </motion.p>
 
                           {isLongText && (
-                            <button
+                            <motion.button
+                              layout="position"
                               type="button"
+                              whileTap={{ scale: 0.95 }}
                               onClick={() => toggleExpandMessage(msg.id)}
-                              className="mt-1.5 text-xs font-semibold text-blush-600 dark:text-blush-400 hover:text-blush-700 dark:hover:text-blush-300 transition-colors inline-block cursor-pointer focus:outline-none self-start"
+                              className="mt-1.5 text-xs font-semibold text-blush-600 dark:text-blush-400 hover:text-blush-700 dark:hover:text-blush-300 transition-colors inline-block cursor-pointer focus:outline-none self-start py-0.5"
                             >
                               {isExpanded ? 'Ler menos' : 'Ler mais'}
-                            </button>
+                            </motion.button>
                           )}
-                        </div>
+                        </motion.div>
                       </div>
 
                       {/* Card Footer */}
-                      <div className="mt-3 pt-2.5 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between shrink-0">
+                      <motion.div 
+                        layout="position"
+                        className="mt-3 pt-2.5 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between shrink-0"
+                      >
                         <span className={`text-[11px] font-semibold ${theme.badgeText} flex items-center gap-1`}>
                           <Sparkles className="w-3 h-3" />
                           <span>Com amor</span>
@@ -383,8 +407,8 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                           likesCount={msg.likes}
                           onClick={() => handleToggleLike(msg.id)}
                         />
-                      </div>
-                    </div>
+                      </motion.div>
+                    </motion.div>
                   </motion.div>
                 );
               })}
