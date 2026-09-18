@@ -789,6 +789,8 @@ export default function AdminPanel({
         isSavingMessage={isSavingMessage}
         setIsSavingMessage={setIsSavingMessage}
         onUpdateMessage={handleUpdateMessageWithLog}
+        onDeleteMessage={handleDeleteMessageWithLog}
+        onRequestConfirm={requestConfirm}
       />
 
       {/* In-App Confirmation Modal */}

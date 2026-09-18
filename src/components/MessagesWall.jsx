@@ -3,6 +3,7 @@ import { MessageCircleHeart, Send, ChevronLeft, ChevronRight, Search, Sparkles, 
 import { motion } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { formatRelativeOrExactDate } from '../utils/dateUtils';
+import { isExcludedOrTestMessage } from '../services/storageService';
 import HeartBurstButton from './ui/HeartBurstButton';
 import { useToast } from './ui/ToastProvider';
 import CloudHeadingReveal from './ui/CloudHeadingReveal';
@@ -70,9 +71,9 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
 
   const safeMessages = useMemo(() => Array.isArray(messages) ? messages : [], [messages]);
   
-  // Apenas mensagens aprovadas
+  // Apenas mensagens aprovadas e válidas (não excluídas/não testes)
   const approvedMessages = useMemo(() => {
-    return safeMessages.filter(m => m && m.status === 'approved');
+    return safeMessages.filter(m => m && m.status === 'approved' && !isExcludedOrTestMessage(m));
   }, [safeMessages]);
 
   // Mensagens filtradas pela busca

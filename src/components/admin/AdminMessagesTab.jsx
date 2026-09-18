@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Edit2, Check, X, CheckCircle2, MessageCircle, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit2, Check, Trash2, CheckCircle2, MessageCircle, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatRelativeOrExactDate } from '../../utils/dateUtils';
 
 const ADMIN_MESSAGES_PER_PAGE = 8;
@@ -40,6 +40,29 @@ export default function AdminMessagesTab({
   const handleTabSwitch = (newFilter) => {
     setMessageFilter(newFilter);
     setCurrentPage(1);
+  };
+
+  const handleDeleteWithConfirmation = (msg, isApproved) => {
+    const authorName = msg?.author ? `"${msg.author}"` : 'este recado';
+    const title = isApproved ? 'Excluir Recado do Mural' : 'Recusar e Excluir Recado';
+    const message = isApproved
+      ? `Tem certeza que deseja excluir permanentemente o recado de ${authorName} do mural público? Esta ação é definitiva e não poderá ser desfeita.`
+      : `Tem certeza que deseja recusar e excluir permanentemente o recado de ${authorName}? Esta ação é definitiva e não poderá ser desfeita.`;
+
+    const confirmOptions = {
+      title,
+      message,
+      confirmText: isApproved ? 'Sim, Excluir' : 'Sim, Recusar e Excluir',
+      cancelText: 'Cancelar',
+      isDestructive: true,
+      onConfirm: () => onDeleteMessage(msg.id),
+    };
+
+    if (typeof onRequestConfirm === 'function') {
+      onRequestConfirm(confirmOptions);
+    } else if (window.confirm(`${title}\n\n${message}`)) {
+      onDeleteMessage(msg.id);
+    }
   };
 
   return (
@@ -156,20 +179,11 @@ export default function AdminMessagesTab({
                         <span>Aprovar</span>
                       </button>
                       <button
-                        onClick={() => {
-                          onRequestConfirm({
-                            title: 'Recusar Recado',
-                            message: `Tem certeza que deseja recusar e excluir o recado de ${msg.author}?`,
-                            confirmText: 'Sim, Recusar',
-                            cancelText: 'Cancelar',
-                            isDestructive: true,
-                            onConfirm: () => onDeleteMessage(msg.id),
-                          });
-                        }}
-                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 text-rose-600 dark:text-rose-300 text-xs font-bold transition min-h-[36px]"
-                        title="Recusar recado"
+                        onClick={() => handleDeleteWithConfirmation(msg, false)}
+                        className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-300 text-xs font-bold transition min-h-[36px]"
+                        title="Recusar e excluir permanentemente"
                       >
-                        <X className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3.5 h-3.5" />
                         <span>Recusar</span>
                       </button>
                     </div>
@@ -251,20 +265,12 @@ export default function AdminMessagesTab({
                       {formatRelativeOrExactDate(msg.date, msg.createdAt) || 'Recente'}
                     </span>
                     <button
-                      onClick={() => {
-                        onRequestConfirm({
-                          title: 'Remover Recado do Mural',
-                          message: `Tem certeza que deseja remover o recado de ${msg.author} do mural público?`,
-                          confirmText: 'Sim, Remover',
-                          cancelText: 'Cancelar',
-                          isDestructive: true,
-                          onConfirm: () => onDeleteMessage(msg.id),
-                        });
-                      }}
-                      className="p-1.5 text-xs text-rose-500 hover:text-rose-700 dark:text-rose-400 font-bold transition flex items-center gap-1"
+                      onClick={() => handleDeleteWithConfirmation(msg, true)}
+                      className="px-2.5 py-1 text-xs text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40 rounded-lg font-bold transition flex items-center gap-1.5"
+                      title="Excluir recado do mural público"
                     >
-                      <X className="w-3.5 h-3.5" />
-                      <span>Remover</span>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Excluir</span>
                     </button>
                   </div>
                 </div>
