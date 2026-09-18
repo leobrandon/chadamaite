@@ -1,14 +1,14 @@
 {
   "metadata": {
-    "exportedAt": "2026-09-07T02:36:02.840Z",
+    "exportedAt": "2026-09-18T12:38:53.342Z",
     "appName": "Chá de Bebê da Maitê",
     "databaseVersion": "Supabase PostgreSQL",
     "counts": {
       "event_config": 1,
       "gifts": 21,
-      "rsvps": 30,
-      "messages": 21,
-      "gift_pledges": 22
+      "rsvps": 33,
+      "messages": 30,
+      "gift_pledges": 26
     }
   },
   "tables": {
@@ -287,6 +287,43 @@
       }
     ],
     "rsvps": [
+      {
+        "id": "rsvp-de098c17-38a0-48df-848c-373fdf790a42",
+        "name": "Fabiula Bessa",
+        "attending": true,
+        "adults_count": 2,
+        "children_count": 0,
+        "companion_names": [
+          "Marciel"
+        ],
+        "phone": "",
+        "message": "Maitê, seja bem vinda! Que Deus abençoe sua chegada, muita luz e felicidades para essa nova família.",
+        "created_at": "2026-09-16T23:45:04.5+00:00"
+      },
+      {
+        "id": "rsvp-ad596106-8bf7-44fe-aba9-677e016baf8f",
+        "name": "Erick Colozzo",
+        "attending": true,
+        "adults_count": 1,
+        "children_count": 0,
+        "companion_names": [],
+        "phone": "(62) 98161-7559",
+        "message": "",
+        "created_at": "2026-09-12T00:54:48.415+00:00"
+      },
+      {
+        "id": "rsvp-bf0a3bf4-9232-421a-b4e8-9259061860a6",
+        "name": "Monica Borges",
+        "attending": true,
+        "adults_count": 2,
+        "children_count": 0,
+        "companion_names": [
+          "Marido"
+        ],
+        "phone": "",
+        "message": "",
+        "created_at": "2026-09-07T02:43:51.199+00:00"
+      },
       {
         "id": "rsvp-428825b1-6561-43bc-8fdd-2ac4006ef05d",
         "name": "Adriana Batista",
@@ -656,175 +693,13 @@
     ],
     "messages": [
       {
-        "id": "msg-ac4e3404-2499-436e-ae50-35edddd9a300",
-        "author": "Adriana Batista",
-        "text": "Com certeza vc já é muito amada e esperada princesinha, a titia avó já te ama de montão e não vê a hora de te conhecer pessoalmente e te dar muito amor e carinho bonequinha!😍❤️💕Deus trará vc com saúde e linda como sua mamãe!!!😘",
+        "id": "msg-3dd1b38b-f519-48de-b013-9d590e0ad594",
+        "author": "Papai e Mamãe",
+        "text": "Site criado com muito carinho para o chá da nossa Maitê. Te amamos, filha!",
         "date": "Agora mesmo",
-        "likes": 1,
+        "likes": 8,
         "status": "approved",
-        "created_at": "2026-09-01T12:10:36.147+00:00"
-      },
-      {
-        "id": "msg-cd9839ee-2131-421d-923c-d8db948ff5df",
-        "author": "Fabiana",
-        "text": "Maitê já é muito amada por todos nós!",
-        "date": "Agora mesmo",
-        "likes": 1,
-        "status": "approved",
-        "created_at": "2026-08-26T22:42:34.512+00:00"
-      },
-      {
-        "id": "msg-298b02db-6dd2-4c4e-9516-6c62ec38bb9c",
-        "author": "Adélia Pires de Barros",
-        "text": "Que venha com muita saúde bebezinha",
-        "date": "Agora mesmo",
-        "likes": 1,
-        "status": "approved",
-        "created_at": "2026-08-18T22:28:28.251+00:00"
-      },
-      {
-        "id": "msg-23b4fd08-22d0-414b-bf47-cd1a42e7ef10",
-        "author": "Filipe e família",
-        "text": "Vai ser um prazer pra vocês ter a minha presença",
-        "date": "Agora mesmo",
-        "likes": 1,
-        "status": "approved",
-        "created_at": "2026-08-18T13:49:48.688+00:00"
-      },
-      {
-        "id": "msg-ca747330-d628-4f75-9eab-e55e3b0e42bd",
-        "author": "Gabriel Henrique Menezes Silva",
-        "text": "Que venha com muita saúde e seja alegria de todos ao seu redor",
-        "date": "Agora mesmo",
-        "likes": 1,
-        "status": "approved",
-        "created_at": "2026-08-17T20:56:12.358+00:00"
-      },
-      {
-        "id": "msg-2cec6b19-d9c0-4461-97ba-0877d1888c89",
-        "author": "Tio Kelvin",
-        "text": "Minha sobrinha lindona, que vc venha com muita saúde, pq de beleza e carisma eu sei que vai puxar o titio! \nNão dê ouvidos ao seu pai e não vai na onda da sua mãe. Fica uma dica de ouro.",
-        "date": "Agora mesmo",
-        "likes": 2,
-        "status": "approved",
-        "created_at": "2026-08-17T14:54:37.519+00:00"
-      },
-      {
-        "id": "msg-eb7d57b7-392b-4d93-bf5f-872f5bd029c6",
-        "author": "Raynara Stephany",
-        "text": "Que a chegada da Maitê traga ainda mais amor, alegria e luz para a vida de vocês. Que ela venha com muita saúde e seja cercada de amor em cada fase da vida. Desejo muitas bênçãos e momentos inesquecíveis para essa família linda! 🤍✨",
-        "date": "Agora mesmo",
-        "likes": 1,
-        "status": "approved",
-        "created_at": "2026-08-17T13:22:47.771+00:00"
-      },
-      {
-        "id": "msg-c6bb5115-22e1-4447-8a90-240b05469917",
-        "author": "Anna Flávia da silva Brandão",
-        "text": "Que venha com muita saúde ❤️",
-        "date": "Agora mesmo",
-        "likes": 2,
-        "status": "approved",
-        "created_at": "2026-08-17T01:59:37.714+00:00"
-      },
-      {
-        "id": "msg-900923db-0701-4708-97b8-de4609286f7c",
-        "author": "Isadora Vieira",
-        "text": "Que a família de Nazaré abençoe o lar de vocês e que a benção de nossa senhora grávida venha descer sobre sua gestação e sobre o seu parto para que seja tão abençoado quanto a vinda do nosso menino Jesus foi e é em nossas vidas. \nAmo vocês demais e contem comigo sempre ❤️",
-        "date": "Agora mesmo",
-        "likes": 3,
-        "status": "approved",
-        "created_at": "2026-08-17T00:52:30.119+00:00"
-      },
-      {
-        "id": "msg-1ce7fcc2-cb44-455b-a5cd-e4fb33249ded",
-        "author": "Célio",
-        "text": "Vovozinho te espera com muito carinho",
-        "date": "Agora mesmo",
-        "likes": 2,
-        "status": "approved",
-        "created_at": "2026-08-17T00:05:03.999+00:00"
-      },
-      {
-        "id": "msg-09475ec2-6bb6-459e-9ee3-a62d0e5e25d2",
-        "author": "José Ricardo Brandão",
-        "text": "Parabéns que Deus e Nossa Senhora abençoe vcs",
-        "date": "Agora mesmo",
-        "likes": 2,
-        "status": "approved",
-        "created_at": "2026-08-16T23:46:17.865+00:00"
-      },
-      {
-        "id": "msg-4a7229b6-2d94-4b1c-9b89-4cb58d88f8f7",
-        "author": "Hércules Gideons",
-        "text": "Jogo feliz em poder participar desse momento com vocês ❤️🎉",
-        "date": "Agora mesmo",
-        "likes": 3,
-        "status": "approved",
-        "created_at": "2026-08-16T23:36:55.705+00:00"
-      },
-      {
-        "id": "msg-2818f5fb-3ea8-4249-9433-d4a64bdb7d72",
-        "author": "Stéfano silva",
-        "text": "Que essa princesa cresça guardada e abençoada por Deus. Que o amor que sentimos pela Isa e pelo Léo possa refletir nessa neném ❤️",
-        "date": "Agora mesmo",
-        "likes": 2,
-        "status": "approved",
-        "created_at": "2026-08-16T23:29:38.353+00:00"
-      },
-      {
-        "id": "msg-55249c30-3c77-45ee-949e-1be22dacd4ba",
-        "author": "Stéfano silva",
-        "text": "Um milagre que se tornou a maior felicidade da Isa, é nítido que Deus está envolvido desde o princípio desse sonho. \nQue essa princesa seja muito bem educada pelos papais e muito abençoada por Deus.",
-        "date": "Agora mesmo",
-        "likes": 4,
-        "status": "approved",
-        "created_at": "2026-08-16T23:26:01.499+00:00"
-      },
-      {
-        "id": "msg-7a8b708f-2342-4c9a-9c81-3e5638b4cc17",
-        "author": "Solange A A Ramos Brandão",
-        "text": "Maitê, estamos te esperando com muito amor e carinho. Que Deus te abençoe e te dê muita saúde, e felicidade! 🙌🙌🙏🙏👏👏👏👏",
-        "date": "Agora mesmo",
-        "likes": 3,
-        "status": "approved",
-        "created_at": "2026-08-16T23:18:44.189+00:00"
-      },
-      {
-        "id": "msg-7ea92cf8-7401-4d41-87ef-f9fed249912d",
-        "author": "Rafaella Barros",
-        "text": "Maitê, você já é uma bênção escolhida por Deus e muito amada antes mesmo de chegar. “Antes de formá-lo no ventre, eu a escolhi.” Jr 1:5 .. Estarei sempre aqui por você! Você foi escolhida por Deus e presenteada aos papais certos 🩷 Aos meus amigos, a quem Deus confiou essa linda missão: que a família de vocês, que agora se inicia, seja sempre cercada de amor, respeito, fé e cumplicidade. Que Deus os capacite a cada dia e os guie nessa nova caminhada, e que nunca falte amor!!🩷 eu amo vocês!!",
-        "date": "Agora mesmo",
-        "likes": 3,
-        "status": "approved",
-        "created_at": "2026-08-16T23:10:43.076+00:00"
-      },
-      {
-        "id": "msg-cf60180a-1289-4f18-a307-dd0843ee0fc8",
-        "author": "Luiza Goyaz",
-        "text": "Amo vocês!",
-        "date": "Agora mesmo",
-        "likes": 2,
-        "status": "approved",
-        "created_at": "2026-08-16T22:58:09.353+00:00"
-      },
-      {
-        "id": "msg-da6875a1-6a42-4a01-b694-22c7b01f50c9",
-        "author": "Ayla",
-        "text": "Esperamos por você Maitê ansiosamente, bjs da priminha Ayla",
-        "date": "Agora mesmo",
-        "likes": 2,
-        "status": "approved",
-        "created_at": "2026-08-16T22:54:57.422+00:00"
-      },
-      {
-        "id": "msg-295d31cc-071c-4fbf-87b5-540960d53087",
-        "author": "Titio Saymon",
-        "text": "Titio te ama muito princesa, estarei aqui sempre que precisar, ainda mais sendo seu tio e padrinho...♡",
-        "date": "Agora mesmo",
-        "likes": 2,
-        "status": "approved",
-        "created_at": "2026-08-16T20:21:04.933+00:00"
+        "created_at": "2026-08-16T19:14:08.724+00:00"
       },
       {
         "id": "msg-6c672fb9-0e9c-499f-b46f-c49bf4d95e78",
@@ -836,13 +711,256 @@
         "created_at": "2026-08-16T19:48:18.341+00:00"
       },
       {
-        "id": "msg-3dd1b38b-f519-48de-b013-9d590e0ad594",
-        "author": "Papai e Mamãe",
-        "text": "Site criado com muito carinho para o chá da nossa Maitê. Te amamos, filha!",
+        "id": "msg-295d31cc-071c-4fbf-87b5-540960d53087",
+        "author": "Titio Saymon",
+        "text": "Titio te ama muito princesa, estarei aqui sempre que precisar, ainda mais sendo seu tio e padrinho...♡",
         "date": "Agora mesmo",
-        "likes": 8,
+        "likes": 2,
         "status": "approved",
-        "created_at": "2026-08-16T19:14:08.724+00:00"
+        "created_at": "2026-08-16T20:21:04.933+00:00"
+      },
+      {
+        "id": "msg-da6875a1-6a42-4a01-b694-22c7b01f50c9",
+        "author": "Ayla",
+        "text": "Esperamos por você Maitê ansiosamente, bjs da priminha Ayla",
+        "date": "Agora mesmo",
+        "likes": 2,
+        "status": "approved",
+        "created_at": "2026-08-16T22:54:57.422+00:00"
+      },
+      {
+        "id": "msg-cf60180a-1289-4f18-a307-dd0843ee0fc8",
+        "author": "Luiza Goyaz",
+        "text": "Amo vocês!",
+        "date": "Agora mesmo",
+        "likes": 2,
+        "status": "approved",
+        "created_at": "2026-08-16T22:58:09.353+00:00"
+      },
+      {
+        "id": "msg-7ea92cf8-7401-4d41-87ef-f9fed249912d",
+        "author": "Rafaella Barros",
+        "text": "Maitê, você já é uma bênção escolhida por Deus e muito amada antes mesmo de chegar. “Antes de formá-lo no ventre, eu a escolhi.” Jr 1:5 .. Estarei sempre aqui por você! Você foi escolhida por Deus e presenteada aos papais certos 🩷 Aos meus amigos, a quem Deus confiou essa linda missão: que a família de vocês, que agora se inicia, seja sempre cercada de amor, respeito, fé e cumplicidade. Que Deus os capacite a cada dia e os guie nessa nova caminhada, e que nunca falte amor!!🩷 eu amo vocês!!",
+        "date": "Agora mesmo",
+        "likes": 3,
+        "status": "approved",
+        "created_at": "2026-08-16T23:10:43.076+00:00"
+      },
+      {
+        "id": "msg-7a8b708f-2342-4c9a-9c81-3e5638b4cc17",
+        "author": "Solange A A Ramos Brandão",
+        "text": "Maitê, estamos te esperando com muito amor e carinho. Que Deus te abençoe e te dê muita saúde, e felicidade! 🙌🙌🙏🙏👏👏👏👏",
+        "date": "Agora mesmo",
+        "likes": 3,
+        "status": "approved",
+        "created_at": "2026-08-16T23:18:44.189+00:00"
+      },
+      {
+        "id": "msg-55249c30-3c77-45ee-949e-1be22dacd4ba",
+        "author": "Stéfano silva",
+        "text": "Um milagre que se tornou a maior felicidade da Isa, é nítido que Deus está envolvido desde o princípio desse sonho. \nQue essa princesa seja muito bem educada pelos papais e muito abençoada por Deus.",
+        "date": "Agora mesmo",
+        "likes": 4,
+        "status": "approved",
+        "created_at": "2026-08-16T23:26:01.499+00:00"
+      },
+      {
+        "id": "msg-2818f5fb-3ea8-4249-9433-d4a64bdb7d72",
+        "author": "Stéfano silva",
+        "text": "Que essa princesa cresça guardada e abençoada por Deus. Que o amor que sentimos pela Isa e pelo Léo possa refletir nessa neném ❤️",
+        "date": "Agora mesmo",
+        "likes": 2,
+        "status": "approved",
+        "created_at": "2026-08-16T23:29:38.353+00:00"
+      },
+      {
+        "id": "msg-4a7229b6-2d94-4b1c-9b89-4cb58d88f8f7",
+        "author": "Hércules Gideons",
+        "text": "Jogo feliz em poder participar desse momento com vocês ❤️🎉",
+        "date": "Agora mesmo",
+        "likes": 3,
+        "status": "approved",
+        "created_at": "2026-08-16T23:36:55.705+00:00"
+      },
+      {
+        "id": "msg-09475ec2-6bb6-459e-9ee3-a62d0e5e25d2",
+        "author": "José Ricardo Brandão",
+        "text": "Parabéns que Deus e Nossa Senhora abençoe vcs",
+        "date": "Agora mesmo",
+        "likes": 2,
+        "status": "approved",
+        "created_at": "2026-08-16T23:46:17.865+00:00"
+      },
+      {
+        "id": "msg-1ce7fcc2-cb44-455b-a5cd-e4fb33249ded",
+        "author": "Célio",
+        "text": "Vovozinho te espera com muito carinho",
+        "date": "Agora mesmo",
+        "likes": 2,
+        "status": "approved",
+        "created_at": "2026-08-17T00:05:03.999+00:00"
+      },
+      {
+        "id": "msg-900923db-0701-4708-97b8-de4609286f7c",
+        "author": "Isadora Vieira",
+        "text": "Que a família de Nazaré abençoe o lar de vocês e que a benção de nossa senhora grávida venha descer sobre sua gestação e sobre o seu parto para que seja tão abençoado quanto a vinda do nosso menino Jesus foi e é em nossas vidas. \nAmo vocês demais e contem comigo sempre ❤️",
+        "date": "Agora mesmo",
+        "likes": 3,
+        "status": "approved",
+        "created_at": "2026-08-17T00:52:30.119+00:00"
+      },
+      {
+        "id": "msg-c6bb5115-22e1-4447-8a90-240b05469917",
+        "author": "Anna Flávia da silva Brandão",
+        "text": "Que venha com muita saúde ❤️",
+        "date": "Agora mesmo",
+        "likes": 2,
+        "status": "approved",
+        "created_at": "2026-08-17T01:59:37.714+00:00"
+      },
+      {
+        "id": "msg-eb7d57b7-392b-4d93-bf5f-872f5bd029c6",
+        "author": "Raynara Stephany",
+        "text": "Que a chegada da Maitê traga ainda mais amor, alegria e luz para a vida de vocês. Que ela venha com muita saúde e seja cercada de amor em cada fase da vida. Desejo muitas bênçãos e momentos inesquecíveis para essa família linda! 🤍✨",
+        "date": "Agora mesmo",
+        "likes": 1,
+        "status": "approved",
+        "created_at": "2026-08-17T13:22:47.771+00:00"
+      },
+      {
+        "id": "msg-2cec6b19-d9c0-4461-97ba-0877d1888c89",
+        "author": "Tio Kelvin",
+        "text": "Minha sobrinha lindona, que vc venha com muita saúde, pq de beleza e carisma eu sei que vai puxar o titio! \nNão dê ouvidos ao seu pai e não vai na onda da sua mãe. Fica uma dica de ouro.",
+        "date": "Agora mesmo",
+        "likes": 2,
+        "status": "approved",
+        "created_at": "2026-08-17T14:54:37.519+00:00"
+      },
+      {
+        "id": "msg-ca747330-d628-4f75-9eab-e55e3b0e42bd",
+        "author": "Gabriel Henrique Menezes Silva",
+        "text": "Que venha com muita saúde e seja alegria de todos ao seu redor",
+        "date": "Agora mesmo",
+        "likes": 1,
+        "status": "approved",
+        "created_at": "2026-08-17T20:56:12.358+00:00"
+      },
+      {
+        "id": "msg-23b4fd08-22d0-414b-bf47-cd1a42e7ef10",
+        "author": "Filipe e família",
+        "text": "Vai ser um prazer pra vocês ter a minha presença",
+        "date": "Agora mesmo",
+        "likes": 1,
+        "status": "approved",
+        "created_at": "2026-08-18T13:49:48.688+00:00"
+      },
+      {
+        "id": "msg-298b02db-6dd2-4c4e-9516-6c62ec38bb9c",
+        "author": "Adélia Pires de Barros",
+        "text": "Que venha com muita saúde bebezinha",
+        "date": "Agora mesmo",
+        "likes": 1,
+        "status": "approved",
+        "created_at": "2026-08-18T22:28:28.251+00:00"
+      },
+      {
+        "id": "msg-cd9839ee-2131-421d-923c-d8db948ff5df",
+        "author": "Fabiana",
+        "text": "Maitê já é muito amada por todos nós!",
+        "date": "Agora mesmo",
+        "likes": 1,
+        "status": "approved",
+        "created_at": "2026-08-26T22:42:34.512+00:00"
+      },
+      {
+        "id": "msg-ac4e3404-2499-436e-ae50-35edddd9a300",
+        "author": "Adriana Batista",
+        "text": "Com certeza vc já é muito amada e esperada princesinha, a titia avó já te ama de montão e não vê a hora de te conhecer pessoalmente e te dar muito amor e carinho bonequinha!😍❤️💕Deus trará vc com saúde e linda como sua mamãe!!!😘",
+        "date": "Agora mesmo",
+        "likes": 1,
+        "status": "approved",
+        "created_at": "2026-09-01T12:10:36.147+00:00"
+      },
+      {
+        "id": "msg-rsvp-de098c17-38a0-48df-848c-373fdf790a42",
+        "author": "Fabiula Bessa",
+        "text": "Maitê, seja bem vinda! Que Deus abençoe sua chegada, muita luz e felicidades para essa nova família.",
+        "date": "Ontem às 20:45",
+        "likes": 0,
+        "status": "approved",
+        "created_at": "2026-09-16T23:45:04.5+00:00"
+      },
+      {
+        "id": "test1-1789646180102",
+        "author": "[EXCLUIDO]",
+        "text": "[EXCLUIDO]",
+        "date": "Recente",
+        "likes": 99,
+        "status": "approved",
+        "created_at": "2026-09-17T11:56:20.261058+00:00"
+      },
+      {
+        "id": "test-approval-check-1",
+        "author": "[EXCLUIDO]",
+        "text": "[EXCLUIDO]",
+        "date": "Agora mesmo",
+        "likes": 0,
+        "status": "approved",
+        "created_at": "2026-09-17T11:58:03.278+00:00"
+      },
+      {
+        "id": "msg-test-upsert-1789646339583",
+        "author": "[EXCLUIDO]",
+        "text": "[EXCLUIDO]",
+        "date": "Agora mesmo",
+        "likes": 0,
+        "status": "approved",
+        "created_at": "2026-09-17T11:58:59.583+00:00"
+      },
+      {
+        "id": "msg-probe-appr",
+        "author": "[EXCLUIDO]",
+        "text": "[EXCLUIDO]",
+        "date": "Agora mesmo",
+        "likes": 0,
+        "status": "approved",
+        "created_at": "2026-09-18T11:55:10.395183+00:00"
+      },
+      {
+        "id": "msg-test-ynyc5q",
+        "author": "[EXCLUIDO]",
+        "text": "[EXCLUIDO]",
+        "date": "Recente",
+        "likes": 0,
+        "status": "approved",
+        "created_at": "2026-09-18T11:55:13.731023+00:00"
+      },
+      {
+        "id": "msg-test-probe-x6ad8",
+        "author": "[EXCLUIDO]",
+        "text": "[EXCLUIDO]",
+        "date": "Recente",
+        "likes": 0,
+        "status": "approved",
+        "created_at": "2026-09-18T11:56:54.772194+00:00"
+      },
+      {
+        "id": "msg-flow-1789732791804",
+        "author": "[EXCLUIDO]",
+        "text": "[EXCLUIDO]",
+        "date": "Recente",
+        "likes": 0,
+        "status": "approved",
+        "created_at": "2026-09-18T11:59:52.198868+00:00"
+      },
+      {
+        "id": "msg-loop-1789732824597",
+        "author": "[EXCLUIDO]",
+        "text": "[EXCLUIDO]",
+        "date": "Recente",
+        "likes": 0,
+        "status": "approved",
+        "created_at": "2026-09-18T12:00:26.791237+00:00"
       }
     ],
     "gift_pledges": [
@@ -999,6 +1117,34 @@
         "giver_name": "Dhulia",
         "quantity": 1,
         "created_at": "2026-08-26T15:33:17.195672+00:00"
+      },
+      {
+        "id": "pledge-cdbf46bd-dbee-422c-be4e-a007437f3e83",
+        "gift_id": "gift-3",
+        "giver_name": "Monica Borges",
+        "quantity": 1,
+        "created_at": "2026-09-07T02:43:49.986997+00:00"
+      },
+      {
+        "id": "pledge-274e0ba7-731d-4b8f-8412-a562080084d1",
+        "gift_id": "gift-5",
+        "giver_name": "Monica Borges",
+        "quantity": 1,
+        "created_at": "2026-09-07T02:43:50.345459+00:00"
+      },
+      {
+        "id": "pledge-33d6dee5-81dc-4943-8530-6e0f0cb839f1",
+        "gift_id": "gift-3",
+        "giver_name": "Erick Colozzo",
+        "quantity": 1,
+        "created_at": "2026-09-12T00:55:36.727921+00:00"
+      },
+      {
+        "id": "pledge-8771250c-3012-423b-8239-3094bb9ec1e1",
+        "gift_id": "gift-5",
+        "giver_name": "Erick Colozzo",
+        "quantity": 1,
+        "created_at": "2026-09-12T00:55:37.377239+00:00"
       }
     ]
   }

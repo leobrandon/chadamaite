@@ -1,4 +1,4 @@
-import { INITIAL_GIFTS, INITIAL_EVENT_CONFIG, INITIAL_MESSAGES } from '../data/initialGifts';
+import { INITIAL_GIFTS, INITIAL_EVENT_CONFIG, INITIAL_MESSAGES, INITIAL_RSVPS, INITIAL_PLEDGES } from '../data/initialGifts';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { formatPhone } from '../utils/phoneMask';
 import { formatRelativeOrExactDate } from '../utils/dateUtils';
@@ -25,12 +25,27 @@ export function generateUniqueId(prefix = 'id') {
   });
 }
 
-// Filtro para registros obsoletos de demonstração que não devem poluir o painel
+// Filtro para registros de teste e mocks de demonstração
 export function isTestGuest(nameOrAuthor) {
   if (!nameOrAuthor) return false;
   const n = String(nameOrAuthor).trim().toLowerCase();
-  // Apenas mocks antigos específicos de demonstração que foram descartados
-  if (n === 'carlos eduardo (mock inicial)' || n === 'mariana silva (mock inicial)') {
+
+  // Lista e padrões de cadastros de teste que não devem poluir a lista nem os presentes
+  if (
+    n === 'teste' ||
+    n === 'teste convidado' ||
+    n === 'carlos eduardo' ||
+    n === 'mariana silva' ||
+    n === 'carlos eduardo (mock inicial)' ||
+    n === 'mariana silva (mock inicial)' ||
+    n === 'teste mural autor' ||
+    n === 'teste tio joão' ||
+    n.startsWith('teste ') ||
+    n.startsWith('teste-') ||
+    n.includes('teste mural') ||
+    n.includes('teste tio') ||
+    n.includes('teste convidado')
+  ) {
     return true;
   }
   return false;
@@ -42,6 +57,11 @@ export function isExcludedOrTestMessage(m) {
   const author = String(m.author || '').trim().toLowerCase();
   const text = String(m.text || '').trim().toLowerCase();
   const id = String(m.id || '').trim().toLowerCase();
+
+  // Descartar recados de usuários de teste
+  if (isTestGuest(author)) {
+    return true;
+  }
 
   // Recados marcados como excluídos no banco de dados
   if (
@@ -61,6 +81,14 @@ export function isExcludedOrTestMessage(m) {
     'msg-probe-appr',
     'msg-test-ynyc5q',
     'msg-test-probe-x6ad8',
+    'rsvp-probe-mural',
+    'rsvp-msg-teste-1789732781327',
+    'rsvp-msg-loop-1789732824597',
+    'rsvp-msg-eb3220a6-63e4-4fc8-926c-58dc53ade8f1',
+    'msg-rsvp-probe-mural',
+    'msg-teste-1789732781327',
+    'msg-loop-1789732824597',
+    'msg-eb3220a6-63e4-4fc8-926c-58dc53ade8f1',
   ];
   if (legacyRemovedIds.includes(id)) {
     return true;
@@ -687,14 +715,26 @@ export const storageService = {
   },
 
   // CONFIRMAÇÕES DE PRESENÇA (RSVP)
+  getDismissedRSVPIds: () => {
+    try {
+      const saved = localStorage.getItem('cha_maite_dismissed_rsvps_v1');
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  },
+
   fetchRSVPsFromCloud: async () => {
     if (!isSupabaseConfigured || !supabase) return storageService.getRSVPs();
     try {
       const { data, error } = await supabase.from('rsvps').select('*').order('created_at', { ascending: false });
       if (error) throw error;
+      const dismissedIds = storageService.getDismissedRSVPIds();
       const mapped = (data || [])
         .map(mapRSVPFromDB)
-        .filter(r => !isTestGuest(r.name) && r.phone !== 'mural_only' && !String(r.id || '').startsWith('rsvp-msg-'));
+        .filter(r => !dismissedIds.includes(r.id) && !isTestGuest(r.name) && r.phone !== 'mural_only' && !String(r.id || '').startsWith('rsvp-msg-'));
       localStorage.setItem(KEYS.RSVPS, JSON.stringify(mapped));
       window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: mapped }));
       return mapped;
@@ -706,18 +746,42 @@ export const storageService = {
 
   getRSVPs: () => {
     try {
+      const dismissedIds = storageService.getDismissedRSVPIds();
       const saved = localStorage.getItem(KEYS.RSVPS);
-      if (!saved) return [];
+      if (saved === null) {
+        return (INITIAL_RSVPS || [])
+          .filter(r => !dismissedIds.includes(r.id) && !isTestGuest(r.name))
+          .map((r) => ({
+            ...r,
+            phone: formatPhone(r.phone || ''),
+          }));
+      }
       const parsed = JSON.parse(saved);
-      if (!Array.isArray(parsed)) return [];
-      return parsed
-        .filter(r => !isTestGuest(r.name) && r.phone !== 'mural_only' && !String(r.id || '').startsWith('rsvp-msg-'))
+      if (!Array.isArray(parsed)) {
+        return (INITIAL_RSVPS || [])
+          .filter(r => !dismissedIds.includes(r.id) && !isTestGuest(r.name))
+          .map((r) => ({
+            ...r,
+            phone: formatPhone(r.phone || ''),
+          }));
+      }
+      const filtered = parsed
+        .filter(r => !dismissedIds.includes(r.id) && !isTestGuest(r.name) && r.phone !== 'mural_only' && !String(r.id || '').startsWith('rsvp-msg-'))
         .map((r) => ({
           ...r,
           phone: formatPhone(r.phone || ''),
         }));
+
+      // Se havia cadastros de teste armazenados, higieniza o localStorage
+      if (filtered.length !== parsed.length) {
+        localStorage.setItem(KEYS.RSVPS, JSON.stringify(filtered));
+      }
+      return filtered;
     } catch {
-      return [];
+      return (INITIAL_RSVPS || []).map((r) => ({
+        ...r,
+        phone: formatPhone(r.phone || ''),
+      }));
     }
   },
 
@@ -794,6 +858,11 @@ export const storageService = {
     const rsvps = storageService.getRSVPs();
     const updated = rsvps.filter(r => r.id !== rsvpId);
 
+    // Registra o ID nos descartados/excluídos para nunca reaparecer em sincronizações
+    const dismissedRsvps = storageService.getDismissedRSVPIds();
+    if (!dismissedRsvps.includes(rsvpId)) dismissedRsvps.push(rsvpId);
+    localStorage.setItem('cha_maite_dismissed_rsvps_v1', JSON.stringify(dismissedRsvps));
+
     // Também remove e dispensa recado associado a este RSVP se houver
     const msgId = `msg-${rsvpId}`;
     const dismissed = storageService.getDismissedMessageIds();
@@ -808,18 +877,17 @@ export const storageService = {
       window.dispatchEvent(new CustomEvent('messages_updated', { detail: updatedMsgs }));
     }
 
+    localStorage.setItem(KEYS.RSVPS, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: updated }));
+
     if (isSupabaseConfigured && supabase) {
       try {
-        const { error } = await supabase.from('rsvps').delete().eq('id', rsvpId);
-        if (error) throw error;
+        await supabase.from('rsvps').delete().eq('id', rsvpId);
       } catch (err) {
         console.error('Erro ao excluir RSVP no Supabase:', err);
-        return rsvps;
       }
     }
 
-    localStorage.setItem(KEYS.RSVPS, JSON.stringify(updated));
-    window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: updated }));
     return updated;
   },
 
@@ -1367,12 +1435,26 @@ export const storageService = {
   },
 
   // PLEDGES (CONTRIBUIÇÕES DE PRESENTES)
+  getDismissedPledgeIds: () => {
+    try {
+      const saved = localStorage.getItem('cha_maite_dismissed_pledges_v1');
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  },
+
   fetchPledgesFromCloud: async () => {
     if (!isSupabaseConfigured || !supabase) return storageService.getPledges();
     try {
       const { data, error } = await supabase.from('gift_pledges').select('*').order('created_at', { ascending: true });
       if (error) throw error;
-      const mapped = (data || []).map(mapPledgeFromDB).filter(p => !isTestGuest(p.giverName));
+      const dismissedIds = storageService.getDismissedPledgeIds();
+      const mapped = (data || [])
+        .map(mapPledgeFromDB)
+        .filter(p => !dismissedIds.includes(p.id) && !isTestGuest(p.giverName));
       localStorage.setItem(KEYS.PLEDGES, JSON.stringify(mapped));
       window.dispatchEvent(new CustomEvent('pledges_updated', { detail: mapped }));
       return mapped;
@@ -1384,13 +1466,20 @@ export const storageService = {
 
   getPledges: () => {
     try {
+      const dismissedIds = storageService.getDismissedPledgeIds();
       const saved = localStorage.getItem(KEYS.PLEDGES);
-      if (!saved) return [];
+      if (saved === null) {
+        return (INITIAL_PLEDGES || []).filter(p => !dismissedIds.includes(p.id) && !isTestGuest(p.giverName));
+      }
       const parsed = JSON.parse(saved);
       if (!Array.isArray(parsed)) return [];
-      return parsed.filter(p => !isTestGuest(p.giverName));
+      const filtered = parsed.filter(p => !dismissedIds.includes(p.id) && !isTestGuest(p.giverName));
+      if (filtered.length !== parsed.length) {
+        localStorage.setItem(KEYS.PLEDGES, JSON.stringify(filtered));
+      }
+      return filtered;
     } catch {
-      return [];
+      return (INITIAL_PLEDGES || []).filter(p => !isTestGuest(p.giverName));
     }
   },
 
@@ -1424,6 +1513,12 @@ export const storageService = {
     const pledges = storageService.getPledges();
     const pledgeToDelete = pledges.find(p => p.id === pledgeId);
     const updated = pledges.filter(p => p.id !== pledgeId);
+
+    // Registra nos descartados para garantir que nunca retorne em sincronizações
+    const dismissedPledges = storageService.getDismissedPledgeIds();
+    if (!dismissedPledges.includes(pledgeId)) dismissedPledges.push(pledgeId);
+    localStorage.setItem('cha_maite_dismissed_pledges_v1', JSON.stringify(dismissedPledges));
+
     localStorage.setItem(KEYS.PLEDGES, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent('pledges_updated', { detail: updated }));
 
@@ -1554,7 +1649,7 @@ export const storageService = {
         dump.tables.event_config = cfg.data || [];
         dump.tables.gifts = gft.data || [];
         dump.tables.gift_pledges = (pld.data || []).filter(p => !isTestGuest(p.giver_name));
-        dump.tables.rsvps = (rsv.data || []).filter(r => !isTestGuest(r.name));
+        dump.tables.rsvps = (rsv.data || []).filter(r => !isTestGuest(r.name) && r.phone !== 'mural_only' && !String(r.id || '').startsWith('rsvp-msg-'));
         dump.tables.messages = (msg.data || []).filter(m => !isTestGuest(m.author));
       } catch (err) {
         console.error('Erro ao buscar do Supabase para exportação, usando dados locais:', err);
