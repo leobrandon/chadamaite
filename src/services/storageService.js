@@ -40,6 +40,7 @@ export function isTestGuest(nameOrAuthor) {
     n === 'mariana silva (mock inicial)' ||
     n === 'teste mural autor' ||
     n === 'teste tio joão' ||
+    n === 'tio marcos' ||
     n.startsWith('teste ') ||
     n.startsWith('teste-') ||
     n.includes('teste mural') ||
@@ -85,10 +86,12 @@ export function isExcludedOrTestMessage(m) {
     'rsvp-msg-teste-1789732781327',
     'rsvp-msg-loop-1789732824597',
     'rsvp-msg-eb3220a6-63e4-4fc8-926c-58dc53ade8f1',
+    'rsvp-msg-flow-1789732791804',
     'msg-rsvp-probe-mural',
     'msg-teste-1789732781327',
     'msg-loop-1789732824597',
     'msg-eb3220a6-63e4-4fc8-926c-58dc53ade8f1',
+    'msg-flow-1789732791804',
   ];
   if (legacyRemovedIds.includes(id)) {
     return true;
@@ -932,6 +935,10 @@ export const storageService = {
       'test1-1789646180102',
       'test-approval-check-1',
       'msg-test-upsert-1789646339583',
+      'rsvp-msg-flow-1789732791804',
+      'msg-flow-1789732791804',
+      'msg-rsvp-1bb3cd4d-97bc-4c08-a156-8b73808b39d5',
+      'rsvp-1bb3cd4d-97bc-4c08-a156-8b73808b39d5',
     ];
     try {
       const saved = localStorage.getItem('cha_maite_dismissed_messages_v1');
@@ -1003,9 +1010,19 @@ export const storageService = {
         // Verificar se já existe recado aprovado correspondente no banco
         const alreadyApproved = dbMessages.some(m => {
           if (m.id === resolvedMsgId || m.id === r.id || m.id === `msg-${r.id}`) return true;
-          if (m.author && r.name && m.author.trim().toLowerCase() === r.name.trim().toLowerCase() &&
-              m.text && r.message && m.text.trim().toLowerCase() === r.message.trim().toLowerCase()) {
-            return true;
+          if (m.author && r.name && m.author.trim().toLowerCase() === r.name.trim().toLowerCase()) {
+            const normM = (m.text || '').toLowerCase().replace(/\s+/g, ' ').trim();
+            const normR = (r.message || '').toLowerCase().replace(/\s+/g, ' ').trim();
+            if (normM === normR) return true;
+
+            // Comparação de similaridade de texto para lidar com edições ou correções de digitação
+            const wordsM = normM.split(' ').filter(Boolean);
+            const wordsR = normR.split(' ').filter(Boolean);
+            if (wordsM.length >= 3 && wordsR.length >= 3) {
+              const matches = wordsM.filter(w => wordsR.includes(w)).length;
+              if (matches / Math.max(wordsM.length, wordsR.length) >= 0.5) return true;
+            }
+            if (normM.slice(0, 20) === normR.slice(0, 20) && normM.length > 10) return true;
           }
           return false;
         });

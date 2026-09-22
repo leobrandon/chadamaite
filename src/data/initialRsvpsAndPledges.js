@@ -322,7 +322,7 @@ export const INITIAL_RSVPS = [
       "Ruy Gonçalves Brandão"
     ],
     "phone": "62985679449",
-    "message": "Maitê, estamos te esperando com muito  e carinho. Que Deus te abençoe e te dê muita saúde, e felicidade! 🙌🙌🙏🙏👏👏👏👏",
+    "message": "Maitê, estamos te esperando com muito amor e carinho. Que Deus te abençoe e te dê muita saúde, e felicidade! 🙌🙌🙏🙏👏👏👏👏",
     "createdAt": "2026-08-16T23:13:12.982028+00:00"
   },
   {
