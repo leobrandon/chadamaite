@@ -12,7 +12,7 @@ WHERE giver_name ILIKE '%teste%'
 -- 2. Excluir confirmações de presença (RSVP) de teste e registros de probes
 DELETE FROM public.rsvps
 WHERE name ILIKE '%teste%'
-   OR name IN ('Carlos Eduardo', 'Mariana Silva')
+   OR name IN ('Carlos Eduardo', 'Mariana Silva', 'Tio Marcos')
    OR phone = 'mural_only'
    OR id LIKE 'rsvp-msg-%'
    OR id LIKE '%probe%';
@@ -20,10 +20,12 @@ WHERE name ILIKE '%teste%'
 -- 3. Excluir recados de teste do mural
 DELETE FROM public.messages
 WHERE author ILIKE '%teste%'
-   OR author IN ('Carlos Eduardo', 'Mariana Silva')
+   OR author IN ('Carlos Eduardo', 'Mariana Silva', 'Tio Marcos', '[EXCLUIDO]')
    OR id LIKE 'msg-test%'
    OR id LIKE 'test%'
    OR id LIKE '%probe%'
+   OR id LIKE '%flow%'
+   OR id LIKE '%loop%'
    OR id = 'msg-rsvp-probe-mural';
 
 -- ====================================================================
