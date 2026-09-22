@@ -3,7 +3,6 @@ import { Gift, Search, Sparkles, CheckCircle2, Lock, Heart, ChevronDown, Chevron
 import { motion } from 'motion/react';
 import ShimmerButton from './ui/ShimmerButton';
 import CloudHeadingReveal from './ui/CloudHeadingReveal';
-import { INITIAL_CATEGORIES } from '../data/initialGifts';
 
 export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmin, isLoading = false }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,6 +57,87 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
           subtitle="Como funciona: Escolha o tamanho do pacote de fraldas e, em seguida, selecione um mimo especial (lenços umedecidos, pomadinhas, roupinhas, etc.) para acompanhar com todo carinho! 💕"
           className="text-center max-w-2xl mx-auto mb-10"
         />
+
+        {/* Mini Guia Visual: Combo Fralda + Mimo */}
+        <motion.div
+          id="guia-combo-presente"
+          initial={{ opacity: 0, y: 15 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4 }}
+          className="max-w-4xl mx-auto mb-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-blush-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm shadow-blush-100/50 dark:shadow-none"
+        >
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-blush-100/80 dark:border-slate-800">
+            <h3 className="font-serif text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100">
+              Como funciona o Combo de Presente?
+            </h3>
+            <span className="text-[11px] sm:text-xs font-semibold text-blush-600 dark:text-blush-400 bg-blush-50 dark:bg-blush-950/60 px-3 py-1 rounded-full border border-blush-200/60 dark:border-blush-800/40">
+              3 Passos Fáceis
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4 relative">
+            {/* Passo 1 */}
+            <div className="flex sm:flex-col items-start gap-3 p-4 rounded-2xl bg-gradient-to-br from-blush-50/70 to-white/70 dark:from-slate-800/60 dark:to-slate-800/30 border border-blush-100 dark:border-slate-700/60 transition-all hover:border-blush-300 dark:hover:border-slate-600">
+              <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-white dark:bg-slate-700 text-blush-600 dark:text-blush-300 shadow-xs border border-blush-100 dark:border-slate-600 shrink-0 text-xl">
+                👶
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-blush-600 dark:text-blush-400 bg-blush-100 dark:bg-blush-950 px-2 py-0.5 rounded-md">
+                    Passo 1
+                  </span>
+                  <span className="font-semibold text-sm text-slate-800 dark:text-slate-100">
+                    Escolha a Fralda
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Selecione o tamanho que deseja presentear (M ou G) clicando no card abaixo.
+                </p>
+              </div>
+            </div>
+
+            {/* Passo 2 */}
+            <div className="flex sm:flex-col items-start gap-3 p-4 rounded-2xl bg-gradient-to-br from-amber-50/60 to-white/70 dark:from-slate-800/60 dark:to-slate-800/30 border border-amber-100/80 dark:border-slate-700/60 transition-all hover:border-amber-300 dark:hover:border-slate-600">
+              <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-300 shadow-xs border border-amber-100 dark:border-slate-600 shrink-0 text-xl">
+                🧸
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950 px-2 py-0.5 rounded-md">
+                    Passo 2
+                  </span>
+                  <span className="font-semibold text-sm text-slate-800 dark:text-slate-100">
+                    Adicione um Mimo
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  No modal que abrir, adicione um mimo especial (pomadinha, lencinho, roupinha ou brinquedo).
+                </p>
+              </div>
+            </div>
+
+            {/* Passo 3 */}
+            <div className="flex sm:flex-col items-start gap-3 p-4 rounded-2xl bg-gradient-to-br from-emerald-50/60 to-white/70 dark:from-slate-800/60 dark:to-slate-800/30 border border-emerald-100/80 dark:border-slate-700/60 transition-all hover:border-emerald-300 dark:hover:border-slate-600">
+              <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-300 shadow-xs border border-emerald-100 dark:border-slate-600 shrink-0 text-xl">
+                🎁
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-md">
+                    Passo 3
+                  </span>
+                  <span className="font-semibold text-sm text-slate-800 dark:text-slate-100">
+                    Presente Reservado!
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Informe seu nome para que os papais saibam quem preparou esse carinho para a Maitê.
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Search & Filter Controls */}
         <div className="max-w-4xl mx-auto mb-8 space-y-4">
