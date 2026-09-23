@@ -723,7 +723,14 @@ export const storageService = {
       const saved = localStorage.getItem('cha_maite_dismissed_rsvps_v1');
       if (!saved) return [];
       const parsed = JSON.parse(saved);
-      return Array.isArray(parsed) ? parsed : [];
+      if (!Array.isArray(parsed)) return [];
+      // Se continha o ID do RSVP por engano decorrente do descarte de recado anterior, limpa o resíduo
+      if (parsed.includes('rsvp-8dd0513e-e2a8-4262-ae62-41108ff2794d')) {
+        const cleaned = parsed.filter(id => id !== 'rsvp-8dd0513e-e2a8-4262-ae62-41108ff2794d');
+        localStorage.setItem('cha_maite_dismissed_rsvps_v1', JSON.stringify(cleaned));
+        return cleaned;
+      }
+      return parsed;
     } catch {
       return [];
     }
@@ -735,6 +742,7 @@ export const storageService = {
       const { data, error } = await supabase.from('rsvps').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       const dismissedIds = storageService.getDismissedRSVPIds();
+
       const mapped = (data || [])
         .map(mapRSVPFromDB)
         .filter(r => !dismissedIds.includes(r.id) && !isTestGuest(r.name) && r.phone !== 'mural_only' && !String(r.id || '').startsWith('rsvp-msg-'));
@@ -877,6 +885,14 @@ export const storageService = {
 
     if (isSupabaseConfigured && supabase) {
       try {
+        await supabase.from('messages').upsert([{
+          id: `dismissed-${rsvpId}`,
+          author: '[EXCLUIDO]',
+          text: `[DISMISSED_ID:${rsvpId}]`,
+          status: 'approved',
+          date: 'Agora mesmo',
+          likes: 0,
+        }], { onConflict: 'id' });
         await supabase.from('rsvps').delete().eq('id', rsvpId);
       } catch (err) {
         console.error('Erro ao excluir RSVP no Supabase:', err);
@@ -957,10 +973,31 @@ export const storageService = {
       // 1. Buscar recados na tabela messages e RSVPs na tabela rsvps em paralelo
       const [messagesRes, rsvpsRes] = await Promise.all([
         supabase.from('messages').select('*').order('created_at', { ascending: false }),
-        supabase.from('rsvps').select('id, name, message, created_at').order('created_at', { ascending: false })
+        supabase.from('rsvps').select('id, name, message, created_at, phone').order('created_at', { ascending: false })
       ]);
 
       if (messagesRes.error) throw messagesRes.error;
+
+      // 1.1 Extrair registros de exclusão/descarte salvos na nuvem (sincronizados entre todos os dispositivos)
+      const cloudDismissedIds = [];
+      (messagesRes.data || []).forEach((row) => {
+        if (!row) return;
+        const author = String(row.author || '').trim();
+        const text = String(row.text || '').trim();
+        const id = String(row.id || '').trim();
+        if (author.includes('[EXCLUIDO]') || text.includes('[DISMISSED_ID:')) {
+          if (id) cloudDismissedIds.push(id.replace(/^dismissed-/, ''));
+          const match = text.match(/\[DISMISSED_ID:([^\]]+)\]/);
+          if (match && match[1]) {
+            cloudDismissedIds.push(match[1]);
+          }
+        }
+      });
+
+      const allDismissedIds = Array.from(new Set([...dismissedIds, ...cloudDismissedIds]));
+      if (cloudDismissedIds.length > 0) {
+        localStorage.setItem('cha_maite_dismissed_messages_v1', JSON.stringify(allDismissedIds));
+      }
 
       // Filtrar mensagens vindas do banco garantindo que nenhuma mensagem excluída ou dispensada permaneça
       const dbMessages = (messagesRes.data || [])
@@ -968,8 +1005,8 @@ export const storageService = {
         .filter(Boolean)
         .filter((m) =>
           !isExcludedOrTestMessage(m) &&
-          !dismissedIds.includes(m.id) &&
-          (!m.rsvpId || !dismissedIds.includes(m.rsvpId))
+          !allDismissedIds.includes(m.id) &&
+          (!m.rsvpId || !allDismissedIds.includes(m.rsvpId))
         );
 
       const rsvps = rsvpsRes.data || [];
@@ -991,10 +1028,11 @@ export const storageService = {
 
         // Verificar se já foi dispensado/rejeitado pelo administrador
         if (
-          dismissedIds.includes(resolvedMsgId) ||
-          dismissedIds.includes(r.id) ||
-          dismissedIds.includes(`msg-${r.id}`) ||
-          dismissedIds.includes(`rsvp-${resolvedMsgId}`)
+          allDismissedIds.includes(resolvedMsgId) ||
+          allDismissedIds.includes(r.id) ||
+          allDismissedIds.includes(`msg-${r.id}`) ||
+          allDismissedIds.includes(`rsvp-${resolvedMsgId}`) ||
+          allDismissedIds.some(dId => dId && (String(r.id || '').includes(dId) || String(resolvedMsgId || '').includes(dId)))
         ) {
           continue;
         }
@@ -1002,11 +1040,28 @@ export const storageService = {
         // Verificar se já existe recado aprovado correspondente no banco
         const alreadyApproved = dbMessages.some(m => {
           if (m.id === resolvedMsgId || m.id === r.id || m.id === `msg-${r.id}`) return true;
-          if (m.author && r.name && m.author.trim().toLowerCase() === r.name.trim().toLowerCase()) {
-            const normM = (m.text || '').toLowerCase().replace(/\s+/g, ' ').trim();
-            const normR = (r.message || '').toLowerCase().replace(/\s+/g, ' ').trim();
-            if (normM === normR) return true;
 
+          const authorA = (m.author || '').toLowerCase().trim();
+          const authorB = (r.name || '').toLowerCase().trim();
+          const normM = (m.text || '').toLowerCase().replace(/\s+/g, ' ').trim();
+          const normR = (r.message || '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+          // 1. Mensagem com texto idêntico (mais de 20 caracteres) de autor compatível
+          if (normM.length >= 20 && normR.length >= 20 && normM === normR) {
+            const firstA = authorA.split(' ')[0];
+            const firstB = authorB.split(' ')[0];
+            if (firstA && firstB && (firstA === firstB || authorA.includes(firstB) || authorB.includes(firstA))) {
+              return true;
+            }
+          }
+
+          // 2. Mesmo autor ou nomes compatíveis (ex: Gabriela Gonçalves e Gabriela Alves Gonçalves)
+          const isSameAuthor = authorA === authorB ||
+            (authorA.length >= 5 && authorB.length >= 5 && (authorA.includes(authorB) || authorB.includes(authorA))) ||
+            (authorA.split(' ')[0] === authorB.split(' ')[0] && authorA.split(' ').slice(-1)[0] === authorB.split(' ').slice(-1)[0]);
+
+          if (isSameAuthor) {
+            if (normM === normR) return true;
             // Comparação de similaridade de texto para lidar com edições ou correções de digitação
             const wordsM = normM.split(' ').filter(Boolean);
             const wordsR = normR.split(' ').filter(Boolean);
@@ -1041,9 +1096,9 @@ export const storageService = {
       const currentLocalMsgs = storageService.getMessages();
       const localPending = currentLocalMsgs.filter(m => 
         m && m.status === 'pending' && 
-        !isExcludedOrTestMessage(m) &&
-        !dismissedIds.includes(m.id) &&
-        !dbMessages.some(dbm => dbm.id === m.id) &&
+        !isExcludedOrTestMessage(m) && 
+        !allDismissedIds.includes(m.id) && 
+        !dbMessages.some(dbm => dbm.id === m.id) && 
         !pendingFromRsvps.some(pr => pr.id === m.id)
       );
 
@@ -1164,10 +1219,23 @@ export const storageService = {
           }
         }
 
-        // Se veio do canal de sincronização rsvps (mural ou rsvp-msg), remove o registro temporário
+        // Se veio de um recado exclusivo do mural gravado temporariamente em rsvps, remove o registro temporário
         const rsvpKey = target.rsvpId || `rsvp-${target.id}`;
-        await supabase.from('rsvps').delete().eq('id', rsvpKey);
-        await supabase.from('rsvps').delete().eq('id', `rsvp-${msgId}`);
+        if (rsvpKey && (String(rsvpKey).startsWith('rsvp-msg-') || target.phone === 'mural_only')) {
+          await supabase.from('rsvps').delete().eq('id', rsvpKey);
+        }
+
+        // Grava marcador de descarte apenas do identificador de recado pendente na nuvem
+        const pendingMsgIds = [msgId, `msg-${target.id}`].filter(Boolean);
+        const dismissMarkers = Array.from(new Set(pendingMsgIds)).map((id) => ({
+          id: `dismissed-${id}`,
+          author: '[EXCLUIDO]',
+          text: `[DISMISSED_ID:${id}]`,
+          status: 'approved',
+          date: 'Agora mesmo',
+          likes: 0,
+        }));
+        await supabase.from('messages').upsert(dismissMarkers, { onConflict: 'id' });
       } catch (err) {
         console.error('Erro ao aprovar mensagem no Supabase:', err);
       }
@@ -1242,6 +1310,30 @@ export const storageService = {
     // 2. Persistência no Supabase com redundância contra RLS
     if (isSupabaseConfigured && supabase) {
       try {
+        // Gravar marcadores de descarte na nuvem para sincronização em todos os navegadores e dispositivos
+        const idsToDismiss = [msgId];
+        if (relatedRsvpId) idsToDismiss.push(relatedRsvpId);
+        if (target?.rsvpId) idsToDismiss.push(target.rsvpId);
+        if (typeof msgId === 'string') {
+          if (msgId.startsWith('msg-')) {
+            idsToDismiss.push(`rsvp-${msgId}`);
+            idsToDismiss.push(msgId.replace(/^msg-/, ''));
+          } else {
+            idsToDismiss.push(`msg-${msgId}`);
+          }
+        }
+
+        const dismissPayloads = Array.from(new Set(idsToDismiss.filter(Boolean))).map((id) => ({
+          id: `dismissed-${id}`,
+          author: '[EXCLUIDO]',
+          text: `[DISMISSED_ID:${id}]`,
+          status: 'approved',
+          date: 'Agora mesmo',
+          likes: 0,
+        }));
+
+        await supabase.from('messages').upsert(dismissPayloads, { onConflict: 'id' });
+
         // Marcação definitiva no banco usando UPDATE (permitido pela política RLS)
         await supabase
           .from('messages')

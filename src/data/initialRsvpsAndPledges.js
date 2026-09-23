@@ -1,5 +1,53 @@
 export const INITIAL_RSVPS = [
   {
+    "id": "rsvp-8dd0513e-e2a8-4262-ae62-41108ff2794d",
+    "name": "Gabriela Alves Gonçalves",
+    "attending": true,
+    "adultsCount": 2,
+    "childrenCount": 0,
+    "companionNames": [
+      "Idália Barbosa Martins"
+    ],
+    "phone": "",
+    "message": "Maitê ainda está na barriguinha, mas já é muito amada e esperada por todos nós! 🥹💕\nAos papais de primeira viagem: aproveitem cada momento dessa espera e não tenham medo das dúvidas ou daquele friozinho na barriga. Vocês vão aprender juntos e descobrir, dia após dia, um amor que não tem tamanho.\nQue Deus abençoe muito essa nova família e que nunca faltem amor, parceria, carinho e muitas risadas nessa nova aventura. ❤️\nMaitê já tem muita sorte de ter vocês!",
+    "createdAt": "2026-09-22T12:44:17.788+00:00"
+  },
+  {
+    "id": "rsvp-09ef0070-4ced-4396-aa2b-3dc0748c7e46",
+    "name": "Mariana Ferreira",
+    "attending": true,
+    "adultsCount": 2,
+    "childrenCount": 0,
+    "companionNames": [
+      "Gesley Mateus"
+    ],
+    "phone": "",
+    "message": "",
+    "createdAt": "2026-09-20T23:03:57.265+00:00"
+  },
+  {
+    "id": "rsvp-73ad0271-7a06-4c24-be83-7a206823849d",
+    "name": "Carlos Eduardo",
+    "attending": true,
+    "adultsCount": 1,
+    "childrenCount": 0,
+    "companionNames": [],
+    "phone": "",
+    "message": "",
+    "createdAt": "2026-09-03T02:25:21.013+00:00"
+  },
+  {
+    "id": "rsvp-425aa689-d59a-4695-8915-7f29cb37c896",
+    "name": "Mariana Silva",
+    "attending": true,
+    "adultsCount": 1,
+    "childrenCount": 0,
+    "companionNames": [],
+    "phone": "",
+    "message": "",
+    "createdAt": "2026-09-03T02:24:47.24+00:00"
+  },
+  {
     "id": "rsvp-de098c17-38a0-48df-848c-373fdf790a42",
     "name": "Fabiula Bessa",
     "attending": true,
