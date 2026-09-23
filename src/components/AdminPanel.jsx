@@ -20,6 +20,8 @@ import AdminEditRsvpModal from './admin/modals/AdminEditRsvpModal';
 import AdminEditMessageModal from './admin/modals/AdminEditMessageModal';
 import { verifyAdminPin, hashPassword } from '../utils/security';
 import { formatPhone } from '../utils/phoneMask';
+import { getMessageTimestamp } from '../utils/dateUtils';
+import { isExcludedOrTestMessage } from '../services/storageService';
 
 export default function AdminPanel({ 
   isOpen, 
@@ -477,8 +479,13 @@ export default function AdminPanel({
   const giftsWithPledgesCount = new Set(pledges.map((p) => p.giftId)).size;
   const availableGiftsCount = safeGifts.length - giftsWithPledgesCount;
 
-  const pendingMessages = safeMessages.filter((m) => m && m.status === 'pending');
-  const approvedMessages = safeMessages.filter((m) => m && m.status === 'approved');
+  const pendingMessages = safeMessages
+    .filter((m) => m && m.status === 'pending' && !isExcludedOrTestMessage(m))
+    .sort((a, b) => getMessageTimestamp(b) - getMessageTimestamp(a));
+
+  const approvedMessages = safeMessages
+    .filter((m) => m && m.status === 'approved' && !isExcludedOrTestMessage(m))
+    .sort((a, b) => getMessageTimestamp(b) - getMessageTimestamp(a));
 
   const handleExportGiftsPDF = () => {
     const printWindow = window.open('', '_blank');

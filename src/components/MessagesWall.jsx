@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { MessageCircleHeart, Send, ChevronLeft, ChevronRight, Search, Sparkles, CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import confetti from 'canvas-confetti';
-import { formatRelativeOrExactDate } from '../utils/dateUtils';
+import { formatRelativeOrExactDate, getMessageTimestamp } from '../utils/dateUtils';
 import { isExcludedOrTestMessage } from '../services/storageService';
 import HeartBurstButton from './ui/HeartBurstButton';
 import { useToast } from './ui/ToastProvider';
@@ -80,9 +80,11 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
 
   const safeMessages = useMemo(() => Array.isArray(messages) ? messages : [], [messages]);
   
-  // Apenas mensagens aprovadas e válidas (não excluídas/não testes)
+  // Apenas mensagens aprovadas e válidas (não excluídas/não testes), ordenadas pela mais recente primeiro
   const approvedMessages = useMemo(() => {
-    return safeMessages.filter(m => m && m.status === 'approved' && !isExcludedOrTestMessage(m));
+    return safeMessages
+      .filter(m => m && m.status === 'approved' && !isExcludedOrTestMessage(m))
+      .sort((a, b) => getMessageTimestamp(b) - getMessageTimestamp(a));
   }, [safeMessages]);
 
   // Mensagens filtradas pela busca

@@ -74,3 +74,23 @@ export function formatRelativeOrExactDate(dateValue, createdAtValue) {
   // 4. Se não houver data válida nem fallback, retorna null (para não exibir texto vago)
   return null;
 }
+
+/**
+ * Retorna o timestamp numérico de um recado para ordenação cronológica precisa
+ */
+export function getMessageTimestamp(m) {
+  if (!m) return 0;
+  if (m.createdAt) {
+    const t = new Date(m.createdAt).getTime();
+    if (!isNaN(t)) return t;
+  }
+  if (m.created_at) {
+    const t = new Date(m.created_at).getTime();
+    if (!isNaN(t)) return t;
+  }
+  if (m.date) {
+    const t = new Date(m.date).getTime();
+    if (!isNaN(t)) return t;
+  }
+  return 0;
+}

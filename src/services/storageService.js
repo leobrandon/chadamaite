@@ -1,7 +1,7 @@
 import { INITIAL_GIFTS, INITIAL_EVENT_CONFIG, INITIAL_MESSAGES, INITIAL_RSVPS, INITIAL_PLEDGES } from '../data/initialGifts';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { formatPhone } from '../utils/phoneMask';
-import { formatRelativeOrExactDate } from '../utils/dateUtils';
+import { formatRelativeOrExactDate, getMessageTimestamp } from '../utils/dateUtils';
 import { DEFAULT_ADMIN_PIN_HASH, sanitizeText, sanitizeName } from '../utils/security';
 
 const KEYS = {
@@ -825,21 +825,13 @@ export const storageService = {
     } : null;
 
     if (isSupabaseConfigured && supabase) {
-      const promises = [
-        supabase.from('rsvps').insert([mapRSVPToDB(newEntry)]),
-      ];
-      if (newMsg) {
-        promises.push(supabase.from('messages').insert([mapMessageToDB(newMsg)]));
-      }
       try {
-        const results = await Promise.all(promises);
-        results.forEach((res, i) => {
-          if (res?.error) {
-            console.error(`Erro ao salvar item ${i === 0 ? 'RSVP' : 'Mensagem'} no Supabase:`, res.error);
-          }
-        });
+        const res = await supabase.from('rsvps').insert([mapRSVPToDB(newEntry)]);
+        if (res?.error) {
+          console.error('Erro ao salvar RSVP no Supabase:', res.error);
+        }
       } catch (err) {
-        console.error('Erro ao salvar RSVP/Recado no Supabase:', err);
+        console.error('Erro ao salvar RSVP no Supabase:', err);
       }
     }
 
@@ -1145,15 +1137,30 @@ export const storageService = {
       createdAt: target.createdAt || new Date().toISOString(),
     };
 
+    let finalId = target.id;
+
     if (isSupabaseConfigured && supabase) {
       try {
-        const payload = mapMessageToDB(approvedMsg);
+        let payload = mapMessageToDB(approvedMsg);
         const { error } = await supabase.from('messages').upsert([payload], { onConflict: 'id' });
         if (error) {
           console.warn('Upsert falhou ao aprovar recado, tentando insert:', error);
           const insertRes = await supabase.from('messages').insert([payload]);
           if (insertRes.error) {
-            console.error('Erro no insert de recado aprovado:', insertRes.error);
+            // Se houver conflito de chave primária (23505) ou política RLS, gera ID aprovado exclusivo
+            if (insertRes.error.code === '23505' || String(insertRes.error.message || '').includes('violates unique constraint')) {
+              console.warn('Chave duplicada detectada ao aprovar recado. Inserindo com ID aprovado único...');
+              finalId = `msg-appr-${String(target.id || '').replace(/^(msg-|rsvp-)/g, '')}`;
+              payload.id = finalId;
+              const fallbackRes = await supabase.from('messages').insert([payload]);
+              if (fallbackRes.error && fallbackRes.error.code === '23505') {
+                finalId = generateUniqueId('msg');
+                payload.id = finalId;
+                await supabase.from('messages').insert([payload]);
+              }
+            } else {
+              console.error('Erro no insert de recado aprovado:', insertRes.error);
+            }
           }
         }
 
@@ -1166,7 +1173,14 @@ export const storageService = {
       }
     }
 
-    const updated = messages.map(m => m.id === msgId ? approvedMsg : m);
+    const finalApprovedMsg = {
+      ...approvedMsg,
+      id: finalId,
+    };
+
+    // Coloca o recado recém-aprovado no topo da lista (1ª página)
+    const remaining = messages.filter(m => m.id !== msgId && m.id !== finalId);
+    const updated = [finalApprovedMsg, ...remaining];
     localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent('messages_updated', { detail: updated }));
     return updated;
