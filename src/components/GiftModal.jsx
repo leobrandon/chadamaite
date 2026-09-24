@@ -5,7 +5,20 @@ import RSVPInlineModal from './RSVPInlineModal';
 import { useToast } from './ui/ToastProvider';
 import UnwrappingRibbon from './ui/UnwrappingRibbon';
 
-export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [], onSaveRSVP, config, rsvpConfirmedName = '', isOpen, onClose, onConfirm, onAddPledge }) {
+export default function GiftModal({
+  gift,
+  gifts = [],
+  pledges = [],
+  _rsvps = [],
+  onSaveRSVP,
+  config,
+  rsvpConfirmedName = '',
+  isOpen,
+  onClose,
+  onConfirm,
+  onAddPledge,
+  initialMimoId = ''
+}) {
   const { addToast } = useToast();
   const [guestName, setGuestName] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -15,7 +28,6 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [rsvpDone, setRsvpDone] = useState(false);
-  const [pendingPledges, setPendingPledges] = useState(null);
 
   const [selectedMimoId, setSelectedMimoId] = useState('');
   const [mimoQuantity, setMimoQuantity] = useState(1);
@@ -93,17 +105,32 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
       setConfirmedMimo(null);
       // If guest already confirmed RSVP, mark as done so we skip the inline form
       setRsvpDone(Boolean(rsvpConfirmedName));
-      setPendingPledges(null);
       
-      // Auto-select first available mimo
-      if (availableMimos.length > 0) {
+      // Auto-select initialMimoId if provided and available, otherwise first available mimo
+      if (initialMimoId && availableMimos.some(m => m.id === initialMimoId)) {
+        setSelectedMimoId(initialMimoId);
+      } else if (availableMimos.length > 0) {
         setSelectedMimoId(availableMimos[0].id);
       } else {
         setSelectedMimoId('');
       }
       setMimoQuantity(1);
     }
-  }, [isOpen, gift?.id]); // Note: DO NOT include pledges/gifts/rsvpConfirmedName here to prevent resetting during submit
+  }, [isOpen, gift?.id, initialMimoId]); // Note: DO NOT include pledges/gifts/rsvpConfirmedName here to prevent resetting during submit
+
+  // Close modal on Escape key press
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setNameError(false);
+        setIsSuccess(false);
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !gift) return null;
 
@@ -161,8 +188,8 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
         safeMimoQty: safeMimoQty,
       };
 
-      if (rsvpDone) {
-        // Guest already confirmed RSVP — save pledges immediately
+      // Always persist both pledges immediately into the database
+      try {
         if (onAddPledge) {
           await onAddPledge(pledgeData.mainGiftId, pledgeData.guestName, pledgeData.qty);
           if (pledgeData.chosenMimo) {
@@ -171,10 +198,8 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
         } else if (onConfirm) {
           await onConfirm(pledgeData.mainGiftId, pledgeData.guestName);
         }
-        setPendingPledges(null);
-      } else {
-        // Defer saving until guest confirms RSVP
-        setPendingPledges(pledgeData);
+      } catch (err) {
+        console.error('Erro ao salvar presente no banco de dados:', err);
       }
 
       setIsSubmitting(false);
@@ -184,17 +209,8 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
   };
 
   const commitPledges = async () => {
-    if (!pendingPledges) return;
-    if (onAddPledge) {
-      await onAddPledge(pendingPledges.mainGiftId, pendingPledges.guestName, pendingPledges.qty);
-      if (pendingPledges.chosenMimo) {
-        await onAddPledge(pendingPledges.chosenMimo.id, pendingPledges.guestName, pendingPledges.safeMimoQty);
-      }
-    } else if (onConfirm) {
-      await onConfirm(pendingPledges.mainGiftId, pendingPledges.guestName);
-    }
+    // Pledges are already saved immediately in handleConfirm
     addToast({ message: 'Presente e presença salvos com sucesso! 💖', type: 'success' });
-    setPendingPledges(null);
   };
 
   const handleClose = () => {
@@ -210,11 +226,17 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
   const whatsappShareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappMessage)}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in overflow-y-auto">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in overflow-y-auto cursor-pointer"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+    >
       <div 
-        className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-blush-200 overflow-hidden relative animate-slide-up max-h-[92dvh] my-auto flex flex-col overscroll-contain"
+        className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl border border-blush-200 dark:border-slate-800 overflow-hidden relative animate-slide-up max-h-[92dvh] my-auto flex flex-col overscroll-contain cursor-default"
         role="dialog"
         aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Animated Unwrapping Ribbon */}
         <UnwrappingRibbon isOpen={isOpen} />
@@ -244,42 +266,42 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
         </div>
 
         {/* Visual Step Progress Indicator */}
-        <div className="bg-blush-50/80 border-b border-blush-200/70 px-4 py-2.5 flex items-center justify-between sm:justify-center gap-1.5 sm:gap-3 text-[11px] sm:text-xs select-none">
+        <div className="bg-blush-50/80 dark:bg-slate-800/80 border-b border-blush-200/70 dark:border-slate-700 px-4 py-2.5 flex items-center justify-between sm:justify-center gap-1.5 sm:gap-3 text-[11px] sm:text-xs select-none">
           {/* Step 1: Diaper / Main Gift */}
-          <div className={`flex items-center gap-1 font-bold ${isSuccess ? 'text-emerald-700' : 'text-blush-800'}`}>
+          <div className={`flex items-center gap-1 font-bold ${isSuccess ? 'text-emerald-700 dark:text-emerald-400' : 'text-blush-800 dark:text-blush-300'}`}>
             <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${isSuccess ? 'bg-emerald-500 text-white' : 'bg-blush-500 text-white shadow-xs'}`}>
               {isSuccess ? '✓' : '1'}
             </span>
             <span className="truncate max-w-[80px] sm:max-w-none">{isFralda ? 'Fralda' : 'Presente'}</span>
           </div>
 
-          <span className="text-slate-300 font-bold">›</span>
+          <span className="text-slate-300 dark:text-slate-600 font-bold">›</span>
 
           {/* Step 2: Mimo (if diaper) */}
           {isFralda && (
             <>
-              <div className={`flex items-center gap-1 font-bold ${isSuccess ? 'text-emerald-700' : selectedMimoId ? 'text-blush-800' : 'text-slate-400'}`}>
-                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${isSuccess ? 'bg-emerald-500 text-white' : selectedMimoId ? 'bg-blush-500 text-white shadow-xs' : 'bg-slate-200 text-slate-600'}`}>
+              <div className={`flex items-center gap-1 font-bold ${isSuccess ? 'text-emerald-700 dark:text-emerald-400' : selectedMimoId ? 'text-blush-800 dark:text-blush-300' : 'text-slate-400 dark:text-slate-500'}`}>
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${isSuccess ? 'bg-emerald-500 text-white' : selectedMimoId ? 'bg-blush-500 text-white shadow-xs' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
                   {isSuccess ? '✓' : '2'}
                 </span>
                 <span>Mimo</span>
               </div>
-              <span className="text-slate-300 font-bold">›</span>
+              <span className="text-slate-300 dark:text-slate-600 font-bold">›</span>
             </>
           )}
 
           {/* Step 3: Guest Name */}
-          <div className={`flex items-center gap-1 font-bold ${isSuccess ? 'text-emerald-700' : guestName.trim() ? 'text-blush-800' : 'text-slate-400'}`}>
-            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${isSuccess ? 'bg-emerald-500 text-white' : guestName.trim() ? 'bg-blush-500 text-white shadow-xs' : 'bg-slate-200 text-slate-600'}`}>
+          <div className={`flex items-center gap-1 font-bold ${isSuccess ? 'text-emerald-700 dark:text-emerald-400' : guestName.trim() ? 'text-blush-800 dark:text-blush-300' : 'text-slate-400 dark:text-slate-500'}`}>
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${isSuccess ? 'bg-emerald-500 text-white' : guestName.trim() ? 'bg-blush-500 text-white shadow-xs' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
               {isSuccess ? '✓' : isFralda ? '3' : '2'}
             </span>
             <span className="truncate max-w-[85px] sm:max-w-none">Seus Dados</span>
           </div>
 
           {/* Step 4: Success */}
-          <span className="text-slate-300 font-bold">›</span>
-          <div className={`flex items-center gap-1 font-bold ${isSuccess ? 'text-emerald-700 font-extrabold' : 'text-slate-400'}`}>
-            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${isSuccess ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-200 text-slate-500'}`}>
+          <span className="text-slate-300 dark:text-slate-600 font-bold">›</span>
+          <div className={`flex items-center gap-1 font-bold ${isSuccess ? 'text-emerald-700 dark:text-emerald-400 font-extrabold' : 'text-slate-400 dark:text-slate-500'}`}>
+            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${isSuccess ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}>
               {isFralda ? '4' : '3'}
             </span>
             <span>Confirmado</span>
@@ -292,45 +314,45 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
           {isSuccess ? (
             /* SUCCESS VIEW */
             <div className="space-y-5 text-center py-2 animate-fade-in">
-              <div className="bg-gradient-to-b from-blush-50/90 to-white border border-blush-200 rounded-3xl p-5 sm:p-6 space-y-4 shadow-sm text-left">
-                <div className="flex items-center gap-2 text-blush-700 font-bold text-xs uppercase tracking-wider">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <div className="bg-gradient-to-b from-blush-50/90 to-white dark:from-slate-800 dark:to-slate-800/50 border border-blush-200 dark:border-slate-700 rounded-3xl p-5 sm:p-6 space-y-4 shadow-sm text-left">
+                <div className="flex items-center gap-2 text-blush-700 dark:text-blush-300 font-bold text-xs uppercase tracking-wider">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>Resumo do Combo Confirmado</span>
                 </div>
 
                 {/* Diaper summary item */}
-                <div className="bg-white p-3.5 rounded-2xl border border-blush-100 shadow-sm flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blush-50 text-blush-600 flex items-center justify-center text-xl shrink-0">
+                <div className="bg-white dark:bg-slate-800/90 p-3.5 rounded-2xl border border-blush-100 dark:border-slate-700 shadow-sm flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blush-50 dark:bg-slate-700 text-blush-600 dark:text-blush-300 flex items-center justify-center text-xl shrink-0 border border-blush-100 dark:border-slate-600">
                     {gift.icon || '👶'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-blush-600 block">Item Principal</span>
-                    <h5 className="font-bold text-slate-800 text-sm leading-snug">{gift.title}</h5>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Quantidade: <strong className="text-blush-700 font-bold">{confirmedQuantity} {confirmedQuantity === 1 ? 'pacote' : 'pacotes'}</strong>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-blush-600 dark:text-blush-400 block">Item Principal</span>
+                    <h5 className="font-bold text-slate-800 dark:text-slate-100 text-sm leading-snug">{gift.title}</h5>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Quantidade: <strong className="text-blush-700 dark:text-blush-300 font-bold">{confirmedQuantity} {confirmedQuantity === 1 ? 'pacote' : 'pacotes'}</strong>
                     </p>
                   </div>
                 </div>
 
                 {/* Mimo summary item */}
                 {confirmedMimo && (
-                  <div className="bg-white p-3.5 rounded-2xl border border-blush-100 shadow-sm flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blush-50 text-blush-600 flex items-center justify-center text-xl shrink-0">
+                  <div className="bg-white dark:bg-slate-800/90 p-3.5 rounded-2xl border border-blush-100 dark:border-slate-700 shadow-sm flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blush-50 dark:bg-slate-700 text-blush-600 dark:text-blush-300 flex items-center justify-center text-xl shrink-0 border border-blush-100 dark:border-slate-600">
                       {confirmedMimo.icon || '🎁'}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-blush-600 block">Mimo Especial</span>
-                      <h5 className="font-bold text-slate-800 text-sm leading-snug">{confirmedMimo.title}</h5>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Quantidade: <strong className="text-blush-700 font-bold">{confirmedMimoQty} {confirmedMimoQty === 1 ? 'unidade' : 'unidades'}</strong>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-blush-600 dark:text-blush-400 block">Mimo Especial</span>
+                      <h5 className="font-bold text-slate-800 dark:text-slate-100 text-sm leading-snug">{confirmedMimo.title}</h5>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        Quantidade: <strong className="text-blush-700 dark:text-blush-300 font-bold">{confirmedMimoQty} {confirmedMimoQty === 1 ? 'unidade' : 'unidades'}</strong>
                       </p>
                     </div>
                   </div>
                 )}
 
-                <div className="pt-2 border-t border-slate-100 text-center">
-                  <p className="text-xs text-slate-500">
-                    Presenteado com carinho por: <strong className="text-slate-800 text-sm">{confirmedGuestName}</strong>
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-700 text-center">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Presenteado com carinho por: <strong className="text-slate-800 dark:text-slate-100 text-sm">{confirmedGuestName}</strong>
                   </p>
                 </div>
               </div>
@@ -349,9 +371,9 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
                         }}
                       />
                       <div className="flex items-center gap-3 my-2">
-                        <div className="flex-1 h-px bg-slate-200" />
-                        <span className="text-xs text-slate-400 font-medium">ou</span>
-                        <div className="flex-1 h-px bg-slate-200" />
+                        <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+                        <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">ou</span>
+                        <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
                       </div>
                       <button
                         type="button"
@@ -359,9 +381,9 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
                           await commitPledges();
                           setRsvpDone(true);
                         }}
-                        className="w-full py-3 px-4 rounded-xl border-2 border-blush-200 bg-blush-50 hover:bg-blush-100 hover:border-blush-300 text-blush-700 font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm"
+                        className="w-full py-3 px-4 rounded-xl border-2 border-blush-200 dark:border-blush-800 bg-blush-50 dark:bg-blush-950/60 hover:bg-blush-100 dark:hover:bg-blush-900/50 hover:border-blush-300 text-blush-700 dark:text-blush-300 font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm"
                       >
-                        <span className="w-5 h-5 rounded-full bg-blush-200 flex items-center justify-center text-blush-700 shrink-0">✔</span>
+                        <span className="w-5 h-5 rounded-full bg-blush-200 dark:bg-blush-800 flex items-center justify-center text-blush-700 dark:text-blush-200 shrink-0">✔</span>
                         Já confirmei minha presença
                       </button>
                     </div>
@@ -370,7 +392,7 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
 
                 return (
                   <>
-                    <p className="text-slate-600 text-xs sm:text-sm leading-relaxed max-w-sm mx-auto mt-4">
+                    <p className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm leading-relaxed max-w-sm mx-auto mt-4">
                       Que emoção ter você ao nosso lado para receber a Maitê! Avise os papais no WhatsApp abaixo para que possamos comemorar juntos! 💕
                     </p>
 
@@ -389,7 +411,7 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
                       <button
                         type="button"
                         onClick={handleClose}
-                        className="w-full py-3 px-5 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-[0.98] text-slate-700 font-bold text-xs sm:text-sm transition"
+                        className="w-full py-3 px-5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-[0.98] text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm transition cursor-pointer"
                       >
                         Concluir ✨
                       </button>
@@ -402,17 +424,17 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
             /* FORM VIEW */
             <>
               {/* STEP 1: DIAPER SELECTION */}
-              <div className="bg-blush-50/80 border border-blush-200/90 rounded-2xl p-4 space-y-3">
+              <div className="bg-blush-50/80 dark:bg-slate-800/70 border border-blush-200/90 dark:border-slate-700 rounded-2xl p-4 space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5">
-                    <span className="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-xl shadow-sm shrink-0">
+                    <span className="w-9 h-9 rounded-xl bg-white dark:bg-slate-700 flex items-center justify-center text-xl shadow-sm shrink-0 border border-blush-100 dark:border-slate-600">
                       {gift.icon || '👶'}
                     </span>
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-blush-700 block">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-blush-700 dark:text-blush-400 block">
                         Passo 1 • Fralda Selecionada
                       </span>
-                      <h4 className="font-bold text-slate-800 text-sm sm:text-base leading-snug">
+                      <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base leading-snug">
                         {gift.title}
                       </h4>
                     </div>
@@ -420,37 +442,37 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
                 </div>
 
                 {gift.description && (
-                  <p className="text-slate-600 text-xs leading-relaxed">
+                  <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed">
                     {gift.description}
                   </p>
                 )}
 
                 {/* Diaper Quantity Stepper */}
-                <div className="flex items-center justify-between pt-2 border-t border-blush-200/60">
-                  <span className="text-xs font-bold text-slate-700">Quantos pacotes vai dar?</span>
+                <div className="flex items-center justify-between pt-2 border-t border-blush-200/60 dark:border-slate-700">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Quantos pacotes vai dar?</span>
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center border border-slate-200 rounded-xl bg-white p-0.5 shadow-sm">
+                    <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 p-0.5 shadow-sm">
                       <button
                         type="button"
                         onClick={() => setQuantity(q => Math.max(1, q - 1))}
                         disabled={quantity <= 1}
-                        className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 font-bold flex items-center justify-center transition active:scale-95 text-sm"
+                        className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-40 text-slate-700 dark:text-slate-200 font-bold flex items-center justify-center transition active:scale-95 text-sm cursor-pointer"
                       >
                         -
                       </button>
-                      <span className="w-9 text-center font-bold text-slate-800 text-sm">
+                      <span className="w-9 text-center font-bold text-slate-800 dark:text-slate-100 text-sm">
                         {quantity}
                       </span>
                       <button
                         type="button"
                         onClick={() => setQuantity(q => Math.min(remainingAvailable, q + 1))}
                         disabled={quantity >= remainingAvailable}
-                        className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 font-bold flex items-center justify-center transition active:scale-95 text-sm"
+                        className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-40 text-slate-700 dark:text-slate-200 font-bold flex items-center justify-center transition active:scale-95 text-sm cursor-pointer"
                       >
                         +
                       </button>
                     </div>
-                    <span className="text-xs text-slate-500 font-medium">{quantity === 1 ? 'pacote' : 'pacotes'}</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{quantity === 1 ? 'pacote' : 'pacotes'}</span>
                   </div>
                 </div>
               </div>
@@ -459,7 +481,7 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
               {isFralda && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-blush-500" />
                       <span>Passo 2 • Escolha o Mimo para Acompanhar: <span className="text-rose-500">*</span></span>
                     </label>
@@ -476,7 +498,7 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
                             placeholder="Buscar mimo por nome..."
                             value={mimoSearch}
                             onChange={(e) => setMimoSearch(e.target.value)}
-                            className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 outline-none focus:border-blush-400 focus:bg-white transition"
+                            className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-blush-400 focus:bg-white dark:focus:bg-slate-750 transition"
                           />
                         </div>
 
@@ -487,10 +509,10 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
                               key={cat}
                               type="button"
                               onClick={() => setMimoCategoryFilter(cat)}
-                              className={`px-2.5 py-1 rounded-lg font-semibold transition shrink-0 ${
+                              className={`px-2.5 py-1 rounded-lg font-semibold transition shrink-0 cursor-pointer ${
                                 mimoCategoryFilter === cat
-                                  ? 'bg-slate-800 text-white shadow-xs'
-                                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                  ? 'bg-slate-800 dark:bg-blush-600 text-white shadow-xs'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                               }`}
                             >
                               {cat}
@@ -512,38 +534,50 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
                                   setMimoError(false);
                                   setMimoQuantity(1);
                                 }}
-                                className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                                className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 hover:-translate-y-0.5 ${
                                   isSelected
-                                    ? 'bg-blush-50/90 border-blush-500 shadow-sm ring-2 ring-blush-200'
-                                    : 'bg-white border-slate-200 hover:border-blush-300 hover:bg-slate-50/80'
+                                    ? 'bg-blush-50 dark:bg-[#251829] border-2 border-blush-500 dark:border-blush-400 shadow-md ring-2 ring-blush-200 dark:ring-blush-500/40 combo-item-selected'
+                                    : 'bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 hover:border-blush-300 dark:hover:border-blush-500 hover:bg-slate-50/80 dark:hover:bg-slate-750'
                                 }`}
                               >
                                 <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                                  <span className="w-9 h-9 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-lg shadow-2xs shrink-0 mt-0.5">
+                                  <span className={`w-9 h-9 rounded-xl border flex items-center justify-center text-lg shadow-2xs shrink-0 mt-0.5 ${
+                                    isSelected
+                                      ? 'bg-white dark:bg-[#341d38] border-blush-200 dark:border-blush-500/50 text-blush-600 dark:text-blush-300'
+                                      : 'bg-white dark:bg-slate-700 border-slate-100 dark:border-slate-600 text-blush-600 dark:text-blush-300'
+                                  }`}>
                                     {m.icon || '🎁'}
                                   </span>
                                   <div className="min-w-0 flex flex-col items-start gap-1 flex-1">
                                     <div className="flex items-center gap-1.5 flex-wrap">
-                                      <h5 className="font-bold text-slate-800 text-xs sm:text-sm leading-snug break-words">
+                                      <h5 className={`font-bold text-xs sm:text-sm leading-snug break-words ${
+                                        isSelected
+                                          ? 'text-slate-900 dark:text-white font-extrabold'
+                                          : 'text-slate-800 dark:text-slate-100'
+                                      }`}>
                                         {m.title}
                                       </h5>
                                       {m.priority === 'high' && (
-                                        <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[9px] font-bold rounded-full whitespace-nowrap">
+                                        <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-950/90 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-700/60 text-[9px] font-bold rounded-full whitespace-nowrap">
                                           ★ Preferência
                                         </span>
                                       )}
                                       {m.priority === 'medium' && (
-                                        <span className="px-1.5 py-0.5 bg-blush-100 text-blush-700 text-[9px] font-bold rounded-full whitespace-nowrap">
+                                        <span className="px-1.5 py-0.5 bg-blush-100 dark:bg-blush-950/90 text-blush-700 dark:text-blush-300 border border-blush-200/80 dark:border-blush-700/60 text-[9px] font-bold rounded-full whitespace-nowrap">
                                           Desejável
                                         </span>
                                       )}
                                       {m.priority === 'low' && (
-                                        <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[9px] font-medium rounded-full whitespace-nowrap">
+                                        <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700 text-[9px] font-medium rounded-full whitespace-nowrap">
                                           Opcional
                                         </span>
                                       )}
                                     </div>
-                                    <p className="text-[11px] text-slate-500 leading-relaxed break-words">
+                                    <p className={`text-[11px] leading-relaxed break-words ${
+                                      isSelected
+                                        ? 'text-slate-600 dark:text-pink-100/90 font-medium'
+                                        : 'text-slate-500 dark:text-slate-400'
+                                    }`}>
                                       {m.category} {m.description ? `• ${m.description}` : ''}
                                     </p>
                                   </div>
@@ -555,14 +589,14 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
                                       <Check className="w-3.5 h-3.5 stroke-[3]" />
                                     </div>
                                   ) : (
-                                    <div className="w-6 h-6 rounded-full border border-slate-300 bg-white" />
+                                    <div className="w-6 h-6 rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
                                   )}
                                 </div>
                               </div>
                             );
                           })
                         ) : (
-                          <div className="p-4 text-center text-xs text-slate-400 bg-slate-50 rounded-2xl">
+                          <div className="p-4 text-center text-xs text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800/60 rounded-2xl">
                             Nenhum mimo encontrado para esta busca.
                           </div>
                         )}
@@ -570,57 +604,57 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
 
                       {/* Mimo Quantity Stepper when a mimo is selected */}
                       {currentSelectedMimo && (
-                        <div className="flex items-center justify-between bg-blush-50/60 p-3 rounded-xl border border-blush-200/80 mt-2">
+                        <div className="flex items-center justify-between bg-blush-50/60 dark:bg-slate-800/80 p-3 rounded-xl border border-blush-200/80 dark:border-slate-700 mt-2">
                           <div>
-                            <span className="text-xs font-bold text-slate-700 block">Quantidade do Mimo:</span>
-                            <span className="text-[10px] text-slate-500">{currentSelectedMimo.title}</span>
+                            <span className="text-xs font-bold text-slate-700 dark:text-slate-200 block">Quantidade do Mimo:</span>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400">{currentSelectedMimo.title}</span>
                           </div>
 
                           <div className="flex items-center gap-2">
-                            <div className="flex items-center border border-slate-200 rounded-xl bg-white p-0.5 shadow-sm">
+                            <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 p-0.5 shadow-sm">
                               <button
                                 type="button"
                                 onClick={() => setMimoQuantity(q => Math.max(1, q - 1))}
                                 disabled={mimoQuantity <= 1}
-                                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 font-bold flex items-center justify-center transition active:scale-95 text-xs"
+                                className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-40 text-slate-700 dark:text-slate-200 font-bold flex items-center justify-center transition active:scale-95 text-xs cursor-pointer"
                               >
                                 -
                               </button>
-                              <span className="w-8 text-center font-bold text-slate-800 text-xs">
+                              <span className="w-8 text-center font-bold text-slate-800 dark:text-slate-100 text-xs">
                                 {mimoQuantity}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => setMimoQuantity(q => Math.min(maxMimoAvailable, q + 1))}
                                 disabled={mimoQuantity >= maxMimoAvailable}
-                                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 font-bold flex items-center justify-center transition active:scale-95 text-xs"
+                                className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-40 text-slate-700 dark:text-slate-200 font-bold flex items-center justify-center transition active:scale-95 text-xs cursor-pointer"
                               >
                                 +
                               </button>
                             </div>
-                            <span className="text-xs text-slate-500 font-medium">un.</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">un.</span>
                           </div>
                         </div>
                       )}
 
                       {mimoError && (
-                        <p className="text-xs text-rose-600 font-bold flex items-center gap-1">
+                        <p className="text-xs text-rose-600 dark:text-rose-400 font-bold flex items-center gap-1">
                           <span>⚠️</span>
                           <span>Por favor, escolha um mimo acima para completar seu combo!</span>
                         </p>
                       )}
                     </div>
                   ) : (
-                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl">
-                      <p className="text-xs text-amber-700">Todos os mimos já foram escolhidos por outros convidados! Você pode presentear com o pacote de fraldas.</p>
+                    <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-2xl">
+                      <p className="text-xs text-amber-700 dark:text-amber-300">Todos os mimos já foram escolhidos por outros convidados! Você pode presentear com o pacote de fraldas.</p>
                     </div>
                   )}
                 </div>
               )}
 
               {/* STEP 3: GUEST NAME */}
-              <div className="pt-2 border-t border-slate-100">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 mb-1.5">
                   Passo 3 • Seu nome ou de quem está presenteando <span className="text-rose-500 font-bold">* (Obrigatório)</span>
                 </label>
                 <input
@@ -635,17 +669,17 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
                   placeholder="Ex: Titia Ana / Leonardo e Família"
                   className={`w-full px-4 py-3 rounded-2xl border outline-none text-base sm:text-sm transition ${
                     nameError
-                      ? 'border-rose-500 bg-rose-50/30 focus:ring-2 focus:ring-rose-200'
-                      : 'border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-200'
+                      ? 'border-rose-500 bg-rose-50/30 dark:bg-rose-950/30 focus:ring-2 focus:ring-rose-200 dark:focus:ring-rose-900/40 text-slate-800 dark:text-slate-100'
+                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blush-400 focus:ring-2 focus:ring-blush-200 dark:focus:ring-blush-900/40'
                   }`}
                 />
                 {nameError ? (
-                  <p className="text-xs text-rose-600 font-bold mt-1.5 flex items-center gap-1">
+                  <p className="text-xs text-rose-600 dark:text-rose-400 font-bold mt-1.5 flex items-center gap-1">
                     <span>⚠️</span>
                     <span>Por favor, informe seu nome para que os papais saibam quem presenteou!</span>
                   </p>
                 ) : (
-                  <p className="text-[11px] text-slate-400 mt-1">
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
                     Informe seu nome para que os papais possam agradecer com carinho.
                   </p>
                 )}
@@ -657,7 +691,7 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
                   type="button"
                   onClick={handleConfirm}
                   disabled={isSubmitting}
-                  className="flex-1 py-3.5 px-6 rounded-2xl bg-blush-500 hover:bg-blush-600 active:scale-[0.98] text-white font-bold text-sm sm:text-base shadow-lg shadow-blush-500/25 transition flex items-center justify-center gap-2"
+                  className="flex-1 py-3.5 px-6 rounded-2xl bg-blush-500 hover:bg-blush-600 active:scale-[0.98] text-white font-bold text-sm sm:text-base shadow-lg shadow-blush-500/25 transition flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Check className="w-5 h-5" />
                   <span>{isSubmitting ? 'Confirmando...' : 'Confirmar meu Combo de Presente! 💖'}</span>
@@ -667,7 +701,7 @@ export default function GiftModal({ gift, gifts = [], pledges = [], _rsvps = [],
                   type="button"
                   onClick={handleClose}
                   disabled={isSubmitting}
-                  className="py-3 px-5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-sm transition"
+                  className="py-3 px-5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-sm transition cursor-pointer"
                 >
                   Cancelar
                 </button>

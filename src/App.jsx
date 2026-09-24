@@ -32,6 +32,7 @@ export default function App() {
   
   // Modals state
   const [selectedGiftForModal, setSelectedGiftForModal] = useState(null);
+  const [initialMimoIdForModal, setInitialMimoIdForModal] = useState('');
   const [isPixModalOpen, setIsPixModalOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [lastRsvpGuestName, setLastRsvpGuestName] = useState('');
@@ -80,8 +81,9 @@ export default function App() {
   }, []);
 
   // Gift actions
-  const handleSelectGift = (gift) => {
+  const handleSelectGift = (gift, initialMimoId = '') => {
     setSelectedGiftForModal(gift);
+    setInitialMimoIdForModal(initialMimoId || '');
   };
 
   const handleConfirmReservation = async (giftId, guestName) => {
@@ -255,7 +257,11 @@ export default function App() {
         rsvps={safeRsvps}
         rsvpConfirmedName={lastRsvpGuestName}
         isOpen={Boolean(selectedGiftForModal)}
-        onClose={() => { setSelectedGiftForModal(null); }}
+        initialMimoId={initialMimoIdForModal}
+        onClose={() => {
+          setSelectedGiftForModal(null);
+          setInitialMimoIdForModal('');
+        }}
         onConfirm={handleConfirmReservation}
         onAddPledge={handleAddPledge}
         onSaveRSVP={handleSaveRSVP}

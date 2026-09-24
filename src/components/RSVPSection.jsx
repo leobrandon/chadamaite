@@ -129,7 +129,7 @@ export default function RSVPSection({ config, onSaveRSVP, gifts = [], pledges = 
           badge="Confirmação de Presença"
           badgeIcon={CalendarCheck}
           title="Você vai ao"
-          highlight="Chá da Maitê? 🌸"
+          highlight="Chá da Maitê?"
           subtitle="Por favor, confirme sua presença para organizarmos tudo com muito amor e conforto para você e sua família!"
           className="text-center max-w-xl mx-auto mb-10"
         />

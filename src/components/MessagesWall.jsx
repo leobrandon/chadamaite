@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { MessageCircleHeart, Send, ChevronLeft, ChevronRight, Search, Sparkles, CheckCircle2 } from 'lucide-react';
+import { MessageCircleHeart, Send, ChevronLeft, ChevronRight, Search, CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { formatRelativeOrExactDate, getMessageTimestamp } from '../utils/dateUtils';
@@ -192,7 +192,7 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
           badge="Mural de Amor"
           badgeIcon={MessageCircleHeart}
           title="Recadinhos para"
-          highlight="a Maitê 💕"
+          highlight="a Maitê"
           subtitle="Deixe uma mensagem cheia de boas energias para a nossa pequena e para os papais."
           className="text-center max-w-xl mx-auto mb-10"
         />
@@ -247,7 +247,7 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
 
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
               <p className="text-[11px] text-slate-400 dark:text-slate-500 order-2 sm:order-1 text-center sm:text-left">
-                ✨ Seu recado será publicado após rápida aprovação dos papais.
+                 Seu recado será publicado após rápida aprovação dos papais.
               </p>
               <button
                 type="submit"
@@ -406,9 +406,8 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                         transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                         className="mt-3 pt-2.5 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between shrink-0"
                       >
-                        <span className={`text-[11px] font-semibold ${theme.badgeText} flex items-center gap-1`}>
-                          <Sparkles className="w-3 h-3" />
-                          <span>Com amor</span>
+                        <span className={`text-[11px] font-semibold ${theme.badgeText}`}>
+                          Com amor
                         </span>
 
                         <HeartBurstButton

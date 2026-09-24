@@ -1,13 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { Gift, Search, Sparkles, CheckCircle2, Lock, Heart, ChevronDown, ChevronUp } from 'lucide-react';
+import { Gift, Search, Sparkles, CheckCircle2, Lock, Heart, ChevronRight, BookOpen } from 'lucide-react';
 import { motion } from 'motion/react';
 import ShimmerButton from './ui/ShimmerButton';
 import CloudHeadingReveal from './ui/CloudHeadingReveal';
+import MimosCatalogModal from './MimosCatalogModal';
+import MimoComboSelectModal from './MimoComboSelectModal';
 
 export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmin, isLoading = false }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [mimoCategory, setMimoCategory] = useState('Todos');
-  const [mimosExpanded, setMimosExpanded] = useState(false);
+  const [isCatalogOpen, setIsCatalogOpen] = useState(false);
+  const [selectedMimoForCombo, setSelectedMimoForCombo] = useState(null);
 
   const safeGifts = Array.isArray(gifts) ? gifts : [];
 
@@ -38,11 +40,9 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
     });
   }, [safeGifts]);
 
-  const filteredMimos = useMemo(() => {
-    return mimos.filter(m => mimoCategory === 'Todos' || m.category === mimoCategory);
-  }, [mimos, mimoCategory]);
-
-  const mimoCategories = ['Todos', ...Array.from(new Set(mimos.map(m => m.category)))];
+  const previewMimos = useMemo(() => {
+    return mimos.slice(0, 8);
+  }, [mimos]);
 
   return (
     <section id="presentes" className="py-16 md:py-20 relative">
@@ -53,7 +53,7 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
           badge="Lista de Presentes & Combos da Maitê"
           badgeIcon={Gift}
           title="Escolha o seu"
-          highlight="Combo de Presente 🎁"
+          highlight="Combo de Presente"
           subtitle="Como funciona: Escolha o tamanho do pacote de fraldas e, em seguida, selecione um mimo especial (lenços umedecidos, pomadinhas, roupinhas, etc.) para acompanhar com todo carinho! 💕"
           className="text-center max-w-2xl mx-auto mb-10"
         />
@@ -144,94 +144,84 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
           
           {/* Search bar */}
           <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               maxLength={80}
               placeholder="Buscar presentes por nome, fralda, marca..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-20 py-3 rounded-2xl bg-white border border-slate-200 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 outline-none text-base sm:text-sm shadow-sm transition"
+              className="w-full pl-11 pr-20 py-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 dark:focus:ring-blush-950/50 outline-none text-base sm:text-sm shadow-sm transition"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 px-2 py-1 font-medium"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-2 py-1 font-medium cursor-pointer"
               >
                 Limpar
               </button>
             )}
           </div>
 
-          {/* Mimos Preview Section */}
+          {/* Mimos Preview Section (Opção 2: Nuvem de Ideias Estática + Catálogo Completo) */}
           {mimos.length > 0 && (
-            <div className="bg-white/60 border border-slate-200/60 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">🧸</span>
-                  <h3 className="font-semibold text-sm text-slate-700 uppercase tracking-wide">Mimos disponíveis para acompanhar:</h3>
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-blush-200/80 dark:border-slate-800 rounded-3xl p-4 sm:p-5 shadow-xs transition-all">
+              {/* Top row: Title and Trigger for the Full Catalog */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 pb-3 border-b border-blush-100/70 dark:border-slate-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-blush-100 dark:bg-blush-950/80 text-blush-600 dark:text-blush-400 flex items-center justify-center text-lg shrink-0 border border-blush-200/80 dark:border-blush-800">
+                    🧸
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 leading-tight">
+                      Mimos para acompanhar o Combo
+                    </h3>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Ideias de mimos para presentear junto com a fralda:
+                    </p>
+                  </div>
                 </div>
-                {mimos.length > 5 && (
-                  <button 
-                    onClick={() => setMimosExpanded(!mimosExpanded)}
-                    className="text-xs text-blush-600 hover:text-blush-700 font-semibold flex items-center gap-1"
-                  >
-                    {mimosExpanded ? <><ChevronUp className="w-3.5 h-3.5" /> Ocultar</> : <><ChevronDown className="w-3.5 h-3.5" /> Ver todos</>}
-                  </button>
-                )}
+
+                <button
+                  type="button"
+                  onClick={() => setIsCatalogOpen(true)}
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-blush-700 dark:text-blush-300 bg-blush-50 dark:bg-blush-950/70 border border-blush-200 dark:border-blush-800 hover:bg-blush-100 dark:hover:bg-blush-900/60 hover:-translate-y-0.5 hover:shadow-xs transition cursor-pointer shrink-0 self-start sm:self-auto"
+                >
+                  <BookOpen className="w-3.5 h-3.5 text-blush-500" />
+                  <span>Ver catálogo completo ({mimos.length})</span>
+                  <ChevronRight className="w-3.5 h-3.5 opacity-70" />
+                </button>
               </div>
 
-              {/* Categories */}
-              <div className="flex gap-2 overflow-x-auto pb-2 mb-2 scrollbar-none text-[11px]">
-                {mimoCategories.map(cat => (
+              {/* Nuvem Estática de Tags / Pílulas ilustradas (100% estático, sem scroll cortado) */}
+              <div className="flex flex-wrap gap-2 items-center">
+                {previewMimos.map((mimo) => (
                   <button
-                    key={cat}
-                    onClick={() => setMimoCategory(cat)}
-                    className={`px-3 py-1 rounded-full whitespace-nowrap transition-colors ${mimoCategory === cat ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                    key={mimo.id}
+                    type="button"
+                    onClick={() => setSelectedMimoForCombo(mimo)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-gradient-to-b from-blush-50/60 to-white dark:from-slate-800 dark:to-slate-800/70 text-slate-700 dark:text-slate-200 border border-blush-100 dark:border-slate-700 hover:border-blush-400 dark:hover:border-blush-400 hover:bg-blush-100/50 dark:hover:bg-slate-700 hover:-translate-y-0.5 hover:shadow-sm dark:hover:shadow-[0_4px_12px_rgba(247,121,158,0.2)] transition-all duration-200 cursor-pointer shadow-2xs active:scale-95"
+                    title="Clique para escolher este mimo junto com uma fralda"
                   >
-                    {cat}
+                    <span className="text-sm shrink-0">{mimo.icon || '🎁'}</span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-200">{mimo.title}</span>
+                    {mimo.priority === 'high' && (
+                      <span className="text-[9px] text-amber-700 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950 px-1 py-0.2 rounded-md font-bold">
+                        ★
+                      </span>
+                    )}
                   </button>
                 ))}
-              </div>
 
-              <div className="relative">
-                <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white/90 to-transparent z-10" />
-                <div className={`flex gap-2.5 ${mimosExpanded ? 'flex-wrap' : 'overflow-x-auto pb-2 scrollbar-none overscroll-x-contain pr-4'}`}>
-                  {filteredMimos.map(mimo => {
-                    const mimoPledges = pledges.filter(p => p.giftId === mimo.id);
-                    const mimoPledgedTotal = mimoPledges.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
-                    const mimoTarget = Number(mimo.targetQuantity) || 5;
-                    const isMimoCompleted = mimoPledgedTotal >= mimoTarget;
-                    
-                    return (
-                      <div 
-                        key={mimo.id} 
-                        className={`px-3 py-2 rounded-xl text-xs font-medium flex items-start gap-2 border transition-all shrink-0 ${
-                          mimosExpanded ? 'w-full sm:w-[calc(50%-5px)] lg:w-[calc(33.333%-7px)]' : 'max-w-[240px]'
-                        } ${isMimoCompleted ? 'bg-slate-50 text-slate-400 border-slate-200 opacity-60' : 'bg-blush-50/70 text-slate-800 border-blush-100 hover:bg-blush-100/70'}`}
-                      >
-                        <span className="text-base shrink-0 mt-0.5">{mimo.icon || '🎁'}</span>
-                        <div className="flex flex-col min-w-0 flex-1">
-                          <span className="font-semibold text-slate-800 text-xs leading-snug break-words">{mimo.title}</span>
-                          {!isMimoCompleted && (
-                            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                              {mimo.priority === 'high' && (
-                                <span className="text-[9px] text-amber-800 font-bold bg-amber-100/90 px-1.5 py-0.5 rounded-full">★ Preferência</span>
-                              )}
-                              {mimo.priority === 'medium' && (
-                                <span className="text-[9px] text-blush-700 font-bold bg-blush-100/80 px-1.5 py-0.5 rounded-full">Desejável</span>
-                              )}
-                              {mimo.priority === 'low' && (
-                                <span className="text-[9px] text-slate-600 font-medium bg-slate-100 px-1.5 py-0.5 rounded-full">Opcional</span>
-                              )}
-                              <span className="text-[9px] text-slate-400 font-normal">{mimo.category}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                {mimos.length > previewMimos.length && (
+                  <button
+                    type="button"
+                    onClick={() => setIsCatalogOpen(true)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-blush-600 dark:text-blush-400 bg-white/70 dark:bg-slate-800/50 border border-dashed border-blush-300 dark:border-slate-600 hover:bg-blush-50 dark:hover:bg-slate-800 hover:-translate-y-0.5 transition cursor-pointer"
+                  >
+                    <span>+{mimos.length - previewMimos.length} outros mimos...</span>
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -262,7 +252,7 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
             ))}
           </div>
         ) : filteredGifts.length > 0 ? (
-          <div className="flex flex-wrap justify-center gap-5 sm:gap-6">
+          <div id="presentes-cards" className="flex flex-wrap justify-center gap-5 sm:gap-6">
             {filteredGifts.map((gift, index) => {
               const giftPledges = pledges.filter(p => p.giftId === gift.id);
               const totalPledged = giftPledges.reduce((sum, p) => sum + (Number(p.quantity) || 1), 0);
@@ -282,7 +272,7 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
                     className={`glass-card rounded-3xl p-5 sm:p-6 flex flex-col justify-between h-full transition-all duration-300 ease-out relative overflow-hidden border border-blush-100/90 dark:border-slate-800 ${
                       isCompleted
                         ? 'bg-white/70 dark:bg-slate-900/70 opacity-95'
-                        : 'hover:-translate-y-1 hover:shadow-xl hover:shadow-blush-500/10 hover:border-blush-300 dark:hover:border-blush-700'
+                        : 'hover:-translate-y-1.5 hover:shadow-xl hover:shadow-blush-500/15 hover:border-blush-300 dark:hover:border-blush-500 dark:hover:shadow-[0_12px_30px_-5px_rgba(247,121,158,0.22)]'
                     }`}
                   >
                     {/* Top card row */}
@@ -334,7 +324,7 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
                       <div className="mt-2 mb-2 bg-blush-50/50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-blush-100/50 dark:border-slate-700">
                         <p className="text-blush-600 dark:text-blush-400 text-xs font-medium flex items-center gap-1.5">
                           <Sparkles className="w-3.5 h-3.5" />
-                          + Inclui 1 Mimo à sua escolha no próximo passo ✨
+                          + Inclui 1 Mimo à sua escolha no próximo passo 
                         </p>
                       </div>
                     </div>
@@ -344,7 +334,7 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
                       {isCompleted ? (
                         <div className="space-y-1.5">
                           <p className="text-center text-[11px] text-sage-700 dark:text-sage-300 font-medium italic">
-                            Combo já completo por outros convidados ✨
+                            Combo já completo por outros convidados 
                           </p>
                           <button
                             disabled
@@ -352,7 +342,7 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
                             className="w-full py-3 px-4 rounded-2xl font-semibold text-xs sm:text-sm bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200/80 dark:border-slate-700 cursor-not-allowed flex items-center justify-center gap-2 select-none shadow-none"
                           >
                             <Lock className="w-3.5 h-3.5 text-slate-400" />
-                            <span>Limite deste combo já foi preenchido 💖</span>
+                            <span>Limite deste combo já foi preenchido </span>
                           </button>
                         </div>
                       ) : (
@@ -361,7 +351,7 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
                           className="w-full py-3 px-4 rounded-2xl font-bold text-xs sm:text-sm bg-blush-500 hover:bg-blush-600 text-white shadow-md shadow-blush-500/20 hover:shadow-blush-500/30 flex items-center justify-center gap-2 group cursor-pointer"
                         >
                           <Heart className="w-4 h-4 group-hover:scale-125 transition-transform fill-white" />
-                          <span>Vou dar este Combo (Fralda + Mimo) 💖</span>
+                          <span>Vou dar este Combo (Fralda + Mimo) </span>
                         </ShimmerButton>
                       )}
                     </div>
@@ -391,6 +381,39 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
             </button>
           </div>
         )}
+
+        {/* Modal de Catálogo Completo de Mimos */}
+        <MimosCatalogModal
+          isOpen={isCatalogOpen}
+          onClose={() => setIsCatalogOpen(false)}
+          mimos={mimos}
+          pledges={pledges}
+          onSelectMimo={(mimo) => {
+            setIsCatalogOpen(false);
+            setSelectedMimoForCombo(mimo);
+          }}
+          onScrollToGifts={() => {
+            const el = document.getElementById('presentes-cards');
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth' });
+            }
+          }}
+        />
+
+        {/* Modal de Escolha da Fralda para o Mimo Selecionado */}
+        <MimoComboSelectModal
+          isOpen={Boolean(selectedMimoForCombo)}
+          onClose={() => setSelectedMimoForCombo(null)}
+          mimo={selectedMimoForCombo}
+          gifts={safeGifts}
+          pledges={pledges}
+          onSelectDiaper={(diaper, mimo) => {
+            setSelectedMimoForCombo(null);
+            if (onSelectGift) {
+              onSelectGift(diaper, mimo?.id);
+            }
+          }}
+        />
 
       </div>
     </section>
