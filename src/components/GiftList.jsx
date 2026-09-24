@@ -54,7 +54,6 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
           badgeIcon={Gift}
           title="Escolha o seu"
           highlight="Combo de Presente"
-          subtitle="Como funciona: Escolha o tamanho do pacote de fraldas e, em seguida, selecione um mimo especial (lenços umedecidos, pomadinhas, roupinhas, etc.) para acompanhar com todo carinho! 💕"
           className="text-center max-w-2xl mx-auto mb-10"
         />
 
