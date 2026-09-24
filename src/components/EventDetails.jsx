@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Calendar, Clock, Copy, Check, ExternalLink, Heart, Sparkles, QrCode, CalendarPlus, Download } from 'lucide-react';
+import { MapPin, Calendar, Clock, Copy, Check, ExternalLink, Heart, QrCode, CalendarPlus, Download } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useToast } from './ui/ToastProvider';
 import CloudHeadingReveal from './ui/CloudHeadingReveal';
@@ -56,9 +56,8 @@ export default function EventDetails({ config, onOpenPixModal }) {
         {/* Section Heading with Cloud Reveal */}
         <CloudHeadingReveal
           badge="Informações do Evento"
-          badgeIcon={Sparkles}
           title="Tudo o que você"
-          highlight="precisa saber ✨"
+          highlight="precisa saber"
           subtitle={config.welcomeMessage}
           className="text-center max-w-2xl mx-auto mb-12"
         />
