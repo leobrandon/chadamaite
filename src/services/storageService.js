@@ -11,6 +11,7 @@ const KEYS = {
   MESSAGES: 'cha_maite_messages_v1',
   PLEDGES: 'cha_maite_pledges_v1',
   LOGS: 'cha_maite_admin_logs_v1',
+  DISMISSED_GIFTS: 'cha_maite_dismissed_gifts_v1',
 };
 
 // Robust ID Generator using crypto.randomUUID with standard fallback
@@ -301,6 +302,201 @@ function mapMessageToDB(m) {
 export const storageService = {
   isCloudConnected: isSupabaseConfigured,
 
+  // Cache e sincronização centralizada de exclusões/lápides na nuvem
+  _tombstonePromise: null,
+  _lastTombstoneFetch: 0,
+  _cachedTombstones: null,
+
+  getDismissedGiftIds: () => {
+    try {
+      const saved = localStorage.getItem(KEYS.DISMISSED_GIFTS);
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  },
+
+  fetchCloudTombstones: async (options = {}) => {
+    const { force = false } = options;
+    const now = Date.now();
+
+    if (!force && storageService._cachedTombstones && (now - storageService._lastTombstoneFetch < 3000)) {
+      return storageService._cachedTombstones;
+    }
+
+    if (!force && storageService._tombstonePromise) {
+      return storageService._tombstonePromise;
+    }
+
+    storageService._tombstonePromise = (async () => {
+      const dismissedRsvps = new Set(storageService.getDismissedRSVPIds());
+      const dismissedPledges = new Set(storageService.getDismissedPledgeIds());
+      const dismissedMessages = new Set(storageService.getDismissedMessageIds());
+      const dismissedGifts = new Set(storageService.getDismissedGiftIds());
+      const rsvpOverrides = new Map();
+      const messageOverrides = new Map();
+
+      if (!isSupabaseConfigured || !supabase) {
+        const result = {
+          dismissedRsvps,
+          dismissedPledges,
+          dismissedMessages,
+          dismissedGifts,
+          rsvpOverrides,
+          messageOverrides,
+        };
+        storageService._cachedTombstones = result;
+        storageService._lastTombstoneFetch = Date.now();
+        storageService._tombstonePromise = null;
+        return result;
+      }
+
+      try {
+        const { data: rows, error } = await supabase
+          .from('messages')
+          .select('id, author, text, created_at')
+          .or('author.ilike.%[EXCLUIDO]%,text.ilike.%[DISMISSED%,author.ilike.%[OVERRIDE%')
+          .order('created_at', { ascending: true });
+
+        if (error) {
+          console.warn('Aviso ao consultar lápides na nuvem:', error);
+        } else if (Array.isArray(rows)) {
+          rows.forEach((row) => {
+            if (!row) return;
+            const author = String(row.author || '').trim();
+            const text = String(row.text || '').trim();
+            const id = String(row.id || '').trim();
+
+            if (author.includes('[EXCLUIDO]') || text.includes('[DISMISSED')) {
+              // Extrair IDs das tags no texto
+              const matches = text.matchAll(/\[(DISMISSED_[A-Z]+|DISMISSED_ID):([^\]]+)\]/g);
+              for (const m of matches) {
+                const tag = m[1];
+                const targetId = m[2].trim();
+                if (!targetId) continue;
+                const bareId = targetId.replace(/^(rsvp-|pledge-|msg-|gift-)/, '');
+
+                if (tag === 'DISMISSED_RSVP' || targetId.startsWith('rsvp-')) {
+                  dismissedRsvps.add(targetId);
+                  dismissedRsvps.add(`rsvp-${bareId}`);
+                  dismissedRsvps.add(bareId);
+                } else if (tag === 'DISMISSED_PLEDGE' || targetId.startsWith('pledge-')) {
+                  dismissedPledges.add(targetId);
+                  dismissedPledges.add(`pledge-${bareId}`);
+                  dismissedPledges.add(bareId);
+                } else if (tag === 'DISMISSED_GIFT' || targetId.startsWith('gift-')) {
+                  dismissedGifts.add(targetId);
+                  dismissedGifts.add(`gift-${bareId}`);
+                  dismissedGifts.add(bareId);
+                } else if (tag === 'DISMISSED_MSG' || targetId.startsWith('msg-')) {
+                  dismissedMessages.add(targetId);
+                  dismissedMessages.add(`msg-${bareId}`);
+                  dismissedMessages.add(bareId);
+                } else {
+                  dismissedRsvps.add(targetId);
+                  dismissedRsvps.add(`rsvp-${bareId}`);
+                  dismissedRsvps.add(bareId);
+                  dismissedPledges.add(targetId);
+                  dismissedPledges.add(`pledge-${bareId}`);
+                  dismissedPledges.add(bareId);
+                  dismissedMessages.add(targetId);
+                  dismissedMessages.add(`msg-${bareId}`);
+                  dismissedMessages.add(bareId);
+                  dismissedGifts.add(targetId);
+                  dismissedGifts.add(`gift-${bareId}`);
+                  dismissedGifts.add(bareId);
+                }
+              }
+
+              // Extrair IDs a partir do id da lápide
+              if (id.startsWith('dismissed-')) {
+                const cleanId = id.replace(/^dismissed-/, '');
+                const bareId = cleanId.replace(/^(rsvp-|pledge-|msg-|gift-)/, '');
+                if (cleanId.startsWith('rsvp-')) {
+                  dismissedRsvps.add(cleanId);
+                  dismissedRsvps.add(`rsvp-${bareId}`);
+                  dismissedRsvps.add(bareId);
+                } else if (cleanId.startsWith('pledge-')) {
+                  dismissedPledges.add(cleanId);
+                  dismissedPledges.add(`pledge-${bareId}`);
+                  dismissedPledges.add(bareId);
+                } else if (cleanId.startsWith('gift-')) {
+                  dismissedGifts.add(cleanId);
+                  dismissedGifts.add(`gift-${bareId}`);
+                  dismissedGifts.add(bareId);
+                } else if (cleanId.startsWith('msg-')) {
+                  dismissedMessages.add(cleanId);
+                  dismissedMessages.add(`msg-${bareId}`);
+                  dismissedMessages.add(bareId);
+                } else {
+                  dismissedRsvps.add(cleanId);
+                  dismissedRsvps.add(`rsvp-${bareId}`);
+                  dismissedRsvps.add(bareId);
+                  dismissedPledges.add(cleanId);
+                  dismissedPledges.add(`pledge-${bareId}`);
+                  dismissedPledges.add(bareId);
+                  dismissedMessages.add(cleanId);
+                  dismissedMessages.add(`msg-${bareId}`);
+                  dismissedMessages.add(bareId);
+                  dismissedGifts.add(cleanId);
+                  dismissedGifts.add(`gift-${bareId}`);
+                  dismissedGifts.add(bareId);
+                }
+              }
+            }
+
+            if (author.includes('[OVERRIDE_RSVP]')) {
+              try {
+                const parsed = JSON.parse(text);
+                if (parsed && parsed.rsvpId) {
+                  const existing = rsvpOverrides.get(parsed.rsvpId) || {};
+                  rsvpOverrides.set(parsed.rsvpId, { ...existing, ...parsed.fields });
+                }
+              } catch {}
+            }
+
+            if (author.includes('[OVERRIDE_MSG]')) {
+              try {
+                const parsed = JSON.parse(text);
+                if (parsed && parsed.msgId) {
+                  const existing = messageOverrides.get(parsed.msgId) || {};
+                  messageOverrides.set(parsed.msgId, { ...existing, ...parsed.fields });
+                }
+              } catch {}
+            }
+          });
+
+          try {
+            localStorage.setItem(KEYS.DISMISSED_RSVPS, JSON.stringify(Array.from(dismissedRsvps)));
+            localStorage.setItem(KEYS.DISMISSED_PLEDGES, JSON.stringify(Array.from(dismissedPledges)));
+            localStorage.setItem(KEYS.DISMISSED_MESSAGES, JSON.stringify(Array.from(dismissedMessages)));
+            localStorage.setItem(KEYS.DISMISSED_GIFTS, JSON.stringify(Array.from(dismissedGifts)));
+          } catch {}
+        }
+      } catch (err) {
+        console.error('Erro ao buscar lápides no Supabase:', err);
+      } finally {
+        storageService._tombstonePromise = null;
+      }
+
+      const result = {
+        dismissedRsvps,
+        dismissedPledges,
+        dismissedMessages,
+        dismissedGifts,
+        rsvpOverrides,
+        messageOverrides,
+      };
+      storageService._cachedTombstones = result;
+      storageService._lastTombstoneFetch = Date.now();
+      return result;
+    })();
+
+    return storageService._tombstonePromise;
+  },
+
   // Inicialização e sincronização em tempo real otimizada
   initRealtimeSync: async (onDataUpdate) => {
     if (!isSupabaseConfigured || !supabase) {
@@ -310,6 +506,9 @@ export const storageService = {
 
     try {
       console.log('⚡ Conectando ao banco em tempo real Supabase...');
+
+      // Carregar lápides na nuvem primeiro para que qualquer exclusão anterior seja honrada imediatamente
+      await storageService.fetchCloudTombstones({ force: true });
 
       // Carregar dados iniciais da nuvem com resiliência total
       const results = await Promise.allSettled([
@@ -343,6 +542,9 @@ export const storageService = {
 
         if (tablesToFetch.length === 0) return;
 
+        // Sempre sincroniza lápides atualizadas antes de recarregar tabelas
+        await storageService.fetchCloudTombstones({ force: true });
+
         const updatePayload = {};
 
         await Promise.all(
@@ -360,6 +562,9 @@ export const storageService = {
                 }
                 case 'messages': {
                   updatePayload.messages = await storageService.fetchMessagesFromCloud();
+                  updatePayload.rsvps = await storageService.fetchRSVPsFromCloud();
+                  updatePayload.pledges = await storageService.fetchPledgesFromCloud();
+                  updatePayload.gifts = await storageService.fetchGiftsFromCloud();
                   break;
                 }
                 case 'gift_pledges': {
@@ -493,10 +698,15 @@ export const storageService = {
   fetchGiftsFromCloud: async () => {
     if (!isSupabaseConfigured || !supabase) return storageService.getGifts();
     try {
-      const { data, error } = await supabase.from('gifts').select('*').order('created_at', { ascending: true });
-      if (error) throw error;
+      const [tombstones, giftsRes] = await Promise.all([
+        storageService.fetchCloudTombstones(),
+        supabase.from('gifts').select('*').order('created_at', { ascending: true }),
+      ]);
+      if (giftsRes.error) throw giftsRes.error;
 
-      if (!data || data.length === 0) {
+      const dismissedSet = tombstones?.dismissedGifts || new Set(storageService.getDismissedGiftIds());
+
+      if (!giftsRes.data || giftsRes.data.length === 0) {
         // Inicializa o banco com a lista completa inicial
         const dbGifts = INITIAL_GIFTS.map(mapGiftToDB);
         const { error: insertErr } = await supabase.from('gifts').insert(dbGifts);
@@ -506,7 +716,15 @@ export const storageService = {
         }
         return INITIAL_GIFTS;
       }
-      const mapped = data.map(mapGiftFromDB);
+      const mapped = giftsRes.data
+        .map(mapGiftFromDB)
+        .filter((g) => {
+          if (!g || !g.id) return false;
+          const idStr = String(g.id);
+          const bareId = idStr.replace(/^gift-/, '');
+          return !dismissedSet.has(idStr) && !dismissedSet.has(bareId) && !dismissedSet.has(`gift-${bareId}`);
+        });
+
       localStorage.setItem(KEYS.GIFTS, JSON.stringify(mapped));
       window.dispatchEvent(new CustomEvent('gifts_updated', { detail: mapped }));
       return mapped;
@@ -667,6 +885,14 @@ export const storageService = {
     const updated = gifts.filter(g => g.id !== giftId);
     storageService.saveGifts(updated);
 
+    // Registra nos descartados locais
+    const dismissed = storageService.getDismissedGiftIds();
+    if (!dismissed.includes(giftId)) dismissed.push(giftId);
+    const bareGiftId = String(giftId).replace(/^gift-/, '');
+    if (!dismissed.includes(bareGiftId)) dismissed.push(bareGiftId);
+    if (!dismissed.includes(`gift-${bareGiftId}`)) dismissed.push(`gift-${bareGiftId}`);
+    localStorage.setItem(KEYS.DISMISSED_GIFTS, JSON.stringify(dismissed));
+
     // Limpar pledges associados a este presente localmente
     const pledges = storageService.getPledges();
     const updatedPledges = pledges.filter(p => p.giftId !== giftId);
@@ -675,16 +901,20 @@ export const storageService = {
 
     if (isSupabaseConfigured && supabase) {
       try {
-        const [giftRes, pledgeRes] = await Promise.all([
+        const tombstone = {
+          id: `dismissed-gift-${giftId}`,
+          author: '[EXCLUIDO]',
+          text: `[DISMISSED_GIFT:${giftId}][DISMISSED_ID:${giftId}]`,
+          status: 'approved',
+          date: 'Agora mesmo',
+          likes: 0,
+        };
+        await supabase.from('messages').upsert([tombstone], { onConflict: 'id' });
+        await Promise.allSettled([
           supabase.from('gifts').delete().eq('id', giftId),
           supabase.from('gift_pledges').delete().eq('gift_id', giftId),
         ]);
-        if (giftRes.error) {
-          console.error('Erro ao deletar presente no Supabase:', giftRes.error);
-        }
-        if (pledgeRes.error) {
-          console.error('Erro ao limpar pledges associados no Supabase:', pledgeRes.error);
-        }
+        await storageService.fetchCloudTombstones({ force: true });
       } catch (err) {
         console.error('Erro ao deletar presente no Supabase:', err);
       }
@@ -720,17 +950,10 @@ export const storageService = {
   // CONFIRMAÇÕES DE PRESENÇA (RSVP)
   getDismissedRSVPIds: () => {
     try {
-      const saved = localStorage.getItem('cha_maite_dismissed_rsvps_v1');
+      const saved = localStorage.getItem(KEYS.DISMISSED_RSVPS);
       if (!saved) return [];
       const parsed = JSON.parse(saved);
-      if (!Array.isArray(parsed)) return [];
-      // Se continha o ID do RSVP por engano decorrente do descarte de recado anterior, limpa o resíduo
-      if (parsed.includes('rsvp-8dd0513e-e2a8-4262-ae62-41108ff2794d')) {
-        const cleaned = parsed.filter(id => id !== 'rsvp-8dd0513e-e2a8-4262-ae62-41108ff2794d');
-        localStorage.setItem('cha_maite_dismissed_rsvps_v1', JSON.stringify(cleaned));
-        return cleaned;
-      }
-      return parsed;
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
     }
@@ -739,13 +962,40 @@ export const storageService = {
   fetchRSVPsFromCloud: async () => {
     if (!isSupabaseConfigured || !supabase) return storageService.getRSVPs();
     try {
-      const { data, error } = await supabase.from('rsvps').select('*').order('created_at', { ascending: false });
-      if (error) throw error;
-      const dismissedIds = storageService.getDismissedRSVPIds();
+      const [tombstones, rsvpsRes] = await Promise.all([
+        storageService.fetchCloudTombstones(),
+        supabase.from('rsvps').select('*').order('created_at', { ascending: false }),
+      ]);
+      if (rsvpsRes.error) throw rsvpsRes.error;
 
-      const mapped = (data || [])
+      const dismissedSet = tombstones?.dismissedRsvps || new Set(storageService.getDismissedRSVPIds());
+      const overrides = tombstones?.rsvpOverrides || new Map();
+
+      const mapped = (rsvpsRes.data || [])
         .map(mapRSVPFromDB)
-        .filter(r => !dismissedIds.includes(r.id) && !isTestGuest(r.name) && r.phone !== 'mural_only' && !String(r.id || '').startsWith('rsvp-msg-'));
+        .filter((r) => {
+          if (!r || !r.id) return false;
+          const idStr = String(r.id);
+          const bareId = idStr.replace(/^rsvp-/, '');
+          if (dismissedSet.has(idStr) || dismissedSet.has(bareId) || dismissedSet.has(`rsvp-${bareId}`)) {
+            return false;
+          }
+          if (String(r.name || '').includes('[EXCLUIDO]')) return false;
+          if (isTestGuest(r.name)) return false;
+          if (r.phone === 'mural_only' || idStr.startsWith('rsvp-msg-')) return false;
+          return true;
+        })
+        .map((r) => {
+          if (overrides.has(r.id)) {
+            return { ...r, ...overrides.get(r.id) };
+          }
+          const bareId = String(r.id).replace(/^rsvp-/, '');
+          if (overrides.has(bareId)) {
+            return { ...r, ...overrides.get(bareId) };
+          }
+          return r;
+        });
+
       localStorage.setItem(KEYS.RSVPS, JSON.stringify(mapped));
       window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: mapped }));
       return mapped;
@@ -758,10 +1008,30 @@ export const storageService = {
   getRSVPs: () => {
     try {
       const dismissedIds = storageService.getDismissedRSVPIds();
+      const dismissedSet = new Set();
+      dismissedIds.forEach((id) => {
+        const str = String(id || '');
+        const bare = str.replace(/^rsvp-/, '');
+        dismissedSet.add(str);
+        dismissedSet.add(bare);
+        dismissedSet.add(`rsvp-${bare}`);
+      });
+
+      const filterItem = (r) => {
+        if (!r || !r.id) return false;
+        const idStr = String(r.id);
+        const bareId = idStr.replace(/^rsvp-/, '');
+        if (dismissedSet.has(idStr) || dismissedSet.has(bareId) || dismissedSet.has(`rsvp-${bareId}`)) return false;
+        if (String(r.name || '').includes('[EXCLUIDO]')) return false;
+        if (isTestGuest(r.name)) return false;
+        if (r.phone === 'mural_only' || idStr.startsWith('rsvp-msg-')) return false;
+        return true;
+      };
+
       const saved = localStorage.getItem(KEYS.RSVPS);
       if (saved === null) {
         return (INITIAL_RSVPS || [])
-          .filter(r => !dismissedIds.includes(r.id) && !isTestGuest(r.name))
+          .filter(filterItem)
           .map((r) => ({
             ...r,
             phone: formatPhone(r.phone || ''),
@@ -770,20 +1040,20 @@ export const storageService = {
       const parsed = JSON.parse(saved);
       if (!Array.isArray(parsed)) {
         return (INITIAL_RSVPS || [])
-          .filter(r => !dismissedIds.includes(r.id) && !isTestGuest(r.name))
+          .filter(filterItem)
           .map((r) => ({
             ...r,
             phone: formatPhone(r.phone || ''),
           }));
       }
       const filtered = parsed
-        .filter(r => !dismissedIds.includes(r.id) && !isTestGuest(r.name) && r.phone !== 'mural_only' && !String(r.id || '').startsWith('rsvp-msg-'))
+        .filter(filterItem)
         .map((r) => ({
           ...r,
           phone: formatPhone(r.phone || ''),
         }));
 
-      // Se havia cadastros de teste armazenados, higieniza o localStorage
+      // Se havia cadastros de teste ou excluídos armazenados, higieniza o localStorage
       if (filtered.length !== parsed.length) {
         localStorage.setItem(KEYS.RSVPS, JSON.stringify(filtered));
       }
@@ -863,18 +1133,24 @@ export const storageService = {
 
     // Registra o ID nos descartados/excluídos para nunca reaparecer em sincronizações
     const dismissedRsvps = storageService.getDismissedRSVPIds();
-    if (!dismissedRsvps.includes(rsvpId)) dismissedRsvps.push(rsvpId);
-    localStorage.setItem('cha_maite_dismissed_rsvps_v1', JSON.stringify(dismissedRsvps));
+    const idStr = String(rsvpId);
+    const bareId = idStr.replace(/^rsvp-/, '');
+    if (!dismissedRsvps.includes(idStr)) dismissedRsvps.push(idStr);
+    if (!dismissedRsvps.includes(bareId)) dismissedRsvps.push(bareId);
+    if (!dismissedRsvps.includes(`rsvp-${bareId}`)) dismissedRsvps.push(`rsvp-${bareId}`);
+    localStorage.setItem(KEYS.DISMISSED_RSVPS, JSON.stringify(dismissedRsvps));
 
     // Também remove e dispensa recado associado a este RSVP se houver
     const msgId = `msg-${rsvpId}`;
+    const bareMsgId = `msg-${bareId}`;
     const dismissed = storageService.getDismissedMessageIds();
-    if (!dismissed.includes(msgId)) dismissed.push(msgId);
-    if (!dismissed.includes(rsvpId)) dismissed.push(rsvpId);
-    localStorage.setItem('cha_maite_dismissed_messages_v1', JSON.stringify(dismissed));
+    [msgId, bareMsgId, rsvpId, bareId].forEach(id => {
+      if (!dismissed.includes(id)) dismissed.push(id);
+    });
+    localStorage.setItem(KEYS.DISMISSED_MESSAGES, JSON.stringify(dismissed));
 
     const messages = storageService.getMessages();
-    const updatedMsgs = messages.filter(m => m.id !== msgId && m.rsvpId !== rsvpId);
+    const updatedMsgs = messages.filter(m => m.id !== msgId && m.id !== bareMsgId && m.rsvpId !== rsvpId && m.rsvpId !== bareId);
     if (updatedMsgs.length !== messages.length) {
       localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updatedMsgs));
       window.dispatchEvent(new CustomEvent('messages_updated', { detail: updatedMsgs }));
@@ -885,15 +1161,32 @@ export const storageService = {
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('messages').upsert([{
-          id: `dismissed-${rsvpId}`,
-          author: '[EXCLUIDO]',
-          text: `[DISMISSED_ID:${rsvpId}]`,
-          status: 'approved',
-          date: 'Agora mesmo',
-          likes: 0,
-        }], { onConflict: 'id' });
-        await supabase.from('rsvps').delete().eq('id', rsvpId);
+        const tombstones = [
+          {
+            id: `dismissed-rsvp-${rsvpId}`,
+            author: '[EXCLUIDO]',
+            text: `[DISMISSED_RSVP:${rsvpId}][DISMISSED_ID:${rsvpId}]`,
+            status: 'approved',
+            date: 'Agora mesmo',
+            likes: 0,
+          },
+          {
+            id: `dismissed-msg-${msgId}`,
+            author: '[EXCLUIDO]',
+            text: `[DISMISSED_MSG:${msgId}][DISMISSED_ID:${msgId}]`,
+            status: 'approved',
+            date: 'Agora mesmo',
+            likes: 0,
+          },
+        ];
+        await supabase.from('messages').upsert(tombstones, { onConflict: 'id' });
+        await Promise.allSettled([
+          supabase.from('rsvps').delete().eq('id', rsvpId),
+          supabase.from('messages').delete().eq('id', msgId),
+          supabase.from('rsvps').delete().eq('id', bareId),
+          supabase.from('messages').delete().eq('id', bareMsgId),
+        ]);
+        await storageService.fetchCloudTombstones({ force: true });
       } catch (err) {
         console.error('Erro ao excluir RSVP no Supabase:', err);
       }
@@ -912,27 +1205,23 @@ export const storageService = {
 
     if (isSupabaseConfigured && supabase && updatedEntry) {
       try {
-        const payload = mapRSVPToDB(updatedEntry);
-        // Supabase JS retorna status 200 com array vazio caso RLS bloqueie UPDATE.
-        // Usamos .select() para verificar se alguma linha foi realmente atualizada.
-        const { data: updatedRows, error: updateErr } = await supabase
-          .from('rsvps')
-          .update(payload)
-          .eq('id', rsvpId)
-          .select();
+        // Grava override na nuvem para garantir sincronização entre todos os dispositivos
+        const overrideRecord = {
+          id: `override-rsvp-${rsvpId}-${Date.now()}`,
+          author: '[OVERRIDE_RSVP]',
+          text: JSON.stringify({ rsvpId, fields, updatedAt: new Date().toISOString() }),
+          status: 'approved',
+          date: 'Agora mesmo',
+          likes: 0,
+        };
+        await supabase.from('messages').insert([overrideRecord]);
 
-        if (updateErr || !updatedRows || updatedRows.length === 0) {
-          // Fallback garantido: delete + insert (permitido por políticas anon no Supabase)
-          await supabase.from('rsvps').delete().eq('id', rsvpId);
-          const { error: insertErr } = await supabase.from('rsvps').insert([payload]);
-          if (insertErr) {
-            console.error('Erro ao reinserir RSVP no Supabase:', insertErr);
-            throw insertErr;
-          }
-        }
+        // Tenta também atualização direta no Supabase
+        const payload = mapRSVPToDB(updatedEntry);
+        await supabase.from('rsvps').update(payload).eq('id', rsvpId);
+        await storageService.fetchCloudTombstones({ force: true });
       } catch (err) {
         console.error('Erro ao atualizar RSVP no Supabase:', err);
-        throw err;
       }
     }
     return updated;
@@ -968,46 +1257,50 @@ export const storageService = {
   fetchMessagesFromCloud: async () => {
     if (!isSupabaseConfigured || !supabase) return storageService.getMessages();
     try {
-      const dismissedIds = storageService.getDismissedMessageIds();
-
-      // 1. Buscar recados na tabela messages e RSVPs na tabela rsvps em paralelo
-      const [messagesRes, rsvpsRes] = await Promise.all([
+      // 1. Buscar lápides e dados em paralelo
+      const [tombstones, messagesRes, rsvpsRes] = await Promise.all([
+        storageService.fetchCloudTombstones(),
         supabase.from('messages').select('*').order('created_at', { ascending: false }),
-        supabase.from('rsvps').select('id, name, message, created_at, phone').order('created_at', { ascending: false })
+        supabase.from('rsvps').select('id, name, message, created_at, phone').order('created_at', { ascending: false }),
       ]);
 
       if (messagesRes.error) throw messagesRes.error;
 
-      // 1.1 Extrair registros de exclusão/descarte salvos na nuvem (sincronizados entre todos os dispositivos)
-      const cloudDismissedIds = [];
-      (messagesRes.data || []).forEach((row) => {
-        if (!row) return;
-        const author = String(row.author || '').trim();
-        const text = String(row.text || '').trim();
-        const id = String(row.id || '').trim();
-        if (author.includes('[EXCLUIDO]') || text.includes('[DISMISSED_ID:')) {
-          if (id) cloudDismissedIds.push(id.replace(/^dismissed-/, ''));
-          const match = text.match(/\[DISMISSED_ID:([^\]]+)\]/);
-          if (match && match[1]) {
-            cloudDismissedIds.push(match[1]);
-          }
-        }
-      });
-
-      const allDismissedIds = Array.from(new Set([...dismissedIds, ...cloudDismissedIds]));
-      if (cloudDismissedIds.length > 0) {
-        localStorage.setItem('cha_maite_dismissed_messages_v1', JSON.stringify(allDismissedIds));
-      }
+      const dismissedSet = tombstones?.dismissedMessages || new Set(storageService.getDismissedMessageIds());
+      const dismissedRsvpsSet = tombstones?.dismissedRsvps || new Set(storageService.getDismissedRSVPIds());
+      const messageOverrides = tombstones?.messageOverrides || new Map();
 
       // Filtrar mensagens vindas do banco garantindo que nenhuma mensagem excluída ou dispensada permaneça
       const dbMessages = (messagesRes.data || [])
         .map(mapMessageFromDB)
         .filter(Boolean)
-        .filter((m) =>
-          !isExcludedOrTestMessage(m) &&
-          !allDismissedIds.includes(m.id) &&
-          (!m.rsvpId || !allDismissedIds.includes(m.rsvpId))
-        );
+        .filter((m) => {
+          if (!m || !m.id) return false;
+          if (isExcludedOrTestMessage(m)) return false;
+          const idStr = String(m.id);
+          const bareId = idStr.replace(/^msg-/, '');
+          if (dismissedSet.has(idStr) || dismissedSet.has(bareId) || dismissedSet.has(`msg-${bareId}`)) return false;
+          if (m.rsvpId) {
+            const rsvpStr = String(m.rsvpId);
+            const bareRsvp = rsvpStr.replace(/^rsvp-/, '');
+            if (
+              dismissedRsvpsSet.has(rsvpStr) ||
+              dismissedRsvpsSet.has(bareRsvp) ||
+              dismissedRsvpsSet.has(`rsvp-${bareRsvp}`) ||
+              dismissedSet.has(rsvpStr) ||
+              dismissedSet.has(bareRsvp)
+            ) {
+              return false;
+            }
+          }
+          return true;
+        })
+        .map((m) => {
+          if (messageOverrides.has(m.id)) {
+            return { ...m, ...messageOverrides.get(m.id) };
+          }
+          return m;
+        });
 
       const rsvps = rsvpsRes.data || [];
 
@@ -1025,14 +1318,17 @@ export const storageService = {
       for (const r of rsvpsWithMsg) {
         const isFromMural = r.phone === 'mural_only' || String(r.id || '').startsWith('rsvp-msg-');
         const resolvedMsgId = isFromMural ? r.id.replace(/^rsvp-/, '') : `msg-${r.id}`;
+        const rsvpIdStr = String(r.id || '');
+        const bareRsvpId = rsvpIdStr.replace(/^rsvp-/, '');
 
-        // Verificar se já foi dispensado/rejeitado pelo administrador
+        // Verificar se o RSVP ou o recado já foi dispensado/excluído
         if (
-          allDismissedIds.includes(resolvedMsgId) ||
-          allDismissedIds.includes(r.id) ||
-          allDismissedIds.includes(`msg-${r.id}`) ||
-          allDismissedIds.includes(`rsvp-${resolvedMsgId}`) ||
-          allDismissedIds.some(dId => dId && (String(r.id || '').includes(dId) || String(resolvedMsgId || '').includes(dId)))
+          dismissedSet.has(resolvedMsgId) ||
+          dismissedSet.has(rsvpIdStr) ||
+          dismissedSet.has(bareRsvpId) ||
+          dismissedRsvpsSet.has(rsvpIdStr) ||
+          dismissedRsvpsSet.has(bareRsvpId) ||
+          dismissedRsvpsSet.has(`rsvp-${bareRsvpId}`)
         ) {
           continue;
         }
@@ -1062,7 +1358,6 @@ export const storageService = {
 
           if (isSameAuthor) {
             if (normM === normR) return true;
-            // Comparação de similaridade de texto para lidar com edições ou correções de digitação
             const wordsM = normM.split(' ').filter(Boolean);
             const wordsR = normR.split(' ').filter(Boolean);
             if (wordsM.length >= 3 && wordsR.length >= 3) {
@@ -1097,7 +1392,7 @@ export const storageService = {
       const localPending = currentLocalMsgs.filter(m => 
         m && m.status === 'pending' && 
         !isExcludedOrTestMessage(m) && 
-        !allDismissedIds.includes(m.id) && 
+        !dismissedSet.has(m.id) && 
         !dbMessages.some(dbm => dbm.id === m.id) && 
         !pendingFromRsvps.some(pr => pr.id === m.id)
       );
@@ -1305,7 +1600,7 @@ export const storageService = {
       dismissed.push(rsvpMsgId);
     }
 
-    localStorage.setItem('cha_maite_dismissed_messages_v1', JSON.stringify(dismissed));
+    localStorage.setItem(KEYS.DISMISSED_MESSAGES, JSON.stringify(dismissed));
 
     // 2. Persistência no Supabase com redundância contra RLS
     if (isSupabaseConfigured && supabase) {
@@ -1326,7 +1621,7 @@ export const storageService = {
         const dismissPayloads = Array.from(new Set(idsToDismiss.filter(Boolean))).map((id) => ({
           id: `dismissed-${id}`,
           author: '[EXCLUIDO]',
-          text: `[DISMISSED_ID:${id}]`,
+          text: `[DISMISSED_MSG:${id}][DISMISSED_ID:${id}]`,
           status: 'approved',
           date: 'Agora mesmo',
           likes: 0,
@@ -1365,6 +1660,8 @@ export const storageService = {
             .ilike('name', target.author.trim())
             .eq('message', target.text.trim());
         }
+
+        await storageService.fetchCloudTombstones({ force: true });
       } catch (err) {
         console.error('Erro ao processar exclusão no Supabase:', err);
       }
@@ -1390,13 +1687,23 @@ export const storageService = {
 
     if (isSupabaseConfigured && supabase) {
       try {
+        const overrideRecord = {
+          id: `override-msg-${msgId}-${Date.now()}`,
+          author: '[OVERRIDE_MSG]',
+          text: JSON.stringify({ msgId, fields, updatedAt: new Date().toISOString() }),
+          status: 'approved',
+          date: 'Agora mesmo',
+          likes: 0,
+        };
+        await supabase.from('messages').insert([overrideRecord]);
+
         if (target.status === 'approved') {
           const dbFields = {};
           if (fields.author !== undefined) dbFields.author = fields.author;
           if (fields.text !== undefined) dbFields.text = fields.text;
-          const { error } = await supabase.from('messages').update(dbFields).eq('id', msgId);
-          if (error) throw error;
+          await supabase.from('messages').update(dbFields).eq('id', msgId);
         }
+        await storageService.fetchCloudTombstones({ force: true });
       } catch (err) {
         console.error('Erro ao atualizar mensagem no Supabase:', err);
       }
@@ -1560,7 +1867,7 @@ export const storageService = {
   // PLEDGES (CONTRIBUIÇÕES DE PRESENTES)
   getDismissedPledgeIds: () => {
     try {
-      const saved = localStorage.getItem('cha_maite_dismissed_pledges_v1');
+      const saved = localStorage.getItem(KEYS.DISMISSED_PLEDGES);
       if (!saved) return [];
       const parsed = JSON.parse(saved);
       return Array.isArray(parsed) ? parsed : [];
@@ -1572,12 +1879,28 @@ export const storageService = {
   fetchPledgesFromCloud: async () => {
     if (!isSupabaseConfigured || !supabase) return storageService.getPledges();
     try {
-      const { data, error } = await supabase.from('gift_pledges').select('*').order('created_at', { ascending: true });
-      if (error) throw error;
-      const dismissedIds = storageService.getDismissedPledgeIds();
-      const mapped = (data || [])
+      const [tombstones, pledgesRes] = await Promise.all([
+        storageService.fetchCloudTombstones(),
+        supabase.from('gift_pledges').select('*').order('created_at', { ascending: true }),
+      ]);
+      if (pledgesRes.error) throw pledgesRes.error;
+
+      const dismissedSet = tombstones?.dismissedPledges || new Set(storageService.getDismissedPledgeIds());
+
+      const mapped = (pledgesRes.data || [])
         .map(mapPledgeFromDB)
-        .filter(p => !dismissedIds.includes(p.id) && !isTestGuest(p.giverName));
+        .filter((p) => {
+          if (!p || !p.id) return false;
+          const idStr = String(p.id);
+          const bareId = idStr.replace(/^pledge-/, '');
+          if (dismissedSet.has(idStr) || dismissedSet.has(bareId) || dismissedSet.has(`pledge-${bareId}`)) {
+            return false;
+          }
+          if (String(p.giverName || '').includes('[EXCLUIDO]')) return false;
+          if (isTestGuest(p.giverName)) return false;
+          return true;
+        });
+
       localStorage.setItem(KEYS.PLEDGES, JSON.stringify(mapped));
       window.dispatchEvent(new CustomEvent('pledges_updated', { detail: mapped }));
       return mapped;
@@ -1590,13 +1913,32 @@ export const storageService = {
   getPledges: () => {
     try {
       const dismissedIds = storageService.getDismissedPledgeIds();
+      const dismissedSet = new Set();
+      dismissedIds.forEach((id) => {
+        const str = String(id || '');
+        const bare = str.replace(/^pledge-/, '');
+        dismissedSet.add(str);
+        dismissedSet.add(bare);
+        dismissedSet.add(`pledge-${bare}`);
+      });
+
+      const filterItem = (p) => {
+        if (!p || !p.id) return false;
+        const idStr = String(p.id);
+        const bareId = idStr.replace(/^pledge-/, '');
+        if (dismissedSet.has(idStr) || dismissedSet.has(bareId) || dismissedSet.has(`pledge-${bareId}`)) return false;
+        if (String(p.giverName || '').includes('[EXCLUIDO]')) return false;
+        if (isTestGuest(p.giverName)) return false;
+        return true;
+      };
+
       const saved = localStorage.getItem(KEYS.PLEDGES);
       if (saved === null) {
-        return (INITIAL_PLEDGES || []).filter(p => !dismissedIds.includes(p.id) && !isTestGuest(p.giverName));
+        return (INITIAL_PLEDGES || []).filter(filterItem);
       }
       const parsed = JSON.parse(saved);
       if (!Array.isArray(parsed)) return [];
-      const filtered = parsed.filter(p => !dismissedIds.includes(p.id) && !isTestGuest(p.giverName));
+      const filtered = parsed.filter(filterItem);
       if (filtered.length !== parsed.length) {
         localStorage.setItem(KEYS.PLEDGES, JSON.stringify(filtered));
       }
@@ -1639,8 +1981,12 @@ export const storageService = {
 
     // Registra nos descartados para garantir que nunca retorne em sincronizações
     const dismissedPledges = storageService.getDismissedPledgeIds();
-    if (!dismissedPledges.includes(pledgeId)) dismissedPledges.push(pledgeId);
-    localStorage.setItem('cha_maite_dismissed_pledges_v1', JSON.stringify(dismissedPledges));
+    const idStr = String(pledgeId);
+    const bareId = idStr.replace(/^pledge-/, '');
+    if (!dismissedPledges.includes(idStr)) dismissedPledges.push(idStr);
+    if (!dismissedPledges.includes(bareId)) dismissedPledges.push(bareId);
+    if (!dismissedPledges.includes(`pledge-${bareId}`)) dismissedPledges.push(`pledge-${bareId}`);
+    localStorage.setItem(KEYS.DISMISSED_PLEDGES, JSON.stringify(dismissedPledges));
 
     localStorage.setItem(KEYS.PLEDGES, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent('pledges_updated', { detail: updated }));
@@ -1655,7 +2001,18 @@ export const storageService = {
 
     if (isSupabaseConfigured && supabase) {
       try {
+        const tombstone = {
+          id: `dismissed-pledge-${pledgeId}`,
+          author: '[EXCLUIDO]',
+          text: `[DISMISSED_PLEDGE:${pledgeId}][DISMISSED_ID:${pledgeId}]`,
+          status: 'approved',
+          date: 'Agora mesmo',
+          likes: 0,
+        };
+        await supabase.from('messages').upsert([tombstone], { onConflict: 'id' });
         await supabase.from('gift_pledges').delete().eq('id', pledgeId);
+        await supabase.from('gift_pledges').delete().eq('id', bareId);
+        await storageService.fetchCloudTombstones({ force: true });
       } catch (err) {
         console.error('Erro ao deletar pledge no Supabase:', err);
       }
