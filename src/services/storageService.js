@@ -65,12 +65,14 @@ export function isExcludedOrTestMessage(m) {
     return true;
   }
 
-  // Recados marcados como excluídos no banco de dados
+  // Recados marcados como excluídos ou marcadores de controle no banco de dados
   if (
     author.includes('[excluido]') ||
     author.includes('[deleted]') ||
+    author.includes('[resolvido]') ||
     text.includes('[excluido]') ||
-    text.includes('[deleted]')
+    text.includes('[deleted]') ||
+    text.includes('[restored]')
   ) {
     return true;
   }
@@ -374,75 +376,62 @@ export const storageService = {
               const matches = text.matchAll(/\[(DISMISSED_[A-Z]+|DISMISSED_ID):([^\]]+)\]/g);
               for (const m of matches) {
                 const tag = m[1];
-                const targetId = m[2].trim();
-                if (!targetId) continue;
-                const bareId = targetId.replace(/^(rsvp-|pledge-|msg-|gift-)/, '');
+                let rawId = m[2].trim();
+                if (!rawId) continue;
+                // Remove prefixos "dismissed-" encadeados
+                const cleanId = rawId.replace(/^(dismissed-)+/, '');
+                const bareId = cleanId.replace(/^(rsvp-msg-|rsvp-|pledge-|msg-|gift-)/, '');
 
-                if (tag === 'DISMISSED_RSVP' || targetId.startsWith('rsvp-')) {
-                  dismissedRsvps.add(targetId);
+                // Mensagens nunca devem descartar confirmação de presença (RSVP)
+                const isMsg = tag === 'DISMISSED_MSG' || cleanId.startsWith('msg-') || cleanId.startsWith('rsvp-msg-') || cleanId.includes('msg-');
+                const isRsvp = (tag === 'DISMISSED_RSVP' || cleanId.startsWith('rsvp-')) && !isMsg;
+                const isPledge = tag === 'DISMISSED_PLEDGE' || cleanId.startsWith('pledge-');
+                const isGift = tag === 'DISMISSED_GIFT' || cleanId.startsWith('gift-');
+
+                if (isRsvp) {
+                  dismissedRsvps.add(cleanId);
                   dismissedRsvps.add(`rsvp-${bareId}`);
                   dismissedRsvps.add(bareId);
-                } else if (tag === 'DISMISSED_PLEDGE' || targetId.startsWith('pledge-')) {
-                  dismissedPledges.add(targetId);
+                } else if (isPledge) {
+                  dismissedPledges.add(cleanId);
                   dismissedPledges.add(`pledge-${bareId}`);
                   dismissedPledges.add(bareId);
-                } else if (tag === 'DISMISSED_GIFT' || targetId.startsWith('gift-')) {
-                  dismissedGifts.add(targetId);
+                } else if (isGift) {
+                  dismissedGifts.add(cleanId);
                   dismissedGifts.add(`gift-${bareId}`);
                   dismissedGifts.add(bareId);
-                } else if (tag === 'DISMISSED_MSG' || targetId.startsWith('msg-')) {
-                  dismissedMessages.add(targetId);
+                } else if (isMsg) {
+                  dismissedMessages.add(cleanId);
                   dismissedMessages.add(`msg-${bareId}`);
                   dismissedMessages.add(bareId);
-                } else {
-                  dismissedRsvps.add(targetId);
-                  dismissedRsvps.add(`rsvp-${bareId}`);
-                  dismissedRsvps.add(bareId);
-                  dismissedPledges.add(targetId);
-                  dismissedPledges.add(`pledge-${bareId}`);
-                  dismissedPledges.add(bareId);
-                  dismissedMessages.add(targetId);
-                  dismissedMessages.add(`msg-${bareId}`);
-                  dismissedMessages.add(bareId);
-                  dismissedGifts.add(targetId);
-                  dismissedGifts.add(`gift-${bareId}`);
-                  dismissedGifts.add(bareId);
                 }
               }
 
               // Extrair IDs a partir do id da lápide
               if (id.startsWith('dismissed-')) {
-                const cleanId = id.replace(/^dismissed-/, '');
-                const bareId = cleanId.replace(/^(rsvp-|pledge-|msg-|gift-)/, '');
-                if (cleanId.startsWith('rsvp-')) {
+                const cleanId = id.replace(/^(dismissed-)+/, '');
+                const bareId = cleanId.replace(/^(rsvp-msg-|rsvp-|pledge-|msg-|gift-)/, '');
+                const isMsg = cleanId.startsWith('msg-') || cleanId.startsWith('rsvp-msg-') || cleanId.includes('msg-');
+                const isRsvp = cleanId.startsWith('rsvp-') && !isMsg;
+                const isPledge = cleanId.startsWith('pledge-');
+                const isGift = cleanId.startsWith('gift-');
+
+                if (isRsvp) {
                   dismissedRsvps.add(cleanId);
                   dismissedRsvps.add(`rsvp-${bareId}`);
                   dismissedRsvps.add(bareId);
-                } else if (cleanId.startsWith('pledge-')) {
+                } else if (isPledge) {
                   dismissedPledges.add(cleanId);
                   dismissedPledges.add(`pledge-${bareId}`);
                   dismissedPledges.add(bareId);
-                } else if (cleanId.startsWith('gift-')) {
+                } else if (isGift) {
                   dismissedGifts.add(cleanId);
                   dismissedGifts.add(`gift-${bareId}`);
                   dismissedGifts.add(bareId);
-                } else if (cleanId.startsWith('msg-')) {
+                } else if (isMsg) {
                   dismissedMessages.add(cleanId);
                   dismissedMessages.add(`msg-${bareId}`);
                   dismissedMessages.add(bareId);
-                } else {
-                  dismissedRsvps.add(cleanId);
-                  dismissedRsvps.add(`rsvp-${bareId}`);
-                  dismissedRsvps.add(bareId);
-                  dismissedPledges.add(cleanId);
-                  dismissedPledges.add(`pledge-${bareId}`);
-                  dismissedPledges.add(bareId);
-                  dismissedMessages.add(cleanId);
-                  dismissedMessages.add(`msg-${bareId}`);
-                  dismissedMessages.add(bareId);
-                  dismissedGifts.add(cleanId);
-                  dismissedGifts.add(`gift-${bareId}`);
-                  dismissedGifts.add(bareId);
                 }
               }
             }
@@ -953,7 +942,18 @@ export const storageService = {
       const saved = localStorage.getItem(KEYS.DISMISSED_RSVPS);
       if (!saved) return [];
       const parsed = JSON.parse(saved);
-      return Array.isArray(parsed) ? parsed : [];
+      if (!Array.isArray(parsed)) return [];
+      // Higieniza qualquer resíduo indevido de recados gravados erroneamente como RSVP
+      const cleaned = parsed.filter(id => {
+        const str = String(id || '');
+        if (str.includes('8dd0513e-e2a8-4262-ae62-41108ff2794d')) return false;
+        if (str.includes('msg-') || str.startsWith('dismissed-msg-')) return false;
+        return true;
+      });
+      if (cleaned.length !== parsed.length) {
+        localStorage.setItem(KEYS.DISMISSED_RSVPS, JSON.stringify(cleaned));
+      }
+      return cleaned;
     } catch {
       return [];
     }
@@ -1053,11 +1053,18 @@ export const storageService = {
           phone: formatPhone(r.phone || ''),
         }));
 
+      // Garante que confirmações legítimas de convidados de INITIAL_RSVPS não sejam perdidas
+      const knownIds = new Set(filtered.map(r => r.id));
+      const missingInitial = (INITIAL_RSVPS || []).filter(
+        initRsvp => initRsvp && !knownIds.has(initRsvp.id) && filterItem(initRsvp)
+      );
+      const fullyMerged = [...filtered, ...missingInitial];
+
       // Se havia cadastros de teste ou excluídos armazenados, higieniza o localStorage
-      if (filtered.length !== parsed.length) {
-        localStorage.setItem(KEYS.RSVPS, JSON.stringify(filtered));
+      if (fullyMerged.length !== parsed.length) {
+        localStorage.setItem(KEYS.RSVPS, JSON.stringify(fullyMerged));
       }
-      return filtered;
+      return fullyMerged;
     } catch {
       return (INITIAL_RSVPS || []).map((r) => ({
         ...r,
@@ -1522,14 +1529,17 @@ export const storageService = {
 
         // Grava marcador de descarte apenas do identificador de recado pendente na nuvem
         const pendingMsgIds = [msgId, `msg-${target.id}`].filter(Boolean);
-        const dismissMarkers = Array.from(new Set(pendingMsgIds)).map((id) => ({
-          id: `dismissed-${id}`,
-          author: '[EXCLUIDO]',
-          text: `[DISMISSED_ID:${id}]`,
-          status: 'approved',
-          date: 'Agora mesmo',
-          likes: 0,
-        }));
+        const dismissMarkers = Array.from(new Set(pendingMsgIds)).map((id) => {
+          const cleanId = String(id).replace(/^(dismissed-)+/, '');
+          return {
+            id: `dismissed-msg-${cleanId.replace(/^msg-/, '')}`,
+            author: '[EXCLUIDO]',
+            text: `[DISMISSED_MSG:${cleanId}]`,
+            status: 'approved',
+            date: 'Agora mesmo',
+            likes: 0,
+          };
+        });
         await supabase.from('messages').upsert(dismissMarkers, { onConflict: 'id' });
       } catch (err) {
         console.error('Erro ao aprovar mensagem no Supabase:', err);
@@ -1605,27 +1615,29 @@ export const storageService = {
     // 2. Persistência no Supabase com redundância contra RLS
     if (isSupabaseConfigured && supabase) {
       try {
-        // Gravar marcadores de descarte na nuvem para sincronização em todos os navegadores e dispositivos
+        // Gravar marcadores de descarte estritamente de recado (DISMISSED_MSG)
         const idsToDismiss = [msgId];
-        if (relatedRsvpId) idsToDismiss.push(relatedRsvpId);
-        if (target?.rsvpId) idsToDismiss.push(target.rsvpId);
+        if (target?.id) idsToDismiss.push(target.id);
         if (typeof msgId === 'string') {
-          if (msgId.startsWith('msg-')) {
-            idsToDismiss.push(`rsvp-${msgId}`);
-            idsToDismiss.push(msgId.replace(/^msg-/, ''));
-          } else {
-            idsToDismiss.push(`msg-${msgId}`);
+          const bare = msgId.replace(/^msg-/, '');
+          idsToDismiss.push(bare);
+          idsToDismiss.push(`msg-${bare}`);
+          if (bare.startsWith('rsvp-')) {
+            idsToDismiss.push(`rsvp-msg-${bare.replace(/^rsvp-/, '')}`);
           }
         }
 
-        const dismissPayloads = Array.from(new Set(idsToDismiss.filter(Boolean))).map((id) => ({
-          id: `dismissed-${id}`,
-          author: '[EXCLUIDO]',
-          text: `[DISMISSED_MSG:${id}][DISMISSED_ID:${id}]`,
-          status: 'approved',
-          date: 'Agora mesmo',
-          likes: 0,
-        }));
+        const dismissPayloads = Array.from(new Set(idsToDismiss.filter(Boolean))).map((id) => {
+          const cleanId = String(id).replace(/^(dismissed-)+/, '');
+          return {
+            id: `dismissed-msg-${cleanId.replace(/^msg-/, '')}`,
+            author: '[EXCLUIDO]',
+            text: `[DISMISSED_MSG:${cleanId}]`,
+            status: 'approved',
+            date: 'Agora mesmo',
+            likes: 0,
+          };
+        });
 
         await supabase.from('messages').upsert(dismissPayloads, { onConflict: 'id' });
 
