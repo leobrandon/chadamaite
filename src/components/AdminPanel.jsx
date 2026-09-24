@@ -61,6 +61,7 @@ export default function AdminPanel({
   const refreshAllCloudData = async () => {
     setIsRefreshingCloud(true);
     try {
+      await storageService.fetchCloudTombstones({ force: true });
       await Promise.allSettled([
         storageService.fetchRSVPsFromCloud(),
         storageService.fetchPledgesFromCloud(),
@@ -320,6 +321,18 @@ export default function AdminPanel({
         ? `Convidado "${targetRsvp.name}" (${targetRsvp.attending ? 'Confirmado' : 'Não virá'}) foi excluído da lista.`
         : 'Um convidado foi excluído da lista de presenças.',
       category: 'rsvps',
+    });
+  };
+
+  const handleDeletePledgeWithLog = async (pledgeId) => {
+    const target = (pledges || []).find(p => p.id === pledgeId);
+    await onDeletePledge(pledgeId);
+    storageService.addAdminLog({
+      action: 'Contribuição Excluída',
+      details: target 
+        ? `Contribuição de "${target.giverName}" foi removida da lista.`
+        : 'Uma contribuição de presente foi removida.',
+      category: 'gifts',
     });
   };
 
@@ -702,7 +715,7 @@ export default function AdminPanel({
                 <AdminGiftsReportTab
                   gifts={safeGifts}
                   pledges={pledges}
-                  onDeletePledge={onDeletePledge}
+                  onDeletePledge={handleDeletePledgeWithLog}
                   onExportPDF={handleExportGiftsPDF}
                   onExportCSV={handleExportGiftsCSV}
                   onRequestConfirm={requestConfirm}
@@ -730,6 +743,7 @@ export default function AdminPanel({
                   pledges={pledges}
                   onAddGift={handleAddGiftWithLog}
                   onEditGift={setEditingGift}
+                  onDeleteGift={handleDeleteGiftWithLog}
                   onResetGifts={handleResetGiftsWithLog}
                   onRequestConfirm={requestConfirm}
                 />
