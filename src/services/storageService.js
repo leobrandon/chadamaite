@@ -446,6 +446,10 @@ export const storageService = {
                   dismissedGifts.add(bareId);
                 } else if (isMsg) {
                   dismissedMessages.add(cleanId);
+                  dismissedMessages.add(bareId);
+                  dismissedMessages.add(`msg-${bareId}`);
+                  dismissedMessages.add(`rsvp-msg-${bareId}`);
+                  dismissedMessages.add(`rsvp-${bareId}`);
                   if (cleanId.startsWith('msg-')) {
                     dismissedMessages.add(cleanId.replace(/^msg-/, ''));
                   } else {
@@ -477,6 +481,10 @@ export const storageService = {
                   dismissedGifts.add(bareId);
                 } else if (isMsg) {
                   dismissedMessages.add(cleanId);
+                  dismissedMessages.add(bareId);
+                  dismissedMessages.add(`msg-${bareId}`);
+                  dismissedMessages.add(`rsvp-msg-${bareId}`);
+                  dismissedMessages.add(`rsvp-${bareId}`);
                   if (cleanId.startsWith('msg-')) {
                     dismissedMessages.add(cleanId.replace(/^msg-/, ''));
                   } else {
@@ -1324,8 +1332,10 @@ export const storageService = {
 
       if (messagesRes.error) throw messagesRes.error;
 
-      const dismissedSet = tombstones?.dismissedMessages || new Set(storageService.getDismissedMessageIds());
-      const dismissedRsvpsSet = tombstones?.dismissedRsvps || new Set(storageService.getDismissedRSVPIds());
+      const localDismissedMsgs = storageService.getDismissedMessageIds();
+      const localDismissedRsvps = storageService.getDismissedRSVPIds();
+      const dismissedSet = new Set([...(tombstones?.dismissedMessages || []), ...localDismissedMsgs]);
+      const dismissedRsvpsSet = new Set([...(tombstones?.dismissedRsvps || []), ...localDismissedRsvps]);
       const messageOverrides = tombstones?.messageOverrides || new Map();
 
       // Filtrar mensagens vindas do banco garantindo que nenhuma mensagem excluída ou dispensada permaneça
@@ -1447,13 +1457,23 @@ export const storageService = {
 
       // 3. Preservar também recados pendentes locais que não estejam dispensados nem no banco
       const currentLocalMsgs = storageService.getMessages();
-      const localPending = currentLocalMsgs.filter(m => 
-        m && m.status === 'pending' && 
-        !isExcludedOrTestMessage(m) && 
-        !dismissedSet.has(m.id) && 
-        !dbMessages.some(dbm => dbm.id === m.id) && 
-        !pendingFromRsvps.some(pr => pr.id === m.id)
-      );
+      const localPending = currentLocalMsgs.filter(m => {
+        if (!m || m.status !== 'pending' || isExcludedOrTestMessage(m)) return false;
+        const mid = String(m.id || '');
+        const bareMid = mid.replace(/^(rsvp-msg-|msg-|rsvp-)/, '');
+        if (
+          dismissedSet.has(mid) ||
+          dismissedSet.has(bareMid) ||
+          dismissedSet.has(`msg-${bareMid}`) ||
+          dismissedSet.has(`rsvp-msg-${bareMid}`) ||
+          dismissedSet.has(`rsvp-${bareMid}`) ||
+          dbMessages.some(dbm => dbm.id === m.id) ||
+          pendingFromRsvps.some(pr => pr.id === m.id)
+        ) {
+          return false;
+        }
+        return true;
+      });
 
       // 4. Consolidar lista completa
       const combined = [...dbMessages, ...pendingFromRsvps, ...localPending];
@@ -1651,31 +1671,46 @@ export const storageService = {
     // 2. Persistência no Supabase com redundância contra RLS
     if (isSupabaseConfigured && supabase) {
       try {
-        // Gravar marcadores de descarte estritamente de recado (DISMISSED_MSG)
-        const idsToDismiss = [msgId];
-        if (target?.id) idsToDismiss.push(target.id);
-        if (typeof msgId === 'string') {
-          const bare = msgId.replace(/^msg-/, '');
-          idsToDismiss.push(bare);
-          idsToDismiss.push(`msg-${bare}`);
-          if (bare.startsWith('rsvp-')) {
-            idsToDismiss.push(`rsvp-msg-${bare.replace(/^rsvp-/, '')}`);
-          }
+        const cleanMsgId = String(msgId).replace(/^(dismissed-)+/, '');
+        const bareMsgId = cleanMsgId.replace(/^(rsvp-msg-|rsvp-|msg-)/, '');
+
+        const allTags = new Set([
+          cleanMsgId,
+          bareMsgId,
+          `msg-${bareMsgId}`,
+          `rsvp-msg-${bareMsgId}`,
+          `rsvp-${bareMsgId}`,
+        ]);
+        if (target?.id) {
+          const targetClean = String(target.id).replace(/^(dismissed-)+/, '');
+          allTags.add(targetClean);
+          allTags.add(targetClean.replace(/^(rsvp-msg-|rsvp-|msg-)/, ''));
+        }
+        if (relatedRsvpId) {
+          const relClean = String(relatedRsvpId).replace(/^(dismissed-)+/, '');
+          allTags.add(relClean);
+          allTags.add(relClean.replace(/^(rsvp-msg-|rsvp-|msg-)/, ''));
         }
 
-        const dismissPayloads = Array.from(new Set(idsToDismiss.filter(Boolean))).map((id) => {
-          const cleanId = String(id).replace(/^(dismissed-)+/, '');
-          return {
-            id: `dismissed-msg-${cleanId.replace(/^msg-/, '')}`,
-            author: '[EXCLUIDO]',
-            text: `[DISMISSED_MSG:${cleanId}]`,
-            status: 'approved',
-            date: 'Agora mesmo',
-            likes: 0,
-          };
-        });
+        const tagsString = Array.from(allTags)
+          .filter(Boolean)
+          .map((t) => `[DISMISSED_MSG:${t}][DISMISSED_ID:${t}]`)
+          .join('');
 
-        await supabase.from('messages').upsert(dismissPayloads, { onConflict: 'id' });
+        const tombstone = {
+          id: `dismissed-msg-${bareMsgId}`,
+          author: '[EXCLUIDO]',
+          text: tagsString,
+          status: 'approved',
+          date: 'Agora mesmo',
+          likes: 0,
+        };
+
+        const { error: upsertErr } = await supabase.from('messages').upsert([tombstone], { onConflict: 'id' });
+        if (upsertErr) {
+          console.warn('Upsert de lápide retornou erro, tentando insert:', upsertErr);
+          await supabase.from('messages').insert([tombstone]);
+        }
 
         // Marcação definitiva no banco usando UPDATE (permitido pela política RLS)
         await supabase
