@@ -1,5 +1,19 @@
 export const INITIAL_RSVPS = [
   {
+    "id": "rsvp-28bf3597-c708-44cd-b509-2eee0ae919ac",
+    "name": "Gean",
+    "attending": true,
+    "adultsCount": 3,
+    "childrenCount": 0,
+    "companionNames": [
+      "Edilene",
+      "Vava"
+    ],
+    "phone": "(62) 99228-9756",
+    "message": "Oi, Maitê! É o GG, seu tio, amigo da mamãe. Estamos ansiosos pela sua chegada! Sua mãe já está me extorquindo com sua cortina, mal esperou você nascer kkkkkk. Mal posso esperar pela hora de você chegar para a gente dar muitos rolês loucos e deixar sua mãe e seu pai doidos! 😂😂\n\nVenha com muita saúde! ❤️",
+    "createdAt": "2026-09-27T19:00:54.307+00:00"
+  },
+  {
     "id": "rsvp-8dd0513e-e2a8-4262-ae62-41108ff2794d",
     "name": "Gabriela Alves Gonçalves",
     "attending": true,
@@ -634,5 +648,19 @@ export const INITIAL_PLEDGES = [
     "giverName": "Erick Colozzo",
     "quantity": 1,
     "createdAt": "2026-09-12T00:55:37.377239+00:00"
+  },
+  {
+    "id": "pledge-f5bfc4bc-d224-4e12-a607-2861fa0b8dda",
+    "giftId": "gift-4",
+    "giverName": "Gean",
+    "quantity": 1,
+    "createdAt": "2026-09-27T18:56:54.541522+00:00"
+  },
+  {
+    "id": "pledge-31be5489-7348-4c36-a3d7-77f07f75441e",
+    "giftId": "gift-6",
+    "giverName": "Gean",
+    "quantity": 1,
+    "createdAt": "2026-09-27T18:56:55.29139+00:00"
   }
 ];

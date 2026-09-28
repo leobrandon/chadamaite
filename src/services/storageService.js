@@ -12,7 +12,51 @@ const KEYS = {
   PLEDGES: 'cha_maite_pledges_v1',
   LOGS: 'cha_maite_admin_logs_v1',
   DISMISSED_GIFTS: 'cha_maite_dismissed_gifts_v1',
+  DISMISSED_RSVPS: 'cha_maite_dismissed_rsvps_v1',
+  DISMISSED_MESSAGES: 'cha_maite_dismissed_messages_v1',
+  DISMISSED_PLEDGES: 'cha_maite_dismissed_pledges_v1',
 };
+
+// Higienização automática e autocura do localStorage
+(function selfHealLocalStorage() {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    // 1. Remove a chave corrompida literal 'undefined' gerada anteriormente
+    window.localStorage.removeItem('undefined');
+
+    // 2. Higieniza descartados de RSVPs para remover resíduos indevidos
+    const rsvpDismissedStr = window.localStorage.getItem(KEYS.DISMISSED_RSVPS);
+    if (rsvpDismissedStr) {
+      try {
+        const parsed = JSON.parse(rsvpDismissedStr);
+        if (Array.isArray(parsed)) {
+          const cleaned = parsed.filter(id => {
+            const s = String(id || '');
+            return !s.includes('28bf3597-c708-44cd-b509-2eee0ae919ac') &&
+                   !s.startsWith('msg-') &&
+                   !s.startsWith('dismissed-msg-');
+          });
+          window.localStorage.setItem(KEYS.DISMISSED_RSVPS, JSON.stringify(cleaned));
+        }
+      } catch {}
+    }
+
+    // 3. Higieniza descartados de recados para remover falso descarte
+    const msgDismissedStr = window.localStorage.getItem(KEYS.DISMISSED_MESSAGES);
+    if (msgDismissedStr) {
+      try {
+        const parsed = JSON.parse(msgDismissedStr);
+        if (Array.isArray(parsed)) {
+          const cleaned = parsed.filter(id => {
+            const s = String(id || '');
+            return !s.includes('28bf3597-c708-44cd-b509-2eee0ae919ac');
+          });
+          window.localStorage.setItem(KEYS.DISMISSED_MESSAGES, JSON.stringify(cleaned));
+        }
+      } catch {}
+    }
+  } catch {}
+})();
 
 // Robust ID Generator using crypto.randomUUID with standard fallback
 export function generateUniqueId(prefix = 'id') {
@@ -402,8 +446,11 @@ export const storageService = {
                   dismissedGifts.add(bareId);
                 } else if (isMsg) {
                   dismissedMessages.add(cleanId);
-                  dismissedMessages.add(`msg-${bareId}`);
-                  dismissedMessages.add(bareId);
+                  if (cleanId.startsWith('msg-')) {
+                    dismissedMessages.add(cleanId.replace(/^msg-/, ''));
+                  } else {
+                    dismissedMessages.add(`msg-${cleanId}`);
+                  }
                 }
               }
 
@@ -430,8 +477,11 @@ export const storageService = {
                   dismissedGifts.add(bareId);
                 } else if (isMsg) {
                   dismissedMessages.add(cleanId);
-                  dismissedMessages.add(`msg-${bareId}`);
-                  dismissedMessages.add(bareId);
+                  if (cleanId.startsWith('msg-')) {
+                    dismissedMessages.add(cleanId.replace(/^msg-/, ''));
+                  } else {
+                    dismissedMessages.add(`msg-${cleanId}`);
+                  }
                 }
               }
             }
@@ -1245,14 +1295,15 @@ export const storageService = {
       'rsvp-1bb3cd4d-97bc-4c08-a156-8b73808b39d5',
     ];
     try {
-      const saved = localStorage.getItem('cha_maite_dismissed_messages_v1');
+      const saved = localStorage.getItem(KEYS.DISMISSED_MESSAGES);
       if (!saved) return defaultDismissed;
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed)) {
+        const cleaned = parsed.filter(id => !String(id || '').includes('28bf3597-c708-44cd-b509-2eee0ae919ac'));
         defaultDismissed.forEach((id) => {
-          if (!parsed.includes(id)) parsed.push(id);
+          if (!cleaned.includes(id)) cleaned.push(id);
         });
-        return parsed;
+        return cleaned;
       }
       return defaultDismissed;
     } catch {
@@ -1526,21 +1577,6 @@ export const storageService = {
         if (rsvpKey && (String(rsvpKey).startsWith('rsvp-msg-') || target.phone === 'mural_only')) {
           await supabase.from('rsvps').delete().eq('id', rsvpKey);
         }
-
-        // Grava marcador de descarte apenas do identificador de recado pendente na nuvem
-        const pendingMsgIds = [msgId, `msg-${target.id}`].filter(Boolean);
-        const dismissMarkers = Array.from(new Set(pendingMsgIds)).map((id) => {
-          const cleanId = String(id).replace(/^(dismissed-)+/, '');
-          return {
-            id: `dismissed-msg-${cleanId.replace(/^msg-/, '')}`,
-            author: '[EXCLUIDO]',
-            text: `[DISMISSED_MSG:${cleanId}]`,
-            status: 'approved',
-            date: 'Agora mesmo',
-            likes: 0,
-          };
-        });
-        await supabase.from('messages').upsert(dismissMarkers, { onConflict: 'id' });
       } catch (err) {
         console.error('Erro ao aprovar mensagem no Supabase:', err);
       }

@@ -304,6 +304,15 @@ export const INITIAL_EVENT_CONFIG = {
 
 export const INITIAL_MESSAGES = [
   {
+    id: "msg-rsvp-28bf3597-c708-44cd-b509-2eee0ae919ac",
+    author: "Gean",
+    text: "Oi, Maitê! É o GG, seu tio, amigo da mamãe. Estamos ansiosos pela sua chegada! Sua mãe já está me extorquindo com sua cortina, mal esperou você nascer kkkkkk. Mal posso esperar pela hora de você chegar para a gente dar muitos rolês loucos e deixar sua mãe e seu pai doidos! 😂😂\n\nVenha com muita saúde! ❤️",
+    date: "Recente",
+    likes: 0,
+    status: "approved",
+    createdAt: "2026-09-27T19:00:54.307+00:00"
+  },
+  {
     id: "msg-1",
     author: "Vovó Maria e Vovô José",
     text: "A princesinha da nossa vida já é muito amada! Que Deus abençoe a chegada da Maitê e traga ainda mais luz para vocês, Leo e Isa.",
