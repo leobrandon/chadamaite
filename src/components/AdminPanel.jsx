@@ -18,7 +18,6 @@ import AdminLogsTab from './admin/AdminLogsTab';
 import AdminEditGiftModal from './admin/modals/AdminEditGiftModal';
 import AdminEditRsvpModal from './admin/modals/AdminEditRsvpModal';
 import AdminEditMessageModal from './admin/modals/AdminEditMessageModal';
-import { verifyAdminPin, hashPassword } from '../utils/security';
 import { formatPhone } from '../utils/phoneMask';
 import { getMessageTimestamp } from '../utils/dateUtils';
 import { isExcludedOrTestMessage } from '../services/storageService';
@@ -44,13 +43,7 @@ export default function AdminPanel({
   onDeleteMessage,
   onUpdateMessage,
 }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    try {
-      return sessionStorage.getItem('cha_maite_admin_auth') === 'true';
-    } catch {
-      return false;
-    }
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
   const [activeTab, setActiveTab] = useState('gifts-report'); // 'gifts-report' | 'rsvps' | 'gifts' | 'config' | 'messages' | 'logs'
@@ -143,35 +136,22 @@ export default function AdminPanel({
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    const entered = pinInput.trim();
-    const storedHash = config?.adminPinHash || config?.adminPin;
-
-    const isValid = await verifyAdminPin(entered, storedHash);
-
-    if (isValid) {
-      try {
-        sessionStorage.setItem('cha_maite_admin_auth', 'true');
-        const computedHash = await hashPassword(entered);
-        sessionStorage.setItem('cha_maite_admin_pin_hash', computedHash);
-      } catch {
-        // ignore sessionStorage errors
-      }
+    try {
+      const accepted = await storageService.loginAdmin(pinInput.trim());
+      if (!accepted) throw new Error('Acesso negado.');
+      await storageService.refreshAdminData();
       setIsAuthenticated(true);
       setPinError(false);
-      // Recarregar todos os dados frescos da nuvem imediatamente após login
-      refreshAllCloudData();
-    } else {
+      setPinInput('');
+    } catch (error) {
+      console.error('Não foi possível entrar no painel:', error);
+      await storageService.clearAdminSession();
       setPinError(true);
     }
   };
 
-  const handleLock = () => {
-    try {
-      sessionStorage.removeItem('cha_maite_admin_auth');
-      sessionStorage.removeItem('cha_maite_admin_pin_hash');
-    } catch {
-      // ignore
-    }
+  const handleLock = async () => {
+    await storageService.clearAdminSession();
     setIsAuthenticated(false);
     setPinInput('');
     setPinError(false);
@@ -379,8 +359,7 @@ export default function AdminPanel({
     });
   };
 
-  const handleSaveConfigWithLog = async (newConfig) => {
-    // Detectar campos modificados com valores anteriores e novos
+  const handleSaveConfigWithLog = async (newConfig, newPin = '') => {
     const current = config || {};
     const fieldLabels = {
       babyName: 'Nome da Bebê',
@@ -394,26 +373,19 @@ export default function AdminPanel({
       address: 'Endereço Completo',
       mapUrl: 'Link do Google Maps',
       pixKey: 'Chave PIX',
-      adminPinHash: 'Senha do Painel',
     };
 
     const changes = [];
-    Object.keys(fieldLabels).forEach((key) => {
-      const oldVal = current[key];
-      const newVal = newConfig[key];
-      if (key === 'adminPinHash') {
-        if (newVal && newVal !== oldVal) {
-          changes.push('Senha do Painel alterada');
-        }
-      } else if (String(oldVal || '').trim() !== String(newVal || '').trim()) {
-        const label = fieldLabels[key];
-        const prevText = oldVal ? `"${oldVal}"` : '(vazio)';
-        const newText = newVal ? `"${newVal}"` : '(vazio)';
-        changes.push(`${label}: ${prevText} → ${newText}`);
+    Object.entries(fieldLabels).forEach(([key, label]) => {
+      const oldValue = String(current[key] || '').trim();
+      const newValue = String(newConfig[key] || '').trim();
+      if (oldValue !== newValue) {
+        changes.push(label + ': "' + (oldValue || '(vazio)') + '" → "' + (newValue || '(vazio)') + '"');
       }
     });
+    if (String(newPin || '').trim()) changes.push('Senha do Painel alterada');
 
-    await onSaveConfig(newConfig);
+    await onSaveConfig(newConfig, String(newPin || '').trim());
 
     const details = changes.length > 0
       ? `Alterações: ${changes.join(' | ')}.`

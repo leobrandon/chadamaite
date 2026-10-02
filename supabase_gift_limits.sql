@@ -1,7 +1,3 @@
--- Instruções: Execute este comando no SQL Editor do Supabase para adicionar o suporte a metas/limites de quantidade nos presentes.
-
--- Adiciona a coluna target_quantity na tabela gifts se ainda não existir
-ALTER TABLE public.gifts ADD COLUMN IF NOT EXISTS target_quantity integer DEFAULT 5;
-
--- Atualiza eventuais registros nulos com o valor padrão 5
-UPDATE public.gifts SET target_quantity = 5 WHERE target_quantity IS NULL;
+-- DEPRECATED: do not run this script.
+-- The policies here were replaced by the restricted staging schema in supabase_schema.sql.
+-- That schema is for a clean homologation project only; production needs a reviewed migration.

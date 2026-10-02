@@ -2,7 +2,7 @@ import { INITIAL_GIFTS, INITIAL_EVENT_CONFIG, INITIAL_MESSAGES, INITIAL_RSVPS, I
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { formatPhone } from '../utils/phoneMask';
 import { formatRelativeOrExactDate, getMessageTimestamp } from '../utils/dateUtils';
-import { DEFAULT_ADMIN_PIN_HASH, sanitizeText, sanitizeName } from '../utils/security';
+import { sanitizeText, sanitizeName } from '../utils/security';
 
 const KEYS = {
   GIFTS: 'cha_maite_gifts_v1',
@@ -163,7 +163,6 @@ function mapConfigFromDB(row) {
     mapUrl: row.map_url || INITIAL_EVENT_CONFIG.mapUrl,
     pixKey: row.pix_key || INITIAL_EVENT_CONFIG.pixKey,
     pixName: row.pix_name || INITIAL_EVENT_CONFIG.pixName,
-    adminPinHash: row.admin_pin || INITIAL_EVENT_CONFIG.adminPinHash || 'e815b24d314219266fbae1d11292d9d23bb2befbd5d0dc3f7a2422edc354413c',
     welcomeMessage: row.welcome_message || INITIAL_EVENT_CONFIG.welcomeMessage,
   };
 }
@@ -183,7 +182,6 @@ function mapConfigToDB(cfg) {
     map_url: cfg.mapUrl,
     pix_key: cfg.pixKey,
     pix_name: cfg.pixName,
-    admin_pin: cfg.adminPinHash || cfg.adminPin || 'e815b24d314219266fbae1d11292d9d23bb2befbd5d0dc3f7a2422edc354413c',
     welcome_message: cfg.welcomeMessage,
   };
 }
@@ -345,8 +343,94 @@ function mapMessageToDB(m) {
   };
 }
 
+let adminToken = null;
+let adminData = { gifts: null, rsvps: null, messages: null, pledges: null };
+
+async function invokeAppApi(action, payload = {}) {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('O Supabase de homologação não está configurado.');
+  }
+  const { data, error } = await supabase.functions.invoke('app-api', {
+    body: { action, ...payload },
+  });
+  if (error) {
+    let message = error.message || 'Não foi possível concluir a operação.';
+    try {
+      const response = error.context;
+      if (response && typeof response.clone === 'function') {
+        const body = await response.clone().json();
+        if (body?.error) message = body.error;
+      }
+    } catch {
+      // Mantém a mensagem segura da função.
+    }
+    throw new Error(message);
+  }
+  return data;
+}
+
+async function invokeAdminApi(action, payload = {}) {
+  if (!adminToken) throw new Error('Sua sessão expirou. Entre novamente no painel.');
+  try {
+    const data = await invokeAppApi(action, { ...payload, token: adminToken });
+    if (data?.token) adminToken = data.token;
+    return data;
+  } catch (error) {
+    if (String(error?.message || '').includes('Sessão administrativa expirada')) {
+      adminToken = null;
+      adminData = { gifts: null, rsvps: null, messages: null, pledges: null };
+    }
+    throw error;
+  }
+}
+
 export const storageService = {
   isCloudConnected: isSupabaseConfigured,
+  loginAdmin: async (pin) => {
+    const result = await invokeAppApi('admin-login', { pin: String(pin || '').trim() });
+    adminToken = result?.token || null;
+    adminData = { gifts: null, rsvps: null, messages: null, pledges: null };
+    return Boolean(adminToken);
+  },
+
+  clearAdminSession: async () => {
+    adminToken = null;
+    adminData = { gifts: null, rsvps: null, messages: null, pledges: null };
+    storageService._cachedTombstones = null;
+    storageService._lastTombstoneFetch = 0;
+    storageService._tombstonePromise = null;
+    for (const key of [KEYS.GIFTS, KEYS.RSVPS, KEYS.MESSAGES, KEYS.PLEDGES]) {
+      localStorage.removeItem(key);
+    }
+    window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: [] }));
+    await Promise.allSettled([
+      storageService.fetchGiftsFromCloud(),
+      storageService.fetchMessagesFromCloud(),
+      storageService.fetchPledgesFromCloud(),
+    ]);
+  },
+
+  refreshAdminData: async () => {
+    if (!adminToken) throw new Error('Entre novamente no painel.');
+    const [giftRows, rsvpRows, messageRows, pledgeRows] = await Promise.all([
+      invokeAdminApi('admin-gifts'),
+      invokeAdminApi('admin-rsvps'),
+      invokeAdminApi('admin-messages'),
+      invokeAdminApi('admin-pledges'),
+    ]);
+    adminData = {
+      gifts: (giftRows || []).map(mapGiftFromDB),
+      rsvps: (rsvpRows || []).map(mapRSVPFromDB).filter((r) => r && !isTestGuest(r.name)),
+      messages: (messageRows || []).map(mapMessageFromDB).filter((m) => m && !isExcludedOrTestMessage(m)),
+      pledges: (pledgeRows || []).map(mapPledgeFromDB).filter((p) => p && !isTestGuest(p.giverName)),
+    };
+    window.dispatchEvent(new CustomEvent('gifts_updated', { detail: adminData.gifts }));
+    window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: adminData.rsvps }));
+    window.dispatchEvent(new CustomEvent('messages_updated', { detail: adminData.messages }));
+    window.dispatchEvent(new CustomEvent('pledges_updated', { detail: adminData.pledges }));
+    return adminData;
+  },
+
 
   // Cache e sincronização centralizada de exclusões/lápides na nuvem
   _tombstonePromise: null,
@@ -365,6 +449,16 @@ export const storageService = {
   },
 
   fetchCloudTombstones: async (options = {}) => {
+    if (!adminToken) {
+      return {
+        dismissedRsvps: new Set(storageService.getDismissedRSVPIds()),
+        dismissedPledges: new Set(storageService.getDismissedPledgeIds()),
+        dismissedMessages: new Set(storageService.getDismissedMessageIds()),
+        dismissedGifts: new Set(storageService.getDismissedGiftIds()),
+        rsvpOverrides: new Map(),
+        messageOverrides: new Map(),
+      };
+    }
     const { force = false } = options;
     const now = Date.now();
 
@@ -400,15 +494,8 @@ export const storageService = {
       }
 
       try {
-        const { data: rows, error } = await supabase
-          .from('messages')
-          .select('id, author, text, created_at')
-          .or('author.ilike.%[EXCLUIDO]%,text.ilike.%[DISMISSED%,author.ilike.%[OVERRIDE%')
-          .order('created_at', { ascending: true });
-
-        if (error) {
-          console.warn('Aviso ao consultar lápides na nuvem:', error);
-        } else if (Array.isArray(rows)) {
+        const rows = adminToken ? await invokeAdminApi('admin-messages') : [];
+        if (Array.isArray(rows)) {
           rows.forEach((row) => {
             if (!row) return;
             const author = String(row.author || '').trim();
@@ -565,7 +652,8 @@ export const storageService = {
         storageService.fetchMessagesFromCloud(),
         storageService.fetchPledgesFromCloud(),
       ]);
-
+      const failedResult = results.find((result) => result.status === 'rejected');
+      if (failedResult) throw failedResult.reason;
       const [configRes, giftsRes, rsvpsRes, messagesRes, pledgesRes] = results;
       const initialPayload = {};
       if (configRes.status === 'fulfilled' && configRes.value) initialPayload.config = configRes.value;
@@ -681,112 +769,94 @@ export const storageService = {
       };
     } catch (err) {
       console.error('Erro na sincronização com Supabase:', err);
-      return () => {};
+      throw err;
     }
   },
 
   // CONFIGURAÇÕES
   fetchConfigFromCloud: async () => {
     if (!isSupabaseConfigured || !supabase) return storageService.getConfig();
-    try {
-      const { data, error } = await supabase
-        .from('event_config')
-        .select('*')
-        .eq('id', 'default_config')
-        .single();
-
-      if (error || !data) {
-        // Se ainda não existir registro, cria o padrão
-        await supabase.from('event_config').upsert([mapConfigToDB(INITIAL_EVENT_CONFIG)]);
-        return INITIAL_EVENT_CONFIG;
-      }
-      const mapped = mapConfigFromDB(data);
-      localStorage.setItem(KEYS.CONFIG, JSON.stringify(mapped));
-      window.dispatchEvent(new CustomEvent('config_updated', { detail: mapped }));
-      return mapped;
-    } catch {
-      return storageService.getConfig();
-    }
+    const fields = 'id,baby_name,parents,event_date,event_time,display_date,display_time,location_name,address,city,map_url,pix_key,pix_name,welcome_message,updated_at';
+    const { data, error } = await supabase
+      .from('event_config')
+      .select(fields)
+      .eq('id', 'default_config')
+      .maybeSingle();
+    if (error) throw new Error('Não foi possível carregar as informações do evento.');
+    if (!data) return storageService.getConfig();
+    const mapped = mapConfigFromDB(data);
+    localStorage.setItem(KEYS.CONFIG, JSON.stringify(mapped));
+    window.dispatchEvent(new CustomEvent('config_updated', { detail: mapped }));
+    return mapped;
   },
 
   getConfig: () => {
     try {
       const saved = localStorage.getItem(KEYS.CONFIG);
-      return saved ? { ...INITIAL_EVENT_CONFIG, ...JSON.parse(saved) } : INITIAL_EVENT_CONFIG;
+      const config = saved ? JSON.parse(saved) : {};
+      delete config.adminPinHash;
+      delete config.adminPin;
+      return { ...INITIAL_EVENT_CONFIG, ...config };
     } catch {
       return INITIAL_EVENT_CONFIG;
     }
   },
 
-  saveConfig: async (newConfig) => {
-    localStorage.setItem(KEYS.CONFIG, JSON.stringify(newConfig));
-    window.dispatchEvent(new CustomEvent('config_updated', { detail: newConfig }));
-
+  saveConfig: async (newConfig, newPin = '') => {
+    const safeConfig = { ...newConfig };
+    delete safeConfig.adminPinHash;
+    delete safeConfig.adminPin;
     if (isSupabaseConfigured && supabase) {
-      try {
-        const payload = mapConfigToDB(newConfig);
-        const { error } = await supabase
-          .from('event_config')
-          .update(payload)
-          .eq('id', 'default_config');
-
-        if (error) {
-          console.error('Erro ao atualizar config no Supabase:', error);
-          await supabase.from('event_config').upsert([payload]);
-        }
-      } catch (err) {
-        console.error('Erro ao salvar config no Supabase:', err);
-      }
+      const result = await invokeAdminApi('admin-save-config', { config: safeConfig, newPin: String(newPin || '').trim() });
+      const mapped = mapConfigFromDB(result.config);
+      localStorage.setItem(KEYS.CONFIG, JSON.stringify(mapped));
+      window.dispatchEvent(new CustomEvent('config_updated', { detail: mapped }));
+      return mapped;
     }
-    return newConfig;
+    localStorage.setItem(KEYS.CONFIG, JSON.stringify(safeConfig));
+    window.dispatchEvent(new CustomEvent('config_updated', { detail: safeConfig }));
+    return safeConfig;
   },
 
-  // PRESENTES
   fetchGiftsFromCloud: async () => {
     if (!isSupabaseConfigured || !supabase) return storageService.getGifts();
     try {
-      const [tombstones, giftsRes] = await Promise.all([
-        storageService.fetchCloudTombstones(),
-        supabase.from('gifts').select('*').order('created_at', { ascending: true }),
-      ]);
-      if (giftsRes.error) throw giftsRes.error;
-
-      const dismissedSet = tombstones?.dismissedGifts || new Set(storageService.getDismissedGiftIds());
-
-      if (!giftsRes.data || giftsRes.data.length === 0) {
-        // Inicializa o banco com a lista completa inicial
-        const dbGifts = INITIAL_GIFTS.map(mapGiftToDB);
-        const { error: insertErr } = await supabase.from('gifts').insert(dbGifts);
-        if (insertErr && isSchemaColumnError(insertErr)) {
-          const fallbackGifts = dbGifts.map(stripSchemaExtendedColumns);
-          await supabase.from('gifts').insert(fallbackGifts);
-        }
-        return INITIAL_GIFTS;
+      const tombstones = await storageService.fetchCloudTombstones();
+      let rows = [];
+      if (adminToken) {
+        rows = await invokeAdminApi('admin-gifts');
+      } else {
+        const { data, error } = await supabase.from('gifts_public').select('*').order('display_order', { ascending: true });
+        if (error) throw error;
+        rows = data || [];
       }
-      const mapped = giftsRes.data
-        .map(mapGiftFromDB)
-        .filter((g) => {
-          if (!g || !g.id) return false;
-          const idStr = String(g.id);
-          const bareId = idStr.replace(/^gift-/, '');
-          return !dismissedSet.has(idStr) && !dismissedSet.has(bareId) && !dismissedSet.has(`gift-${bareId}`);
-        });
-
-      localStorage.setItem(KEYS.GIFTS, JSON.stringify(mapped));
+      const dismissedSet = tombstones?.dismissedGifts || new Set(storageService.getDismissedGiftIds());
+      const mapped = (rows || []).map(mapGiftFromDB).filter((gift) => {
+        if (!gift || !gift.id) return false;
+        const idStr = String(gift.id);
+        const bareId = idStr.replace(/^gift-/, '');
+        return !dismissedSet.has(idStr) && !dismissedSet.has(bareId) && !dismissedSet.has('gift-' + bareId);
+      });
+      if (adminToken) adminData.gifts = mapped;
+      else localStorage.setItem(KEYS.GIFTS, JSON.stringify(mapped));
       window.dispatchEvent(new CustomEvent('gifts_updated', { detail: mapped }));
-      return mapped;
-    } catch (err) {
-      console.error('Erro ao carregar presentes do Supabase:', err);
-      return storageService.getGifts();
+      return mapped.length ? mapped : (adminToken ? mapped : INITIAL_GIFTS);
+    } catch (error) {
+      console.error('Erro ao carregar presentes do Supabase:', error);
+      if (adminToken) throw error;
+      return INITIAL_GIFTS;
     }
   },
 
   getGifts: () => {
+    if (adminToken && Array.isArray(adminData.gifts)) return adminData.gifts;
+    const safePublicGifts = (items) => (items || []).map((gift) => ({ ...gift, reservedBy: '', reservedAt: null }));
     try {
       const saved = localStorage.getItem(KEYS.GIFTS);
-      return saved ? JSON.parse(saved) : INITIAL_GIFTS;
+      const gifts = saved ? JSON.parse(saved) : INITIAL_GIFTS;
+      return isSupabaseConfigured ? safePublicGifts(gifts) : gifts;
     } catch {
-      return INITIAL_GIFTS;
+      return isSupabaseConfigured ? safePublicGifts(INITIAL_GIFTS) : INITIAL_GIFTS;
     }
   },
 
@@ -797,72 +867,34 @@ export const storageService = {
   },
 
   reserveGift: async (giftId, guestName) => {
+    const safeName = sanitizeName(guestName || 'Convidado com carinho', 80) || 'Convidado com carinho';
+    if (isSupabaseConfigured && supabase) {
+      await invokeAppApi('public-reserve-gift', { giftId, guestName: safeName });
+      return storageService.fetchGiftsFromCloud();
+    }
     const gifts = storageService.getGifts();
     const nowIso = new Date().toISOString();
-    const updated = gifts.map(gift => {
-      if (gift.id === giftId) {
-        return {
-          ...gift,
-          status: 'reserved',
-          reservedBy: guestName.trim() || 'Convidado com carinho',
-          reservedAt: nowIso,
-        };
-      }
-      return gift;
-    });
+    const updated = gifts.map((gift) => gift.id === giftId
+      ? { ...gift, status: 'reserved', reservedBy: safeName, reservedAt: nowIso }
+      : gift);
     storageService.saveGifts(updated);
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase
-          .from('gifts')
-          .update({
-            status: 'reserved',
-            reserved_by: guestName.trim() || 'Convidado com carinho',
-            reserved_at: nowIso,
-          })
-          .eq('id', giftId);
-      } catch (err) {
-        console.error('Erro ao reservar presente no Supabase:', err);
-      }
-    }
     return updated;
   },
 
   cancelReservation: async (giftId) => {
-    const gifts = storageService.getGifts();
-    const updated = gifts.map(gift => {
-      if (gift.id === giftId) {
-        return {
-          ...gift,
-          status: 'available',
-          reservedBy: '',
-          reservedAt: null,
-        };
-      }
-      return gift;
-    });
-    storageService.saveGifts(updated);
-
     if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase
-          .from('gifts')
-          .update({
-            status: 'available',
-            reserved_by: '',
-            reserved_at: null,
-          })
-          .eq('id', giftId);
-      } catch (err) {
-        console.error('Erro ao liberar presente no Supabase:', err);
-      }
+      await invokeAdminApi('admin-cancel-reservation', { id: giftId });
+      return storageService.fetchGiftsFromCloud();
     }
+    const gifts = storageService.getGifts();
+    const updated = gifts.map((gift) => gift.id === giftId
+      ? { ...gift, status: 'available', reservedBy: '', reservedAt: null }
+      : gift);
+    storageService.saveGifts(updated);
     return updated;
   },
 
   addGift: async (newGift) => {
-    const gifts = storageService.getGifts();
     const gift = {
       ...newGift,
       targetQuantity: Number(newGift.targetQuantity || 5),
@@ -872,129 +904,63 @@ export const storageService = {
       reservedBy: '',
       reservedAt: null,
     };
-    const updated = [gift, ...gifts];
-    storageService.saveGifts(updated);
-
     if (isSupabaseConfigured && supabase) {
-      try {
-        const payload = mapGiftToDB(gift);
-        const { error } = await supabase.from('gifts').insert([payload]);
-        if (error) {
-          if (isSchemaColumnError(error)) {
-            const fallbackPayload = stripSchemaExtendedColumns(payload);
-            const retryRes = await supabase.from('gifts').insert([fallbackPayload]);
-            if (retryRes.error) {
-              console.error('Erro ao adicionar presente no Supabase (retry seguro):', retryRes.error);
-            }
-          } else {
-            console.error('Erro ao adicionar presente no Supabase:', error);
-          }
-        }
-      } catch (err) {
-        console.error('Erro ao adicionar presente no Supabase:', err);
-      }
+      const row = await invokeAdminApi('admin-create-gift', { gift });
+      const savedGift = mapGiftFromDB(row);
+      adminData.gifts = [savedGift, ...(adminData.gifts || storageService.getGifts())];
+      window.dispatchEvent(new CustomEvent('gifts_updated', { detail: adminData.gifts }));
+      return adminData.gifts;
     }
+    const updated = [gift, ...storageService.getGifts()];
+    storageService.saveGifts(updated);
     return updated;
   },
 
   updateGift: async (giftId, fields) => {
-    const gifts = storageService.getGifts();
-    const updated = gifts.map(g => g.id === giftId ? { ...g, ...fields } : g);
-    storageService.saveGifts(updated);
-
     if (isSupabaseConfigured && supabase) {
-      try {
-        const gift = updated.find(g => g.id === giftId);
-        if (gift) {
-          const payload = mapGiftToDB(gift);
-          const { error } = await supabase.from('gifts').update(payload).eq('id', giftId);
-          if (error) {
-            if (isSchemaColumnError(error)) {
-              const fallbackPayload = stripSchemaExtendedColumns(payload);
-              const retryRes = await supabase.from('gifts').update(fallbackPayload).eq('id', giftId);
-              if (retryRes.error) {
-                console.error('Erro ao atualizar presente no Supabase (retry seguro):', retryRes.error);
-              }
-            } else {
-              console.error('Erro ao atualizar presente no Supabase:', error);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Erro ao atualizar presente no Supabase:', err);
-      }
+      const row = await invokeAdminApi('admin-update-gift', { id: giftId, fields });
+      const savedGift = mapGiftFromDB(row);
+      const updated = (adminData.gifts || storageService.getGifts()).map((gift) => gift.id === giftId ? savedGift : gift);
+      adminData.gifts = updated;
+      window.dispatchEvent(new CustomEvent('gifts_updated', { detail: updated }));
+      return updated;
     }
+    const updated = storageService.getGifts().map((gift) => gift.id === giftId ? { ...gift, ...fields } : gift);
+    storageService.saveGifts(updated);
     return updated;
   },
 
   deleteGift: async (giftId) => {
-    const gifts = storageService.getGifts();
-    const updated = gifts.filter(g => g.id !== giftId);
-    storageService.saveGifts(updated);
-
-    // Registra nos descartados locais
+    if (isSupabaseConfigured && supabase) await invokeAdminApi('admin-delete-gift', { id: giftId });
+    const gifts = (adminData.gifts || storageService.getGifts()).filter((gift) => gift.id !== giftId);
+    if (adminToken) adminData.gifts = gifts;
+    else localStorage.setItem(KEYS.GIFTS, JSON.stringify(gifts));
     const dismissed = storageService.getDismissedGiftIds();
-    if (!dismissed.includes(giftId)) dismissed.push(giftId);
-    const bareGiftId = String(giftId).replace(/^gift-/, '');
-    if (!dismissed.includes(bareGiftId)) dismissed.push(bareGiftId);
-    if (!dismissed.includes(`gift-${bareGiftId}`)) dismissed.push(`gift-${bareGiftId}`);
-    localStorage.setItem(KEYS.DISMISSED_GIFTS, JSON.stringify(dismissed));
-
-    // Limpar pledges associados a este presente localmente
-    const pledges = storageService.getPledges();
-    const updatedPledges = pledges.filter(p => p.giftId !== giftId);
-    localStorage.setItem(KEYS.PLEDGES, JSON.stringify(updatedPledges));
-    window.dispatchEvent(new CustomEvent('pledges_updated', { detail: updatedPledges }));
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const tombstone = {
-          id: `dismissed-gift-${giftId}`,
-          author: '[EXCLUIDO]',
-          text: `[DISMISSED_GIFT:${giftId}][DISMISSED_ID:${giftId}]`,
-          status: 'approved',
-          date: 'Agora mesmo',
-          likes: 0,
-        };
-        await supabase.from('messages').upsert([tombstone], { onConflict: 'id' });
-        await Promise.allSettled([
-          supabase.from('gifts').delete().eq('id', giftId),
-          supabase.from('gift_pledges').delete().eq('gift_id', giftId),
-        ]);
-        await storageService.fetchCloudTombstones({ force: true });
-      } catch (err) {
-        console.error('Erro ao deletar presente no Supabase:', err);
-      }
+    const bareId = String(giftId).replace(/^gift-/, '');
+    for (const id of [String(giftId), bareId, 'gift-' + bareId]) {
+      if (!dismissed.includes(id)) dismissed.push(id);
     }
-    return updated;
+    localStorage.setItem(KEYS.DISMISSED_GIFTS, JSON.stringify(dismissed));
+    const pledges = (adminData.pledges || storageService.getPledges()).filter((pledge) => pledge.giftId !== giftId);
+    if (adminToken) adminData.pledges = pledges;
+    else localStorage.setItem(KEYS.PLEDGES, JSON.stringify(pledges));
+    window.dispatchEvent(new CustomEvent('gifts_updated', { detail: gifts }));
+    window.dispatchEvent(new CustomEvent('pledges_updated', { detail: pledges }));
+    return gifts;
   },
 
   resetGiftsToDefault: async () => {
-    storageService.saveGifts(INITIAL_GIFTS);
     if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.from('gifts').delete().neq('id', 'dummy');
-        const dbGifts = INITIAL_GIFTS.map(mapGiftToDB);
-        const { error } = await supabase.from('gifts').insert(dbGifts);
-        if (error) {
-          if (isSchemaColumnError(error)) {
-            const fallbackGifts = dbGifts.map(stripSchemaExtendedColumns);
-            const retryRes = await supabase.from('gifts').insert(fallbackGifts);
-            if (retryRes.error) {
-              console.error('Erro ao resetar presentes no Supabase (retry seguro):', retryRes.error);
-            }
-          } else {
-            console.error('Erro ao resetar presentes no Supabase:', error);
-          }
-        }
-      } catch (err) {
-        console.error('Erro ao resetar presentes no Supabase:', err);
-      }
+      await invokeAdminApi('admin-reset-gifts', { gifts: INITIAL_GIFTS.map(mapGiftToDB) });
+      const rows = await invokeAdminApi('admin-gifts');
+      adminData.gifts = (rows || []).map(mapGiftFromDB);
+      window.dispatchEvent(new CustomEvent('gifts_updated', { detail: adminData.gifts }));
+      return adminData.gifts;
     }
+    storageService.saveGifts(INITIAL_GIFTS);
     return INITIAL_GIFTS;
   },
 
-  // CONFIRMAÇÕES DE PRESENÇA (RSVP)
   getDismissedRSVPIds: () => {
     try {
       const saved = localStorage.getItem(KEYS.DISMISSED_RSVPS);
@@ -1018,278 +984,78 @@ export const storageService = {
   },
 
   fetchRSVPsFromCloud: async () => {
-    if (!isSupabaseConfigured || !supabase) return storageService.getRSVPs();
-    try {
-      const [tombstones, rsvpsRes] = await Promise.all([
-        storageService.fetchCloudTombstones(),
-        supabase.from('rsvps').select('*').order('created_at', { ascending: false }),
-      ]);
-      if (rsvpsRes.error) throw rsvpsRes.error;
-
-      const dismissedSet = tombstones?.dismissedRsvps || new Set(storageService.getDismissedRSVPIds());
-      const overrides = tombstones?.rsvpOverrides || new Map();
-
-      const mapped = (rsvpsRes.data || [])
-        .map(mapRSVPFromDB)
-        .filter((r) => {
-          if (!r || !r.id) return false;
-          const idStr = String(r.id);
-          const bareId = idStr.replace(/^rsvp-/, '');
-          if (dismissedSet.has(idStr) || dismissedSet.has(bareId) || dismissedSet.has(`rsvp-${bareId}`)) {
-            return false;
-          }
-          if (String(r.name || '').includes('[EXCLUIDO]')) return false;
-          if (isTestGuest(r.name)) return false;
-          if (r.phone === 'mural_only' || idStr.startsWith('rsvp-msg-')) return false;
-          return true;
-        })
-        .map((r) => {
-          if (overrides.has(r.id)) {
-            return { ...r, ...overrides.get(r.id) };
-          }
-          const bareId = String(r.id).replace(/^rsvp-/, '');
-          if (overrides.has(bareId)) {
-            return { ...r, ...overrides.get(bareId) };
-          }
-          return r;
-        });
-
-      localStorage.setItem(KEYS.RSVPS, JSON.stringify(mapped));
-      window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: mapped }));
-      return mapped;
-    } catch (err) {
-      console.error('Erro ao carregar RSVPs do Supabase:', err);
-      return storageService.getRSVPs();
+    if (!isSupabaseConfigured || !supabase || !adminToken) {
+      localStorage.removeItem(KEYS.RSVPS);
+      window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: [] }));
+      return [];
     }
+    const [tombstones, rows] = await Promise.all([
+      storageService.fetchCloudTombstones({ force: true }),
+      invokeAdminApi('admin-rsvps'),
+    ]);
+    const dismissedSet = tombstones?.dismissedRsvps || new Set(storageService.getDismissedRSVPIds());
+    const overrides = tombstones?.rsvpOverrides || new Map();
+    const mapped = (rows || []).map(mapRSVPFromDB).filter((rsvp) => {
+      if (!rsvp || !rsvp.id || isTestGuest(rsvp.name)) return false;
+      const id = String(rsvp.id);
+      const bare = id.replace(/^rsvp-/, '');
+      return !dismissedSet.has(id) && !dismissedSet.has(bare) && !dismissedSet.has('rsvp-' + bare);
+    }).map((rsvp) => {
+      const id = String(rsvp.id);
+      const bare = id.replace(/^rsvp-/, '');
+      return { ...rsvp, ...(overrides.get(id) || overrides.get(bare) || {}) };
+    });
+    adminData.rsvps = mapped;
+    window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: mapped }));
+    return mapped;
   },
 
   getRSVPs: () => {
-    try {
-      const dismissedIds = storageService.getDismissedRSVPIds();
-      const dismissedSet = new Set();
-      dismissedIds.forEach((id) => {
-        const str = String(id || '');
-        const bare = str.replace(/^rsvp-/, '');
-        dismissedSet.add(str);
-        dismissedSet.add(bare);
-        dismissedSet.add(`rsvp-${bare}`);
-      });
-
-      const filterItem = (r) => {
-        if (!r || !r.id) return false;
-        const idStr = String(r.id);
-        const bareId = idStr.replace(/^rsvp-/, '');
-        if (dismissedSet.has(idStr) || dismissedSet.has(bareId) || dismissedSet.has(`rsvp-${bareId}`)) return false;
-        if (String(r.name || '').includes('[EXCLUIDO]')) return false;
-        if (isTestGuest(r.name)) return false;
-        if (r.phone === 'mural_only' || idStr.startsWith('rsvp-msg-')) return false;
-        return true;
-      };
-
-      const saved = localStorage.getItem(KEYS.RSVPS);
-      if (saved === null) {
-        return (INITIAL_RSVPS || [])
-          .filter(filterItem)
-          .map((r) => ({
-            ...r,
-            phone: formatPhone(r.phone || ''),
-          }));
-      }
-      const parsed = JSON.parse(saved);
-      if (!Array.isArray(parsed)) {
-        return (INITIAL_RSVPS || [])
-          .filter(filterItem)
-          .map((r) => ({
-            ...r,
-            phone: formatPhone(r.phone || ''),
-          }));
-      }
-      const filtered = parsed
-        .filter(filterItem)
-        .map((r) => ({
-          ...r,
-          phone: formatPhone(r.phone || ''),
-        }));
-
-      // Garante que confirmações legítimas de convidados de INITIAL_RSVPS não sejam perdidas
-      const knownIds = new Set(filtered.map(r => r.id));
-      const missingInitial = (INITIAL_RSVPS || []).filter(
-        initRsvp => initRsvp && !knownIds.has(initRsvp.id) && filterItem(initRsvp)
-      );
-      const fullyMerged = [...filtered, ...missingInitial];
-
-      // Se havia cadastros de teste ou excluídos armazenados, higieniza o localStorage
-      if (fullyMerged.length !== parsed.length) {
-        localStorage.setItem(KEYS.RSVPS, JSON.stringify(fullyMerged));
-      }
-      return fullyMerged;
-    } catch {
-      return (INITIAL_RSVPS || []).map((r) => ({
-        ...r,
-        phone: formatPhone(r.phone || ''),
-      }));
-    }
+    return adminToken && Array.isArray(adminData.rsvps) ? adminData.rsvps : [];
   },
 
   saveRSVP: async (rsvpData) => {
-    const rsvps = storageService.getRSVPs();
     const safeName = sanitizeName(rsvpData.name || '', 80);
     const safePhone = formatPhone(rsvpData.phone || '');
     const safeMessage = sanitizeText(rsvpData.message || '', 500);
     const safeCompanions = Array.isArray(rsvpData.companionNames)
-      ? rsvpData.companionNames.map(c => sanitizeName(c, 80)).filter(Boolean)
+      ? rsvpData.companionNames.map((name) => sanitizeName(name, 80)).filter(Boolean)
       : [];
-    const safeAdults = Math.max(1, Math.min(20, Number(rsvpData.adultsCount) || 1));
-    const safeChildren = Math.max(0, Math.min(20, Number(rsvpData.childrenCount) || 0));
-
-    const newEntry = {
-      id: generateUniqueId('rsvp'),
-      createdAt: new Date().toISOString(),
+    const rsvp = {
       name: safeName,
       attending: Boolean(rsvpData.attending),
-      adultsCount: rsvpData.attending ? safeAdults : 0,
-      childrenCount: rsvpData.attending ? safeChildren : 0,
+      adultsCount: rsvpData.attending ? Math.max(1, Math.min(20, Number(rsvpData.adultsCount) || 1)) : 0,
+      childrenCount: rsvpData.attending ? Math.max(0, Math.min(20, Number(rsvpData.childrenCount) || 0)) : 0,
       companionNames: rsvpData.attending ? safeCompanions : [],
       phone: safePhone,
       message: safeMessage,
     };
-
-    const hasMessage = Boolean(safeMessage && safeMessage.trim());
-    const newMsg = hasMessage ? {
-      id: `msg-${newEntry.id}`,
-      author: safeName || 'Amigo com carinho',
-      text: safeMessage,
-      date: 'Agora mesmo',
-      createdAt: newEntry.createdAt,
-      likes: 0,
-      status: 'pending',
-      rsvpId: newEntry.id,
-      origin: 'rsvp',
-    } : null;
-
     if (isSupabaseConfigured && supabase) {
-      try {
-        const res = await supabase.from('rsvps').insert([mapRSVPToDB(newEntry)]);
-        if (res?.error) {
-          console.error('Erro ao salvar RSVP no Supabase:', res.error);
-        }
-      } catch (err) {
-        console.error('Erro ao salvar RSVP no Supabase:', err);
-      }
+      const result = await invokeAppApi('public-submit-rsvp', { rsvp });
+      return mapRSVPFromDB(result.rsvp);
     }
-
-    const updated = [newEntry, ...rsvps];
-    localStorage.setItem(KEYS.RSVPS, JSON.stringify(updated));
-    window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: updated }));
-
-    if (newMsg) {
-      const currentMsgs = storageService.getMessages();
-      const updatedMsgs = [newMsg, ...currentMsgs.filter(m => m.id !== newMsg.id)];
-      localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updatedMsgs));
-      window.dispatchEvent(new CustomEvent('messages_updated', { detail: updatedMsgs }));
-    }
-
-    return newEntry;
+    return { id: generateUniqueId('rsvp'), createdAt: new Date().toISOString(), ...rsvp };
   },
 
   deleteRSVP: async (rsvpId) => {
-    const rsvps = storageService.getRSVPs();
-    const updated = rsvps.filter(r => r.id !== rsvpId);
-
-    // Registra o ID nos descartados/excluídos para nunca reaparecer em sincronizações
-    const dismissedRsvps = storageService.getDismissedRSVPIds();
-    const idStr = String(rsvpId);
-    const bareId = idStr.replace(/^rsvp-/, '');
-    if (!dismissedRsvps.includes(idStr)) dismissedRsvps.push(idStr);
-    if (!dismissedRsvps.includes(bareId)) dismissedRsvps.push(bareId);
-    if (!dismissedRsvps.includes(`rsvp-${bareId}`)) dismissedRsvps.push(`rsvp-${bareId}`);
-    localStorage.setItem(KEYS.DISMISSED_RSVPS, JSON.stringify(dismissedRsvps));
-
-    // Também remove e dispensa recado associado a este RSVP se houver
-    const msgId = `msg-${rsvpId}`;
-    const bareMsgId = `msg-${bareId}`;
-    const dismissed = storageService.getDismissedMessageIds();
-    [msgId, bareMsgId, rsvpId, bareId].forEach(id => {
-      if (!dismissed.includes(id)) dismissed.push(id);
-    });
-    localStorage.setItem(KEYS.DISMISSED_MESSAGES, JSON.stringify(dismissed));
-
-    const messages = storageService.getMessages();
-    const updatedMsgs = messages.filter(m => m.id !== msgId && m.id !== bareMsgId && m.rsvpId !== rsvpId && m.rsvpId !== bareId);
-    if (updatedMsgs.length !== messages.length) {
-      localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updatedMsgs));
-      window.dispatchEvent(new CustomEvent('messages_updated', { detail: updatedMsgs }));
-    }
-
-    localStorage.setItem(KEYS.RSVPS, JSON.stringify(updated));
+    if (isSupabaseConfigured && supabase) await invokeAdminApi('admin-delete-rsvp', { id: rsvpId });
+    const updated = (adminData.rsvps || storageService.getRSVPs()).filter((rsvp) => rsvp.id !== rsvpId);
+    if (adminToken) adminData.rsvps = updated;
+    localStorage.removeItem(KEYS.RSVPS);
     window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: updated }));
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const tombstones = [
-          {
-            id: `dismissed-rsvp-${rsvpId}`,
-            author: '[EXCLUIDO]',
-            text: `[DISMISSED_RSVP:${rsvpId}][DISMISSED_ID:${rsvpId}]`,
-            status: 'approved',
-            date: 'Agora mesmo',
-            likes: 0,
-          },
-          {
-            id: `dismissed-msg-${msgId}`,
-            author: '[EXCLUIDO]',
-            text: `[DISMISSED_MSG:${msgId}][DISMISSED_ID:${msgId}]`,
-            status: 'approved',
-            date: 'Agora mesmo',
-            likes: 0,
-          },
-        ];
-        await supabase.from('messages').upsert(tombstones, { onConflict: 'id' });
-        await Promise.allSettled([
-          supabase.from('rsvps').delete().eq('id', rsvpId),
-          supabase.from('messages').delete().eq('id', msgId),
-          supabase.from('rsvps').delete().eq('id', bareId),
-          supabase.from('messages').delete().eq('id', bareMsgId),
-        ]);
-        await storageService.fetchCloudTombstones({ force: true });
-      } catch (err) {
-        console.error('Erro ao excluir RSVP no Supabase:', err);
-      }
-    }
-
     return updated;
   },
 
   updateRSVP: async (rsvpId, fields) => {
-    const rsvps = storageService.getRSVPs();
-    const existing = rsvps.find(r => r.id === rsvpId);
-    const updatedEntry = existing ? { ...existing, ...fields } : null;
-    const updated = rsvps.map(r => r.id === rsvpId ? { ...r, ...fields } : r);
-    localStorage.setItem(KEYS.RSVPS, JSON.stringify(updated));
-    window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: updated }));
-
-    if (isSupabaseConfigured && supabase && updatedEntry) {
-      try {
-        // Grava override na nuvem para garantir sincronização entre todos os dispositivos
-        const overrideRecord = {
-          id: `override-rsvp-${rsvpId}-${Date.now()}`,
-          author: '[OVERRIDE_RSVP]',
-          text: JSON.stringify({ rsvpId, fields, updatedAt: new Date().toISOString() }),
-          status: 'approved',
-          date: 'Agora mesmo',
-          likes: 0,
-        };
-        await supabase.from('messages').insert([overrideRecord]);
-
-        // Tenta também atualização direta no Supabase
-        const payload = mapRSVPToDB(updatedEntry);
-        await supabase.from('rsvps').update(payload).eq('id', rsvpId);
-        await storageService.fetchCloudTombstones({ force: true });
-      } catch (err) {
-        console.error('Erro ao atualizar RSVP no Supabase:', err);
-      }
+    if (isSupabaseConfigured && supabase) {
+      const row = await invokeAdminApi('admin-update-rsvp', { id: rsvpId, fields });
+      const saved = mapRSVPFromDB(row);
+      const updated = (adminData.rsvps || storageService.getRSVPs()).map((rsvp) => rsvp.id === rsvpId ? saved : rsvp);
+      adminData.rsvps = updated;
+      window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: updated }));
+      return updated;
     }
-    return updated;
+    return storageService.getRSVPs();
   },
 
   getDismissedMessageIds: () => {
@@ -1322,315 +1088,86 @@ export const storageService = {
   // MENSAGENS / MURAL DE CARINHO
   fetchMessagesFromCloud: async () => {
     if (!isSupabaseConfigured || !supabase) return storageService.getMessages();
-    try {
-      // 1. Buscar lápides e dados em paralelo
-      const [tombstones, messagesRes, rsvpsRes] = await Promise.all([
-        storageService.fetchCloudTombstones(),
-        supabase.from('messages').select('*').order('created_at', { ascending: false }),
-        supabase.from('rsvps').select('id, name, message, created_at, phone').order('created_at', { ascending: false }),
-      ]);
-
-      if (messagesRes.error) throw messagesRes.error;
-
-      const localDismissedMsgs = storageService.getDismissedMessageIds();
-      const localDismissedRsvps = storageService.getDismissedRSVPIds();
-      const dismissedSet = new Set([...(tombstones?.dismissedMessages || []), ...localDismissedMsgs]);
-      const dismissedRsvpsSet = new Set([...(tombstones?.dismissedRsvps || []), ...localDismissedRsvps]);
-      const messageOverrides = tombstones?.messageOverrides || new Map();
-
-      // Filtrar mensagens vindas do banco garantindo que nenhuma mensagem excluída ou dispensada permaneça
-      const dbMessages = (messagesRes.data || [])
-        .map(mapMessageFromDB)
-        .filter(Boolean)
-        .filter((m) => {
-          if (!m || !m.id) return false;
-          if (isExcludedOrTestMessage(m)) return false;
-          const idStr = String(m.id);
-          const bareId = idStr.replace(/^msg-/, '');
-          if (dismissedSet.has(idStr) || dismissedSet.has(bareId) || dismissedSet.has(`msg-${bareId}`)) return false;
-          if (m.rsvpId) {
-            const rsvpStr = String(m.rsvpId);
-            const bareRsvp = rsvpStr.replace(/^rsvp-/, '');
-            if (
-              dismissedRsvpsSet.has(rsvpStr) ||
-              dismissedRsvpsSet.has(bareRsvp) ||
-              dismissedRsvpsSet.has(`rsvp-${bareRsvp}`) ||
-              dismissedSet.has(rsvpStr) ||
-              dismissedSet.has(bareRsvp)
-            ) {
-              return false;
-            }
-          }
-          return true;
-        })
-        .map((m) => {
-          if (messageOverrides.has(m.id)) {
-            return { ...m, ...messageOverrides.get(m.id) };
-          }
-          return m;
-        });
-
-      const rsvps = rsvpsRes.data || [];
-
-      // 2. Extrair recados pendentes deixados durante confirmação de presença (RSVP) ou pelo Mural
-      const rsvpsWithMsg = rsvps.filter(
-        (r) =>
-          r &&
-          r.message &&
-          typeof r.message === 'string' &&
-          r.message.trim().length > 0 &&
-          !isExcludedOrTestMessage({ author: r.name, text: r.message, id: r.id })
-      );
-
-      const pendingFromRsvps = [];
-      for (const r of rsvpsWithMsg) {
-        const isFromMural = r.phone === 'mural_only' || String(r.id || '').startsWith('rsvp-msg-');
-        const resolvedMsgId = isFromMural ? r.id.replace(/^rsvp-/, '') : `msg-${r.id}`;
-        const rsvpIdStr = String(r.id || '');
-        const bareRsvpId = rsvpIdStr.replace(/^rsvp-/, '');
-
-        // Verificar se o RSVP ou o recado já foi dispensado/excluído
-        if (
-          dismissedSet.has(resolvedMsgId) ||
-          dismissedSet.has(rsvpIdStr) ||
-          dismissedSet.has(bareRsvpId) ||
-          dismissedRsvpsSet.has(rsvpIdStr) ||
-          dismissedRsvpsSet.has(bareRsvpId) ||
-          dismissedRsvpsSet.has(`rsvp-${bareRsvpId}`)
-        ) {
-          continue;
-        }
-
-        // Verificar se já existe recado aprovado correspondente no banco
-        const alreadyApproved = dbMessages.some(m => {
-          if (m.id === resolvedMsgId || m.id === r.id || m.id === `msg-${r.id}`) return true;
-
-          const authorA = (m.author || '').toLowerCase().trim();
-          const authorB = (r.name || '').toLowerCase().trim();
-          const normM = (m.text || '').toLowerCase().replace(/\s+/g, ' ').trim();
-          const normR = (r.message || '').toLowerCase().replace(/\s+/g, ' ').trim();
-
-          // 1. Mensagem com texto idêntico (mais de 20 caracteres) de autor compatível
-          if (normM.length >= 20 && normR.length >= 20 && normM === normR) {
-            const firstA = authorA.split(' ')[0];
-            const firstB = authorB.split(' ')[0];
-            if (firstA && firstB && (firstA === firstB || authorA.includes(firstB) || authorB.includes(firstA))) {
-              return true;
-            }
-          }
-
-          // 2. Mesmo autor ou nomes compatíveis (ex: Gabriela Gonçalves e Gabriela Alves Gonçalves)
-          const isSameAuthor = authorA === authorB ||
-            (authorA.length >= 5 && authorB.length >= 5 && (authorA.includes(authorB) || authorB.includes(authorA))) ||
-            (authorA.split(' ')[0] === authorB.split(' ')[0] && authorA.split(' ').slice(-1)[0] === authorB.split(' ').slice(-1)[0]);
-
-          if (isSameAuthor) {
-            if (normM === normR) return true;
-            const wordsM = normM.split(' ').filter(Boolean);
-            const wordsR = normR.split(' ').filter(Boolean);
-            if (wordsM.length >= 3 && wordsR.length >= 3) {
-              const matches = wordsM.filter(w => wordsR.includes(w)).length;
-              if (matches / Math.max(wordsM.length, wordsR.length) >= 0.5) return true;
-            }
-            if (normM.slice(0, 20) === normR.slice(0, 20) && normM.length > 10) return true;
-          }
-          return false;
-        });
-
-        if (!alreadyApproved) {
-          const candidate = {
-            id: resolvedMsgId,
-            rsvpId: r.id,
-            author: r.name ? r.name.trim() : 'Amigo com carinho',
-            text: r.message.trim(),
-            date: formatRelativeOrExactDate(r.created_at) || 'Recente',
-            createdAt: r.created_at || new Date().toISOString(),
-            likes: 0,
-            status: 'pending',
-            origin: isFromMural ? 'mural' : 'rsvp',
-          };
-          if (!isExcludedOrTestMessage(candidate)) {
-            pendingFromRsvps.push(candidate);
-          }
-        }
-      }
-
-      // 3. Preservar também recados pendentes locais que não estejam dispensados nem no banco
-      const currentLocalMsgs = storageService.getMessages();
-      const localPending = currentLocalMsgs.filter(m => {
-        if (!m || m.status !== 'pending' || isExcludedOrTestMessage(m)) return false;
-        const mid = String(m.id || '');
-        const bareMid = mid.replace(/^(rsvp-msg-|msg-|rsvp-)/, '');
-        if (
-          dismissedSet.has(mid) ||
-          dismissedSet.has(bareMid) ||
-          dismissedSet.has(`msg-${bareMid}`) ||
-          dismissedSet.has(`rsvp-msg-${bareMid}`) ||
-          dismissedSet.has(`rsvp-${bareMid}`) ||
-          dbMessages.some(dbm => dbm.id === m.id) ||
-          pendingFromRsvps.some(pr => pr.id === m.id)
-        ) {
-          return false;
-        }
-        return true;
-      });
-
-      // 4. Consolidar lista completa
-      const combined = [...dbMessages, ...pendingFromRsvps, ...localPending];
-      localStorage.setItem(KEYS.MESSAGES, JSON.stringify(combined));
-      window.dispatchEvent(new CustomEvent('messages_updated', { detail: combined }));
-      return combined;
-    } catch (err) {
-      console.error('Erro ao carregar mensagens do Supabase:', err);
-      return storageService.getMessages();
-    }
+    const [tombstones, result] = await Promise.all([
+      storageService.fetchCloudTombstones({ force: true }),
+      adminToken
+        ? invokeAdminApi('admin-messages')
+        : supabase.from('messages').select('id,author,text,date,likes,status,created_at').eq('status', 'approved').order('created_at', { ascending: false }),
+    ]);
+    if (!adminToken && result.error) throw new Error('Não foi possível carregar os recados públicos.');
+    const rows = adminToken ? result : (result.data || []);
+    const dismissed = new Set([
+      ...(tombstones?.dismissedMessages || []),
+      ...storageService.getDismissedMessageIds(),
+    ]);
+    const overrides = tombstones?.messageOverrides || new Map();
+    const mapped = (rows || []).map(mapMessageFromDB).filter((message) => {
+      if (!message || !message.id || isExcludedOrTestMessage(message)) return false;
+      if (!adminToken && message.status !== 'approved') return false;
+      const id = String(message.id);
+      const bare = id.replace(/^msg-/, '');
+      return !dismissed.has(id) && !dismissed.has(bare) && !dismissed.has('msg-' + bare);
+    }).map((message) => ({ ...message, ...(overrides.get(message.id) || {}) }));
+    if (adminToken) adminData.messages = mapped;
+    else localStorage.setItem(KEYS.MESSAGES, JSON.stringify(mapped));
+    window.dispatchEvent(new CustomEvent('messages_updated', { detail: mapped }));
+    return mapped;
   },
 
   getMessages: () => {
+    if (adminToken && Array.isArray(adminData.messages)) return adminData.messages;
     try {
-      const dismissedIds = storageService.getDismissedMessageIds();
       const saved = localStorage.getItem(KEYS.MESSAGES);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed
-            .filter((m) => m && !isExcludedOrTestMessage(m) && !dismissedIds.includes(m.id))
-            .map((m) => ({ ...m, status: m.status || 'approved' }));
-        }
-      }
-      return INITIAL_MESSAGES
-        .filter((m) => !isExcludedOrTestMessage(m) && !dismissedIds.includes(m.id))
-        .map((m) => ({ ...m, status: 'approved' }));
+      const messages = saved ? JSON.parse(saved) : INITIAL_MESSAGES;
+      return Array.isArray(messages)
+        ? messages.filter((message) => message && message.status === 'approved' && !isExcludedOrTestMessage(message))
+        : [];
     } catch {
-      return INITIAL_MESSAGES.map(m => ({ ...m, status: 'approved' }));
+      return INITIAL_MESSAGES.filter((message) => message.status === 'approved');
     }
   },
 
   addMessage: async (msgData, autoApprove = false) => {
-    const messages = storageService.getMessages();
-    const nowIso = new Date().toISOString();
-    const safeAuthor = sanitizeName(msgData.author || 'Amigo com carinho', 80);
-    const safeText = sanitizeText(msgData.text || '', 500);
-
-    const newMsg = {
-      id: generateUniqueId('msg'),
-      author: safeAuthor || 'Amigo com carinho',
-      text: safeText,
-      date: nowIso,
-      createdAt: nowIso,
-      likes: 0,
-      status: autoApprove ? 'approved' : 'pending',
-      origin: 'mural',
-    };
-
+    const author = sanitizeName(msgData.author || 'Amigo com carinho', 80) || 'Amigo com carinho';
+    const text = sanitizeText(msgData.text || '', 500);
+    if (!text) throw new Error('Escreva um recado antes de enviar.');
     if (isSupabaseConfigured && supabase) {
-      try {
-        if (newMsg.status === 'approved') {
-          const payload = mapMessageToDB(newMsg);
-          await supabase.from('messages').insert([payload]);
-        } else {
-          // Se o recado for pendente de moderação, sincronizar via rsvps (canal de leitura público em tempo real)
-          // para garantir que apareça instantaneamente no painel administrativo de qualquer dispositivo
-          await supabase.from('rsvps').insert([{
-            id: `rsvp-${newMsg.id}`,
-            name: newMsg.author,
-            attending: false,
-            adults_count: 0,
-            children_count: 0,
-            phone: 'mural_only',
-            message: newMsg.text,
-            created_at: nowIso,
-          }]);
-        }
-      } catch (err) {
-        console.error('Erro ao adicionar mensagem no Supabase:', err);
+      const result = await invokeAppApi('public-submit-message', { message: { author, text } });
+      let saved = mapMessageFromDB(result.message);
+      if (autoApprove && adminToken && saved?.id) {
+        saved = mapMessageFromDB(await invokeAdminApi('admin-approve-message', { id: saved.id }));
       }
+      if (adminToken && saved) {
+        adminData.messages = [saved, ...(adminData.messages || []).filter((message) => message.id !== saved.id)];
+        window.dispatchEvent(new CustomEvent('messages_updated', { detail: adminData.messages }));
+      }
+      return saved;
     }
-
-    const updated = [newMsg, ...messages];
-    localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updated));
-    window.dispatchEvent(new CustomEvent('messages_updated', { detail: updated }));
-    return newMsg;
+    return { id: generateUniqueId('msg'), author, text, date: new Date().toISOString(), likes: 0, status: 'pending' };
   },
 
   approveMessage: async (msgId) => {
-    const messages = storageService.getMessages();
-    const target = messages.find(m => m.id === msgId);
-    if (!target) return messages;
-
-    const approvedMsg = {
-      ...target,
-      status: 'approved',
-      date: target.date || 'Agora mesmo',
-      createdAt: target.createdAt || new Date().toISOString(),
-    };
-
-    let finalId = target.id;
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        let payload = mapMessageToDB(approvedMsg);
-        const { error } = await supabase.from('messages').upsert([payload], { onConflict: 'id' });
-        if (error) {
-          console.warn('Upsert falhou ao aprovar recado, tentando insert:', error);
-          const insertRes = await supabase.from('messages').insert([payload]);
-          if (insertRes.error) {
-            // Se houver conflito de chave primária (23505) ou política RLS, gera ID aprovado exclusivo
-            if (insertRes.error.code === '23505' || String(insertRes.error.message || '').includes('violates unique constraint')) {
-              console.warn('Chave duplicada detectada ao aprovar recado. Inserindo com ID aprovado único...');
-              finalId = `msg-appr-${String(target.id || '').replace(/^(msg-|rsvp-)/g, '')}`;
-              payload.id = finalId;
-              const fallbackRes = await supabase.from('messages').insert([payload]);
-              if (fallbackRes.error && fallbackRes.error.code === '23505') {
-                finalId = generateUniqueId('msg');
-                payload.id = finalId;
-                await supabase.from('messages').insert([payload]);
-              }
-            } else {
-              console.error('Erro no insert de recado aprovado:', insertRes.error);
-            }
-          }
-        }
-
-        // Se veio de um recado exclusivo do mural gravado temporariamente em rsvps, remove o registro temporário
-        const rsvpKey = target.rsvpId || `rsvp-${target.id}`;
-        if (rsvpKey && (String(rsvpKey).startsWith('rsvp-msg-') || target.phone === 'mural_only')) {
-          await supabase.from('rsvps').delete().eq('id', rsvpKey);
-        }
-      } catch (err) {
-        console.error('Erro ao aprovar mensagem no Supabase:', err);
-      }
-    }
-
-    const finalApprovedMsg = {
-      ...approvedMsg,
-      id: finalId,
-    };
-
-    // Coloca o recado recém-aprovado no topo da lista (1ª página)
-    const remaining = messages.filter(m => m.id !== msgId && m.id !== finalId);
-    const updated = [finalApprovedMsg, ...remaining];
-    localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updated));
+    const approved = mapMessageFromDB(await invokeAdminApi('admin-approve-message', { id: msgId }));
+    const messages = adminData.messages || storageService.getMessages();
+    const updated = [approved, ...messages.filter((message) => message.id !== msgId && message.id !== approved.id)];
+    adminData.messages = updated;
     window.dispatchEvent(new CustomEvent('messages_updated', { detail: updated }));
     return updated;
   },
 
   likeMessage: async (msgId, delta = 1) => {
-    const messages = storageService.getMessages();
-    const target = messages.find(m => m.id === msgId);
-    const currentLikes = Number(target?.likes) || 0;
-    const newLikes = Math.max(0, currentLikes + delta);
-    
     if (isSupabaseConfigured && supabase) {
-      try {
-        const { error } = await supabase.from('messages').update({ likes: newLikes }).eq('id', msgId);
-        if (error) throw error;
-      } catch (err) {
-        console.error('Erro ao atualizar curtida da mensagem no Supabase:', err);
-      }
+      const result = await invokeAppApi('public-like-message', { messageId: msgId });
+      const messages = storageService.getMessages();
+      const updated = messages.map((message) => message.id === msgId ? { ...message, likes: Number(result.likes) || 0 } : message);
+      localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('messages_updated', { detail: updated }));
+      return updated;
     }
-
-    const updated = messages.map(m => m.id === msgId ? { ...m, likes: newLikes } : m);
+    const messages = storageService.getMessages();
+    const updated = messages.map((message) => message.id === msgId
+      ? { ...message, likes: Math.max(0, (Number(message.likes) || 0) + delta) }
+      : message);
     localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent('messages_updated', { detail: updated }));
     return updated;
@@ -1638,167 +1175,27 @@ export const storageService = {
 
   deleteMessage: async (msgId) => {
     if (!msgId) return storageService.getMessages();
-
-    const messages = storageService.getMessages();
-    const target = messages.find(m => m.id === msgId);
-
-    // 1. Sempre registrar o ID nos dispensados/excluídos permanentemente
+    if (isSupabaseConfigured && supabase) await invokeAdminApi('admin-delete-message', { id: msgId });
+    const updated = (adminData.messages || storageService.getMessages()).filter((message) => message.id !== msgId);
+    if (adminToken) adminData.messages = updated;
+    else localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updated));
     const dismissed = storageService.getDismissedMessageIds();
     if (!dismissed.includes(msgId)) dismissed.push(msgId);
-
-    let relatedRsvpId = target?.rsvpId;
-    if (!relatedRsvpId && typeof msgId === 'string') {
-      if (msgId.startsWith('msg-rsvp-')) {
-        relatedRsvpId = msgId.replace(/^msg-/, '');
-      } else if (msgId.startsWith('msg-')) {
-        const candidate = msgId.replace(/^msg-/, '');
-        if (candidate.startsWith('rsvp-')) {
-          relatedRsvpId = candidate;
-        }
-      }
-    }
-
-    if (relatedRsvpId && !dismissed.includes(relatedRsvpId)) {
-      dismissed.push(relatedRsvpId);
-    }
-    const rsvpMsgId = relatedRsvpId ? `msg-${relatedRsvpId}` : null;
-    if (rsvpMsgId && !dismissed.includes(rsvpMsgId)) {
-      dismissed.push(rsvpMsgId);
-    }
-
     localStorage.setItem(KEYS.DISMISSED_MESSAGES, JSON.stringify(dismissed));
-
-    // 2. Persistência no Supabase com redundância contra RLS
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const cleanMsgId = String(msgId).replace(/^(dismissed-)+/, '');
-        const bareMsgId = cleanMsgId.replace(/^(rsvp-msg-|rsvp-|msg-)/, '');
-
-        const allTags = new Set([
-          cleanMsgId,
-          bareMsgId,
-          `msg-${bareMsgId}`,
-          `rsvp-msg-${bareMsgId}`,
-          `rsvp-${bareMsgId}`,
-        ]);
-        if (target?.id) {
-          const targetClean = String(target.id).replace(/^(dismissed-)+/, '');
-          allTags.add(targetClean);
-          allTags.add(targetClean.replace(/^(rsvp-msg-|rsvp-|msg-)/, ''));
-        }
-        if (relatedRsvpId) {
-          const relClean = String(relatedRsvpId).replace(/^(dismissed-)+/, '');
-          allTags.add(relClean);
-          allTags.add(relClean.replace(/^(rsvp-msg-|rsvp-|msg-)/, ''));
-        }
-
-        const tagsString = Array.from(allTags)
-          .filter(Boolean)
-          .map((t) => `[DISMISSED_MSG:${t}][DISMISSED_ID:${t}]`)
-          .join('');
-
-        const tombstone = {
-          id: `dismissed-msg-${bareMsgId}`,
-          author: '[EXCLUIDO]',
-          text: tagsString,
-          status: 'approved',
-          date: 'Agora mesmo',
-          likes: 0,
-        };
-
-        const { error: upsertErr } = await supabase.from('messages').upsert([tombstone], { onConflict: 'id' });
-        if (upsertErr) {
-          console.warn('Upsert de lápide retornou erro, tentando insert:', upsertErr);
-          await supabase.from('messages').insert([tombstone]);
-        }
-
-        // Marcação definitiva no banco usando UPDATE (permitido pela política RLS)
-        await supabase
-          .from('messages')
-          .update({
-            author: '[EXCLUIDO]',
-            text: '[EXCLUIDO]',
-            status: 'approved',
-          })
-          .eq('id', msgId);
-
-        // Tentativa de deleção física caso a política de delete esteja habilitada
-        await supabase.from('messages').delete().eq('id', msgId);
-
-        // Remove canal temporário rsvps se criado pelo mural
-        const directRsvpId = `rsvp-${msgId}`;
-        await supabase.from('rsvps').delete().eq('id', directRsvpId);
-
-        // Limpa texto da mensagem no RSVP caso exista para não recriar
-        if (relatedRsvpId) {
-          await supabase.from('rsvps').delete().eq('id', relatedRsvpId);
-          await supabase
-            .from('rsvps')
-            .update({ message: '' })
-            .eq('id', relatedRsvpId);
-        } else if (target?.author && target?.text) {
-          await supabase
-            .from('rsvps')
-            .update({ message: '' })
-            .ilike('name', target.author.trim())
-            .eq('message', target.text.trim());
-        }
-
-        await storageService.fetchCloudTombstones({ force: true });
-      } catch (err) {
-        console.error('Erro ao processar exclusão no Supabase:', err);
-      }
-    }
-
-    // 3. Atualizar localmente
-    const updated = messages.filter(
-      (m) =>
-        m.id !== msgId &&
-        (!relatedRsvpId || (m.id !== rsvpMsgId && m.rsvpId !== relatedRsvpId))
-    );
-    localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent('messages_updated', { detail: updated }));
     return updated;
   },
 
   updateMessage: async (msgId, fields) => {
-    const messages = storageService.getMessages();
-    const target = messages.find(m => m.id === msgId);
-    if (!target) return messages;
-
-    const updatedMsg = { ...target, ...fields };
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const overrideRecord = {
-          id: `override-msg-${msgId}-${Date.now()}`,
-          author: '[OVERRIDE_MSG]',
-          text: JSON.stringify({ msgId, fields, updatedAt: new Date().toISOString() }),
-          status: 'approved',
-          date: 'Agora mesmo',
-          likes: 0,
-        };
-        await supabase.from('messages').insert([overrideRecord]);
-
-        if (target.status === 'approved') {
-          const dbFields = {};
-          if (fields.author !== undefined) dbFields.author = fields.author;
-          if (fields.text !== undefined) dbFields.text = fields.text;
-          await supabase.from('messages').update(dbFields).eq('id', msgId);
-        }
-        await storageService.fetchCloudTombstones({ force: true });
-      } catch (err) {
-        console.error('Erro ao atualizar mensagem no Supabase:', err);
-      }
-    }
-
-    const updated = messages.map(m => m.id === msgId ? updatedMsg : m);
-    localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updated));
+    if (isSupabaseConfigured && supabase) await invokeAdminApi('admin-update-message', { id: msgId, fields });
+    const messages = adminData.messages || storageService.getMessages();
+    const updated = messages.map((message) => message.id === msgId ? { ...message, ...fields } : message);
+    if (adminToken) adminData.messages = updated;
+    else localStorage.setItem(KEYS.MESSAGES, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent('messages_updated', { detail: updated }));
     return updated;
   },
 
-  // EXPORTAÇÕES PARA CSV / EXCEL COM PROTEÇÃO CONTRA FORMULA INJECTION
   exportRSVPsToCSV: () => {
     const rsvps = storageService.getRSVPs();
     if (!rsvps.length) return null;
@@ -1961,149 +1358,68 @@ export const storageService = {
 
   fetchPledgesFromCloud: async () => {
     if (!isSupabaseConfigured || !supabase) return storageService.getPledges();
-    try {
-      const [tombstones, pledgesRes] = await Promise.all([
-        storageService.fetchCloudTombstones(),
-        supabase.from('gift_pledges').select('*').order('created_at', { ascending: true }),
-      ]);
-      if (pledgesRes.error) throw pledgesRes.error;
-
-      const dismissedSet = tombstones?.dismissedPledges || new Set(storageService.getDismissedPledgeIds());
-
-      const mapped = (pledgesRes.data || [])
-        .map(mapPledgeFromDB)
-        .filter((p) => {
-          if (!p || !p.id) return false;
-          const idStr = String(p.id);
-          const bareId = idStr.replace(/^pledge-/, '');
-          if (dismissedSet.has(idStr) || dismissedSet.has(bareId) || dismissedSet.has(`pledge-${bareId}`)) {
-            return false;
-          }
-          if (String(p.giverName || '').includes('[EXCLUIDO]')) return false;
-          if (isTestGuest(p.giverName)) return false;
-          return true;
-        });
-
-      localStorage.setItem(KEYS.PLEDGES, JSON.stringify(mapped));
-      window.dispatchEvent(new CustomEvent('pledges_updated', { detail: mapped }));
-      return mapped;
-    } catch (err) {
-      console.error('Erro ao carregar pledges do Supabase:', err);
-      return storageService.getPledges();
+    let rows = [];
+    if (adminToken) {
+      rows = await invokeAdminApi('admin-pledges');
+    } else {
+      const { data, error } = await supabase.from('gift_pledge_totals').select('gift_id,pledged_quantity').order('gift_id', { ascending: true });
+      if (error) throw new Error('Não foi possível carregar as quantidades de presentes.');
+      rows = (data || []).map((row) => ({ id: 'pledge-total-' + row.gift_id, gift_id: row.gift_id, giver_name: '', quantity: row.pledged_quantity }));
     }
+    const tombstones = await storageService.fetchCloudTombstones();
+    const dismissed = tombstones?.dismissedPledges || new Set(storageService.getDismissedPledgeIds());
+    const mapped = (rows || []).map(mapPledgeFromDB).filter((pledge) => {
+      if (!pledge || !pledge.id || (adminToken && isTestGuest(pledge.giverName))) return false;
+      const id = String(pledge.id);
+      const bare = id.replace(/^pledge-/, '');
+      return !dismissed.has(id) && !dismissed.has(bare) && !dismissed.has('pledge-' + bare);
+    });
+    if (adminToken) adminData.pledges = mapped;
+    else localStorage.setItem(KEYS.PLEDGES, JSON.stringify(mapped));
+    window.dispatchEvent(new CustomEvent('pledges_updated', { detail: mapped }));
+    return mapped;
   },
 
   getPledges: () => {
+    if (adminToken && Array.isArray(adminData.pledges)) return adminData.pledges;
     try {
-      const dismissedIds = storageService.getDismissedPledgeIds();
-      const dismissedSet = new Set();
-      dismissedIds.forEach((id) => {
-        const str = String(id || '');
-        const bare = str.replace(/^pledge-/, '');
-        dismissedSet.add(str);
-        dismissedSet.add(bare);
-        dismissedSet.add(`pledge-${bare}`);
-      });
-
-      const filterItem = (p) => {
-        if (!p || !p.id) return false;
-        const idStr = String(p.id);
-        const bareId = idStr.replace(/^pledge-/, '');
-        if (dismissedSet.has(idStr) || dismissedSet.has(bareId) || dismissedSet.has(`pledge-${bareId}`)) return false;
-        if (String(p.giverName || '').includes('[EXCLUIDO]')) return false;
-        if (isTestGuest(p.giverName)) return false;
-        return true;
-      };
-
       const saved = localStorage.getItem(KEYS.PLEDGES);
-      if (saved === null) {
-        return (INITIAL_PLEDGES || []).filter(filterItem);
-      }
-      const parsed = JSON.parse(saved);
-      if (!Array.isArray(parsed)) return [];
-      const filtered = parsed.filter(filterItem);
-      if (filtered.length !== parsed.length) {
-        localStorage.setItem(KEYS.PLEDGES, JSON.stringify(filtered));
-      }
-      return filtered;
+      const pledges = saved ? JSON.parse(saved) : INITIAL_PLEDGES;
+      if (!Array.isArray(pledges)) return [];
+      return isSupabaseConfigured
+        ? pledges.map((pledge) => ({ ...pledge, giverName: '' }))
+        : pledges;
     } catch {
-      return (INITIAL_PLEDGES || []).filter(p => !isTestGuest(p.giverName));
+      return INITIAL_PLEDGES;
     }
   },
 
   addPledge: async (giftId, giverName, quantity) => {
-    const pledges = storageService.getPledges();
-    const safeGiverName = sanitizeName(giverName || 'Amigo do Chá', 80);
+    const safeGiverName = sanitizeName(giverName || 'Amigo do Chá', 80) || 'Amigo do Chá';
     const safeQuantity = Math.max(1, Math.min(999, parseInt(quantity, 10) || 1));
-
-    const newPledge = {
-      id: generateUniqueId('pledge'),
-      giftId,
-      giverName: safeGiverName,
-      quantity: safeQuantity,
-      createdAt: new Date().toISOString(),
-    };
-    const updated = [...pledges, newPledge];
-    localStorage.setItem(KEYS.PLEDGES, JSON.stringify(updated));
-    window.dispatchEvent(new CustomEvent('pledges_updated', { detail: updated }));
-
     if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.from('gift_pledges').insert([mapPledgeToDB(newPledge)]);
-      } catch (err) {
-        console.error('Erro ao adicionar pledge no Supabase:', err);
-      }
+      const result = await invokeAppApi('public-add-pledge', { giftId, giverName: safeGiverName, quantity: safeQuantity });
+      await storageService.fetchPledgesFromCloud();
+      return mapPledgeFromDB(result.pledge);
     }
-    return newPledge;
+    return { id: generateUniqueId('pledge'), giftId, giverName: safeGiverName, quantity: safeQuantity, createdAt: new Date().toISOString() };
   },
 
   deletePledge: async (pledgeId) => {
-    const pledges = storageService.getPledges();
-    const pledgeToDelete = pledges.find(p => p.id === pledgeId);
-    const updated = pledges.filter(p => p.id !== pledgeId);
-
-    // Registra nos descartados para garantir que nunca retorne em sincronizações
-    const dismissedPledges = storageService.getDismissedPledgeIds();
-    const idStr = String(pledgeId);
-    const bareId = idStr.replace(/^pledge-/, '');
-    if (!dismissedPledges.includes(idStr)) dismissedPledges.push(idStr);
-    if (!dismissedPledges.includes(bareId)) dismissedPledges.push(bareId);
-    if (!dismissedPledges.includes(`pledge-${bareId}`)) dismissedPledges.push(`pledge-${bareId}`);
-    localStorage.setItem(KEYS.DISMISSED_PLEDGES, JSON.stringify(dismissedPledges));
-
-    localStorage.setItem(KEYS.PLEDGES, JSON.stringify(updated));
+    if (isSupabaseConfigured && supabase) await invokeAdminApi('admin-delete-pledge', { id: pledgeId });
+    const updated = (adminData.pledges || storageService.getPledges()).filter((pledge) => pledge.id !== pledgeId);
+    if (adminToken) adminData.pledges = updated;
+    else localStorage.setItem(KEYS.PLEDGES, JSON.stringify(updated));
+    const dismissed = storageService.getDismissedPledgeIds();
+    const bareId = String(pledgeId).replace(/^pledge-/, '');
+    for (const id of [String(pledgeId), bareId, 'pledge-' + bareId]) {
+      if (!dismissed.includes(id)) dismissed.push(id);
+    }
+    localStorage.setItem(KEYS.DISMISSED_PLEDGES, JSON.stringify(dismissed));
     window.dispatchEvent(new CustomEvent('pledges_updated', { detail: updated }));
-
-    if (pledgeToDelete) {
-      storageService.addAdminLog({
-        action: 'Contribuição Cancelada',
-        details: `Contribuição de "${pledgeToDelete.giverName}" (${pledgeToDelete.quantity} un.) foi removida pelo administrador.`,
-        category: 'gifts',
-      });
-    }
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const tombstone = {
-          id: `dismissed-pledge-${pledgeId}`,
-          author: '[EXCLUIDO]',
-          text: `[DISMISSED_PLEDGE:${pledgeId}][DISMISSED_ID:${pledgeId}]`,
-          status: 'approved',
-          date: 'Agora mesmo',
-          likes: 0,
-        };
-        await supabase.from('messages').upsert([tombstone], { onConflict: 'id' });
-        await supabase.from('gift_pledges').delete().eq('id', pledgeId);
-        await supabase.from('gift_pledges').delete().eq('id', bareId);
-        await storageService.fetchCloudTombstones({ force: true });
-      } catch (err) {
-        console.error('Erro ao deletar pledge no Supabase:', err);
-      }
-    }
     return updated;
   },
 
-  // REGISTRO DE ATIVIDADES E AUDITORIA (LOGS)
   getAdminLogs: () => {
     try {
       const saved = localStorage.getItem(KEYS.LOGS);
@@ -2194,46 +1510,29 @@ export const storageService = {
   },
 
   exportFullDatabaseJSON: async () => {
-    let dump = {
-      exported_at: new Date().toISOString(),
-      app: 'Chá da Maitê',
-      tables: {}
-    };
-
+    const dump = { exported_at: new Date().toISOString(), app: 'Chá da Maitê', tables: {} };
     if (isSupabaseConfigured && supabase) {
-      try {
-        const [cfg, gft, pld, rsv, msg] = await Promise.all([
-          supabase.from('event_config').select('*'),
-          supabase.from('gifts').select('*'),
-          supabase.from('gift_pledges').select('*'),
-          supabase.from('rsvps').select('*'),
-          supabase.from('messages').select('*')
-        ]);
-        dump.tables.event_config = cfg.data || [];
-        dump.tables.gifts = gft.data || [];
-        dump.tables.gift_pledges = (pld.data || []).filter(p => !isTestGuest(p.giver_name));
-        dump.tables.rsvps = (rsv.data || []).filter(r => !isTestGuest(r.name) && r.phone !== 'mural_only' && !String(r.id || '').startsWith('rsvp-msg-'));
-        dump.tables.messages = (msg.data || []).filter(m => !isTestGuest(m.author));
-      } catch (err) {
-        console.error('Erro ao buscar do Supabase para exportação, usando dados locais:', err);
-        dump.tables = {
-          event_config: [storageService.getConfig()],
-          gifts: storageService.getGifts(),
-          gift_pledges: storageService.getPledges(),
-          rsvps: storageService.getRSVPs(),
-          messages: storageService.getMessages()
-        };
-      }
+      if (!adminToken) throw new Error('Entre novamente no painel para exportar os dados.');
+      const [gifts, pledges, rsvps, messages] = await Promise.all([
+        invokeAdminApi('admin-gifts'),
+        invokeAdminApi('admin-pledges'),
+        invokeAdminApi('admin-rsvps'),
+        invokeAdminApi('admin-messages'),
+      ]);
+      dump.tables.event_config = [mapConfigToDB(storageService.getConfig())];
+      dump.tables.gifts = gifts || [];
+      dump.tables.gift_pledges = (pledges || []).filter((p) => !isTestGuest(p.giver_name));
+      dump.tables.rsvps = (rsvps || []).filter((r) => !isTestGuest(r.name) && r.phone !== 'mural_only' && !String(r.id || '').startsWith('rsvp-msg-'));
+      dump.tables.messages = (messages || []).filter((m) => !isExcludedOrTestMessage(mapMessageFromDB(m)));
     } else {
       dump.tables = {
-        event_config: [storageService.getConfig()],
+        event_config: [mapConfigToDB(storageService.getConfig())],
         gifts: storageService.getGifts(),
         gift_pledges: storageService.getPledges(),
         rsvps: storageService.getRSVPs(),
-        messages: storageService.getMessages()
+        messages: storageService.getMessages(),
       };
     }
-
     return JSON.stringify(dump, null, 2);
   },
 

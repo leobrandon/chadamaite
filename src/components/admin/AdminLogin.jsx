@@ -48,7 +48,7 @@ export default function AdminLogin({ pinInput, setPinInput, pinError, setPinErro
           </div>
           {pinError && (
             <p className="text-xs text-rose-500 dark:text-rose-400 font-bold mt-2">
-              ❌ Senha incorreta. Verifique a senha digitada e tente novamente.
+              ❌ Não foi possível validar o PIN. Confira a senha e tente novamente.
             </p>
           )}
         </div>
