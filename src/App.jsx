@@ -27,6 +27,7 @@ export default function App() {
   const [messages, setMessages] = useState(storageService.getMessages());
   const [pledges, setPledges] = useState(storageService.getPledges?.() || []);
   const [isInitialLoading, setIsInitialLoading] = useState(storageService.isCloudConnected);
+  const [initialSyncError, setInitialSyncError] = useState(false);
   
   const [activeTab, setActiveTab] = useState('inicio');
   
@@ -65,6 +66,7 @@ export default function App() {
       // End initial loading if sync completed or local
       setIsInitialLoading(false);
     }).catch(() => {
+      setInitialSyncError(storageService.isCloudConnected);
       setIsInitialLoading(false);
     });
 
@@ -175,14 +177,13 @@ export default function App() {
   };
 
   // Config actions
-  const handleSaveConfig = async (newConfig) => {
-    const updated = await storageService.saveConfig(newConfig);
+  const handleSaveConfig = async (newConfig, newPin = '') => {
+    const updated = await storageService.saveConfig(newConfig, newPin);
     if (updated) setConfig(updated);
   };
 
   const safeGifts = Array.isArray(gifts) ? gifts : [];
   const safeRsvps = Array.isArray(rsvps) ? rsvps : [];
-  const safeMessages = Array.isArray(messages) ? messages : [];
   const safePledges = Array.isArray(pledges) ? pledges : [];
 
   const availableGiftsCount = safeGifts.length;
@@ -192,6 +193,32 @@ export default function App() {
     const elem = document.getElementById(id);
     if (elem) elem.scrollIntoView({ behavior: 'smooth' });
   };
+
+  if (isInitialLoading && storageService.isCloudConnected) {
+    return (
+      <main className="min-h-screen grid place-items-center bg-[#fffaf5] px-6 text-center text-slate-700">
+        <p role="status" className="text-sm font-medium">Carregando as informações do evento...</p>
+      </main>
+    );
+  }
+
+  if (initialSyncError && storageService.isCloudConnected) {
+    return (
+      <main className="min-h-screen grid place-items-center bg-[#fffaf5] px-6 text-center text-slate-700">
+        <div role="alert" className="max-w-md space-y-4">
+          <h1 className="text-xl font-semibold">Não foi possível carregar as informações do evento.</h1>
+          <p className="text-sm">Confira sua conexão e tente novamente.</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="rounded-full bg-rose-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-rose-600"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <ToastProvider>

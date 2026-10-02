@@ -77,7 +77,7 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4 relative">
             {/* Passo 1 */}
-            <div className="flex sm:flex-col items-start gap-3 p-4 rounded-2xl bg-gradient-to-br from-blush-50/70 to-white/70 dark:from-slate-800/60 dark:to-slate-800/30 border border-blush-100 dark:border-slate-700/60 transition-all hover:border-blush-300 dark:hover:border-slate-600">
+            <div className="flex sm:flex-col items-start gap-3 p-4 rounded-2xl bg-gradient-to-br from-blush-50/70 to-white/70 dark:from-slate-800/60 dark:to-slate-800/30 border border-[#ffeef2] dark:border-slate-700/60 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:hover:shadow-[0_4px_14px_rgba(15,23,42,0.45)] hover:border-[#fcaec4] dark:hover:border-[#f7799e]">
               <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-white dark:bg-slate-700 text-blush-600 dark:text-blush-300 shadow-xs border border-blush-100 dark:border-slate-600 shrink-0 text-xl">
                 👶
               </div>
@@ -97,7 +97,7 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
             </div>
 
             {/* Passo 2 */}
-            <div className="flex sm:flex-col items-start gap-3 p-4 rounded-2xl bg-gradient-to-br from-amber-50/60 to-white/70 dark:from-slate-800/60 dark:to-slate-800/30 border border-amber-100/80 dark:border-slate-700/60 transition-all hover:border-amber-300 dark:hover:border-slate-600">
+            <div className="flex sm:flex-col items-start gap-3 p-4 rounded-2xl bg-gradient-to-br from-amber-50/60 to-white/70 dark:from-slate-800/60 dark:to-slate-800/30 border border-amber-100/80 dark:border-slate-700/60 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:hover:shadow-[0_4px_14px_rgba(15,23,42,0.45)] hover:border-amber-300 dark:hover:border-amber-400">
               <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-300 shadow-xs border border-amber-100 dark:border-slate-600 shrink-0 text-xl">
                 🧸
               </div>
@@ -117,7 +117,7 @@ export default function GiftList({ gifts, pledges = [], onSelectGift, onOpenAdmi
             </div>
 
             {/* Passo 3 */}
-            <div className="flex sm:flex-col items-start gap-3 p-4 rounded-2xl bg-gradient-to-br from-emerald-50/60 to-white/70 dark:from-slate-800/60 dark:to-slate-800/30 border border-emerald-100/80 dark:border-slate-700/60 transition-all hover:border-emerald-300 dark:hover:border-slate-600">
+            <div className="flex sm:flex-col items-start gap-3 p-4 rounded-2xl bg-gradient-to-br from-emerald-50/60 to-white/70 dark:from-slate-800/60 dark:to-slate-800/30 border border-emerald-100/80 dark:border-slate-700/60 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:hover:shadow-[0_4px_14px_rgba(15,23,42,0.45)] hover:border-emerald-300 dark:hover:border-emerald-400">
               <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-300 shadow-xs border border-emerald-100 dark:border-slate-600 shrink-0 text-xl">
                 🎁
               </div>

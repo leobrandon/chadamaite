@@ -286,47 +286,22 @@ export const INITIAL_GIFTS = [
 ];
 
 export const INITIAL_EVENT_CONFIG = {
-  babyName: "Maitê",
-  parents: "Leonardo & Isabella",
-  date: "2026-09-20",
-  time: "15:30",
-  displayDate: "20 de Setembro de 2026",
-  displayTime: "A partir das 15:30h",
-  locationName: "Espaço LC Eventos",
-  address: "R. EMA-01, Quadra 07 Lote 28 - Lot. Alphaville Res., Goiânia - GO, 74370-720",
-  city: "Goiânia - GO",
-  mapUrl: "https://maps.app.goo.gl/6c8WqWsfqNx4kpXFA",
-  pixKey: "chadamaitelp@gmail.com",
-  pixName: "Leonardo / Isabella",
-  adminPinHash: "e815b24d314219266fbae1d11292d9d23bb2befbd5d0dc3f7a2422edc354413c",
-  welcomeMessage: "Estamos muito felizes em compartilhar esse momento tão especial com você! Preparamos tudo com muito amor e carinho para esperar a nossa Maitê.",
+  babyName: 'Bebê de Teste',
+  parents: 'Família de Teste',
+  date: '2030-01-01',
+  time: '15:30',
+  displayDate: '1 de Janeiro de 2030',
+  displayTime: 'A partir das 15:30h',
+  locationName: 'Espaço de Teste',
+  address: 'Endereço fictício de homologação',
+  city: 'Cidade de Teste',
+  mapUrl: 'https://example.com/mapa',
+  pixKey: 'teste@example.com',
+  pixName: 'Conta de teste',
+  welcomeMessage: 'Esta é uma configuração fictícia usada somente na homologação.',
 };
 
-export const INITIAL_MESSAGES = [
-  {
-    id: "msg-rsvp-28bf3597-c708-44cd-b509-2eee0ae919ac",
-    author: "Gean",
-    text: "Oi, Maitê! É o GG, seu tio, amigo da mamãe. Estamos ansiosos pela sua chegada! Sua mãe já está me extorquindo com sua cortina, mal esperou você nascer kkkkkk. Mal posso esperar pela hora de você chegar para a gente dar muitos rolês loucos e deixar sua mãe e seu pai doidos! 😂😂\n\nVenha com muita saúde! ❤️",
-    date: "Recente",
-    likes: 0,
-    status: "approved",
-    createdAt: "2026-09-27T19:00:54.307+00:00"
-  },
-  {
-    id: "msg-1",
-    author: "Vovó Maria e Vovô José",
-    text: "A princesinha da nossa vida já é muito amada! Que Deus abençoe a chegada da Maitê e traga ainda mais luz para vocês, Leo e Isa.",
-    date: "Hoje",
-    likes: 4
-  },
-  {
-    id: "msg-2",
-    author: "Tia Camila & Família",
-    text: "Contando os dias para conhecer a Maitê! Parabéns aos papais Leonardo e Isabella por essa bênção tão linda!",
-    date: "Ontem",
-    likes: 3
-  }
-];
+export const INITIAL_MESSAGES = [];
 
 export const BABY_EMOJIS = [
   { emoji: "🎁", label: "🎁 Presente" },

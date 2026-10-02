@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Check, Eye, EyeOff, Database, Download, FileCode } from 'lucide-react';
-import { hashPassword } from '../../utils/security';
 import storageService from '../../services/storageService';
 
 export default function AdminConfigTab({ config, onSaveConfig }) {
@@ -8,6 +7,7 @@ export default function AdminConfigTab({ config, onSaveConfig }) {
   const [newPin, setNewPin] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [configSaved, setConfigSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [exportingType, setExportingType] = useState(null);
 
   const handleDownloadBackup = async (format) => {
@@ -85,23 +85,18 @@ export default function AdminConfigTab({ config, onSaveConfig }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const configToSave = { ...tempConfig };
-    
-    // Se o usuário digitou uma nova senha PIN, gera o hash seguro
-    if (newPin && newPin.trim()) {
-      const hash = await hashPassword(newPin.trim());
-      configToSave.adminPinHash = hash;
-      delete configToSave.adminPin;
-    }
-    
-    onSaveConfig(configToSave);
+    delete configToSave.adminPinHash;
+    delete configToSave.adminPin;
+    setSaveError('');
+
     try {
-      sessionStorage.setItem('cha_maite_admin_auth', 'true');
-    } catch {
-      // ignore
+      await onSaveConfig(configToSave, newPin.trim());
+      setNewPin('');
+      setConfigSaved(true);
+      setTimeout(() => setConfigSaved(false), 2500);
+    } catch (error) {
+      setSaveError(error?.message || 'Não foi possível salvar as configurações.');
     }
-    setNewPin('');
-    setConfigSaved(true);
-    setTimeout(() => setConfigSaved(false), 2500);
   };
 
   return (
@@ -264,7 +259,9 @@ export default function AdminConfigTab({ config, onSaveConfig }) {
             <Check className="w-4 h-4" />
             <span>Salvar Configurações</span>
           </button>
-
+          {saveError && (
+            <p role="alert" className="text-sm text-rose-600 dark:text-rose-400">{saveError}</p>
+          )}
           {configSaved && (
             <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold text-center">
               ✓ Salvo com sucesso!

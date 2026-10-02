@@ -200,6 +200,9 @@ export default function GiftModal({
         }
       } catch (err) {
         console.error('Erro ao salvar presente no banco de dados:', err);
+        setIsSubmitting(false);
+        addToast({ message: 'Não foi possível confirmar o presente. Tente novamente.', type: 'info', duration: 5000 });
+        return;
       }
 
       setIsSubmitting(false);
@@ -405,7 +408,7 @@ export default function GiftModal({
                         className="w-full py-3.5 sm:py-4 px-6 rounded-2xl bg-[#25D366] hover:bg-[#20ba59] active:scale-[0.98] text-white font-bold text-sm sm:text-base shadow-lg shadow-emerald-500/25 transition flex items-center justify-center gap-2.5 group"
                       >
                         <MessageCircle className="w-5 h-5 fill-current" />
-                        <span>Avisar os papais no WhatsApp 💌</span>
+                        <span>Avisar os papais no WhatsApp</span>
                       </a>
 
                       <button
@@ -413,7 +416,7 @@ export default function GiftModal({
                         onClick={handleClose}
                         className="w-full py-3 px-5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-[0.98] text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm transition cursor-pointer"
                       >
-                        Concluir ✨
+                        Concluir
                       </button>
                     </div>
                   </>
