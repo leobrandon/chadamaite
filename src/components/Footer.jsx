@@ -6,18 +6,18 @@ export default function Footer({ config, onOpenAdmin }) {
   const { addToast } = useToast();
 
   const handleShareClick = () => {
-    addToast({ message: 'Abrindo compartilhamento do WhatsApp! 💌', type: 'info' });
+    addToast({ message: 'Abrindo compartilhamento das recordações no WhatsApp! 💌', type: 'info' });
   };
   const getShareUrl = () => {
     const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
-    const shareText = `Olá! Veja o convite e lista de presentes do Chá de Bebê da Maitê: ${currentUrl}`;
+    const shareText = 'Olá! Veja as fotos e os recados do chá da Maitê: ' + currentUrl;
     return `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
   };
 
   return (
     <footer className="bg-slate-900 text-slate-300 py-12 border-t border-slate-800">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center space-y-6">
-        
+
         {/* Logo / Monogram */}
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blush-500/20 text-blush-400 text-2xl mb-1">
           🌸
@@ -47,7 +47,7 @@ export default function Footer({ config, onOpenAdmin }) {
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition"
           >
             <Share2 className="w-3.5 h-3.5" />
-            <span>Compartilhar Convite no WhatsApp</span>
+            <span>Compartilhar recordações no WhatsApp</span>
           </a>
         </div>
 

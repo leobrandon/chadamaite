@@ -386,6 +386,18 @@ async function invokeAdminApi(action, payload = {}) {
 
 export const storageService = {
   isCloudConnected: isSupabaseConfigured,
+  invokeAlbumAdmin: async (action, payload = {}) => {
+    if (!adminToken) throw new Error('Sua sessão expirou. Entre novamente no painel.');
+    const { data, error } = await supabase.functions.invoke('album-api', {
+      body: { ...payload, action, token: adminToken },
+    });
+    if (error) {
+      let message = 'Não foi possível concluir a operação do álbum.';
+      try { message = (await error.context.clone().json()).error || message; } catch {}
+      throw new Error(message);
+    }
+    return data;
+  },
   loginAdmin: async (pin) => {
     const result = await invokeAppApi('admin-login', { pin: String(pin || '').trim() });
     adminToken = result?.token || null;

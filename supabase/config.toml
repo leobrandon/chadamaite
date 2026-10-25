@@ -1,2 +1,5 @@
 [functions.app-api]
 verify_jwt = false
+
+[functions.album-api]
+verify_jwt = false

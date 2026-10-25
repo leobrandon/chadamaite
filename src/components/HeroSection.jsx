@@ -1,46 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { Gift, CalendarCheck, Heart, Sparkles, MapPin, Calendar, Clock, Share2 } from 'lucide-react';
+import React from 'react';
+import { Camera, Heart, Sparkles, MapPin, Calendar, Clock, Share2 } from 'lucide-react';
 import { motion } from 'motion/react';
-import AnimatedCountdownTicker from './hero/AnimatedCountdownTicker';
 import { LetterPullUp, FadeInUp } from './hero/TextRevealPullUp';
 
+const formatPastTime = (time) => {
+  const value = String(time || '').trim();
+  const match = value.match(/^(\d{1,2}):(\d{2})$/);
+
+  if (match) {
+    const [, hours, minutes] = match;
+    return `${hours}h${minutes === '00' ? '' : minutes}`;
+  }
+
+  return value.replace(/^a partir\s+(?:das|de)\s+/i, '');
+};
+
 export default function HeroSection({ config, onNavigateToGifts, onNavigateToRSVP }) {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-    isPast: false
-  });
-
-  useEffect(() => {
-    const calculateTime = () => {
-      const target = new Date(`${config.date}T${config.time || '15:00'}:00`);
-      const now = new Date();
-      const difference = target.getTime() - now.getTime();
-
-      if (difference <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isPast: true });
-        return;
-      }
-
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((difference / 1000 / 60) % 60);
-      const seconds = Math.floor((difference / 1000) % 60);
-
-      setTimeLeft({ days, hours, minutes, seconds, isPast: false });
-    };
-
-    calculateTime();
-    const timer = setInterval(calculateTime, 1000);
-    return () => clearInterval(timer);
-  }, [config.date, config.time]);
-
+  const eventTime = formatPastTime(config.time || config.displayTime);
   const getShareUrl = () => {
     const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
-    const shareText = `Olá! Veja o convite e lista de presentes do Chá de Bebê da Maitê: ${currentUrl}`;
-    return `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
+    const shareText = 'Olá! Veja as recordações do chá da Maitê: ' + currentUrl;
+    return 'https://api.whatsapp.com/send?text=' + encodeURIComponent(shareText);
   };
 
   return (
@@ -53,7 +33,6 @@ export default function HeroSection({ config, onNavigateToGifts, onNavigateToRSV
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center relative z-10">
-        
         {/* Floating pill badge with soft spring entry */}
         <motion.div
           initial={{ opacity: 0, y: -15, scale: 0.9 }}
@@ -62,7 +41,7 @@ export default function HeroSection({ config, onNavigateToGifts, onNavigateToRSV
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 dark:bg-slate-800/90 border border-blush-200 dark:border-slate-700 shadow-sm text-blush-700 dark:text-blush-300 text-xs sm:text-sm font-medium mb-6 animate-float"
         >
           <Heart className="w-3.5 h-3.5 fill-blush-400 text-blush-400" />
-          <span>Com muito amor, esperamos por você!</span>
+          <span>Um dia para guardar no coração</span>
           <Sparkles className="w-3.5 h-3.5 text-gold-500" />
         </motion.div>
 
@@ -72,7 +51,7 @@ export default function HeroSection({ config, onNavigateToGifts, onNavigateToRSV
             Chá de Bebê da nossa princesinha
           </h2>
         </FadeInUp>
-        
+
         {/* Main Title with Letter Pull-Up & Smooth Blur-In */}
         <h1 className="font-serif text-5xl sm:text-7xl md:text-8xl font-bold text-slate-800 dark:text-slate-100 tracking-tight leading-none mb-3">
           <span className="text-blush-600 dark:text-blush-400 block font-handwriting text-6xl sm:text-8xl md:text-9xl py-1 drop-shadow-xs">
@@ -87,10 +66,7 @@ export default function HeroSection({ config, onNavigateToGifts, onNavigateToRSV
         {/* Subtitle with FadeInUp */}
         <FadeInUp delay={0.4}>
           <p className="text-slate-600 dark:text-slate-300 text-base sm:text-lg max-w-xl mx-auto mb-8 font-light leading-relaxed">
-            À espera do maior presente de nossas vidas. Com amor,{' '}
-            <strong className="font-semibold text-slate-800 dark:text-slate-100">
-              {config.parents || 'Leonardo & Isabella'}
-            </strong>.
+            Obrigado a todos que participaram do chá da nossa Maitê! Ficamos muito felizes com a presença de todos e com o carinho de todo mundo.
           </p>
         </FadeInUp>
 
@@ -109,7 +85,7 @@ export default function HeroSection({ config, onNavigateToGifts, onNavigateToRSV
               className="glass-card p-3.5 rounded-2xl flex items-center justify-center gap-2.5 shadow-sm hover:border-blush-300 dark:hover:border-blush-500/50 transition-colors"
             >
               <Clock className="w-4 h-4 text-blush-500 dark:text-blush-400 shrink-0" />
-              <span className="text-xs sm:text-sm font-medium">{config.displayTime}</span>
+              <span className="text-xs sm:text-sm font-medium">{eventTime}</span>
             </motion.div>
             <motion.div
               whileHover={{ y: -3, transition: { duration: 0.2 } }}
@@ -123,9 +99,6 @@ export default function HeroSection({ config, onNavigateToGifts, onNavigateToRSV
           </div>
         </FadeInUp>
 
-        {/* Smooth Animated Countdown Ticker */}
-        <AnimatedCountdownTicker timeLeft={timeLeft} />
-
         {/* Action Buttons with Ultra-Smooth Hover */}
         <FadeInUp delay={0.65}>
           <div className="flex flex-wrap items-center justify-center gap-3 max-w-3xl mx-auto">
@@ -134,17 +107,17 @@ export default function HeroSection({ config, onNavigateToGifts, onNavigateToRSV
               onClick={onNavigateToGifts}
               className="h-12 px-6 rounded-full bg-blush-500 hover:bg-blush-600 active:scale-95 text-white font-bold text-sm shadow-md shadow-blush-500/25 hover:shadow-xl hover:shadow-blush-500/35 hover:-translate-y-0.5 transition-all duration-200 ease-out flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer"
             >
-              <Gift className="w-4 h-4 shrink-0" />
-              <span>Ver Lista de Presentes</span>
+              <Camera className="w-4 h-4 shrink-0" />
+              <span>Ver fotos</span>
             </button>
-            
+
             <button
               type="button"
               onClick={onNavigateToRSVP}
               className="h-12 px-6 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 font-bold text-sm border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ease-out flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer"
             >
-              <CalendarCheck className="w-4 h-4 text-blush-500 dark:text-blush-400 shrink-0" />
-              <span>Confirmar Presença</span>
+              <Heart className="w-4 h-4 text-blush-500 dark:text-blush-400 shrink-0" />
+              <span>Deixar recado</span>
             </button>
 
             <a
@@ -152,14 +125,13 @@ export default function HeroSection({ config, onNavigateToGifts, onNavigateToRSV
               target="_blank"
               rel="noopener noreferrer"
               className="h-12 px-5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 active:scale-95 text-emerald-700 dark:text-emerald-300 font-bold text-sm border border-emerald-200 dark:border-emerald-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ease-out flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer"
-              title="Compartilhar convite no WhatsApp"
+              title="Compartilhar recordações no WhatsApp"
             >
               <Share2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <span>Compartilhar</span>
+              <span>Compartilhar recordações</span>
             </a>
           </div>
         </FadeInUp>
-
       </div>
     </section>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Gift, Users, Plus, MessageCircleHeart, Settings, History } from 'lucide-react';
+import { Gift, Users, Plus, MessageCircleHeart, Settings, History, Camera } from 'lucide-react';
 
 export default function AdminStats({
   totalGuests,
@@ -17,6 +17,11 @@ export default function AdminStats({
   logsCount = 0,
 }) {
   const tabs = [
+    {
+      id: 'photos',
+      label: 'Fotos do chá',
+      icon: Camera,
+    },
     {
       id: 'gifts-report',
       label: 'Contribuições',

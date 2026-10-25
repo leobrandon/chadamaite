@@ -3,11 +3,8 @@ import './App.css';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import EventDetails from './components/EventDetails';
-import GiftList from './components/GiftList';
-import GiftModal from './components/GiftModal';
-import RSVPSection from './components/RSVPSection';
 import MessagesWall from './components/MessagesWall';
-import PixModal from './components/PixModal';
+import PhotoAlbum from './components/PhotoAlbum';
 import ScrollButtons from './components/ScrollButtons';
 import MobileFloatingCTA from './components/MobileFloatingCTA';
 import Footer from './components/Footer';
@@ -28,15 +25,11 @@ export default function App() {
   const [pledges, setPledges] = useState(storageService.getPledges?.() || []);
   const [isInitialLoading, setIsInitialLoading] = useState(storageService.isCloudConnected);
   const [initialSyncError, setInitialSyncError] = useState(false);
-  
+
   const [activeTab, setActiveTab] = useState('inicio');
-  
+
   // Modals state
-  const [selectedGiftForModal, setSelectedGiftForModal] = useState(null);
-  const [initialMimoIdForModal, setInitialMimoIdForModal] = useState('');
-  const [isPixModalOpen, setIsPixModalOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [lastRsvpGuestName, setLastRsvpGuestName] = useState('');
 
   // Sync with localStorage, Supabase and custom events
   useEffect(() => {
@@ -83,24 +76,6 @@ export default function App() {
   }, []);
 
   // Gift actions
-  const handleSelectGift = (gift, initialMimoId = '') => {
-    setSelectedGiftForModal(gift);
-    setInitialMimoIdForModal(initialMimoId || '');
-  };
-
-  const handleConfirmReservation = async (giftId, guestName) => {
-    const updated = await storageService.reserveGift(giftId, guestName);
-    if (Array.isArray(updated)) setGifts(updated);
-  };
-
-  const handleAddPledge = async (giftId, giverName, quantity) => {
-    const pledge = await storageService.addPledge(giftId, giverName, quantity);
-    if (pledge) {
-      const updated = await storageService.fetchPledgesFromCloud();
-      setPledges(updated);
-    }
-  };
-
   const handleDeletePledge = async (pledgeId) => {
     const updated = await storageService.deletePledge(pledgeId);
     if (Array.isArray(updated)) setPledges(updated);
@@ -132,12 +107,6 @@ export default function App() {
   };
 
   // RSVP actions
-  const handleSaveRSVP = async (rsvpData) => {
-    await storageService.saveRSVP(rsvpData);
-    // Store guest name so GiftModal can pre-fill and skip RSVP step
-    if (rsvpData?.name) setLastRsvpGuestName(rsvpData.name.trim());
-  };
-
   const handleDeleteRSVP = async (rsvpId) => {
     const updated = await storageService.deleteRSVP(rsvpId);
     if (Array.isArray(updated)) setRsvps(updated);
@@ -182,11 +151,7 @@ export default function App() {
     if (updated) setConfig(updated);
   };
 
-  const safeGifts = Array.isArray(gifts) ? gifts : [];
-  const safeRsvps = Array.isArray(rsvps) ? rsvps : [];
-  const safePledges = Array.isArray(pledges) ? pledges : [];
 
-  const availableGiftsCount = safeGifts.length;
 
   const scrollToSection = (id) => {
     setActiveTab(id);
@@ -225,13 +190,12 @@ export default function App() {
       <div className="min-h-screen bg-baby-pattern flex flex-col justify-between relative overflow-x-hidden">
         {/* Full-site ambient floating elements (hearts, stars, clouds, sparkles, cute teddy bears) */}
         <FloatingAmbientParticles />
-      
+
         {/* Top Navbar */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenAdmin={() => setIsAdminOpen(true)}
-        totalGiftsAvailable={availableGiftsCount}
         isDark={isDark}
         onToggleDark={toggleDark}
       />
@@ -240,33 +204,13 @@ export default function App() {
         {/* Hero Section */}
         <HeroSection
           config={config}
-          onNavigateToGifts={() => scrollToSection('presentes')}
-          onNavigateToRSVP={() => scrollToSection('rsvp')}
+          onNavigateToGifts={() => scrollToSection('fotos')}
+          onNavigateToRSVP={() => scrollToSection('recados')}
         />
 
         {/* Event Details Section */}
-        <EventDetails
-          config={config}
-          onOpenPixModal={() => setIsPixModalOpen(true)}
-        />
-
-        {/* Gift Registry Section */}
-        <GiftList
-          gifts={gifts}
-          pledges={pledges}
-          isLoading={isInitialLoading}
-          onSelectGift={handleSelectGift}
-          onOpenAdmin={() => setIsAdminOpen(true)}
-        />
-
-        {/* RSVP Section */}
-        <RSVPSection
-          config={config}
-          onSaveRSVP={handleSaveRSVP}
-          gifts={safeGifts}
-          pledges={safePledges}
-          onAddPledge={handleAddPledge}
-        />
+        <EventDetails config={config} />
+        <PhotoAlbum />
 
         {/* Guestbook / Messages Wall */}
         <MessagesWall
@@ -275,31 +219,6 @@ export default function App() {
           onLikeMessage={handleLikeMessage}
         />
       </main>
-
-      {/* Modals */}
-      <GiftModal
-        gift={selectedGiftForModal}
-        gifts={gifts}
-        pledges={pledges}
-        rsvps={safeRsvps}
-        rsvpConfirmedName={lastRsvpGuestName}
-        isOpen={Boolean(selectedGiftForModal)}
-        initialMimoId={initialMimoIdForModal}
-        onClose={() => {
-          setSelectedGiftForModal(null);
-          setInitialMimoIdForModal('');
-        }}
-        onConfirm={handleConfirmReservation}
-        onAddPledge={handleAddPledge}
-        onSaveRSVP={handleSaveRSVP}
-        config={config}
-      />
-
-      <PixModal
-        isOpen={isPixModalOpen}
-        onClose={() => setIsPixModalOpen(false)}
-        config={config}
-      />
 
       {isAdminOpen && (
         <Suspense
@@ -346,8 +265,8 @@ export default function App() {
 
       {/* Mobile Sticky Action Bar */}
       <MobileFloatingCTA
-        onNavigateToGifts={() => scrollToSection('presentes')}
-        onNavigateToRSVP={() => scrollToSection('rsvp')}
+        onNavigateToGifts={() => scrollToSection('fotos')}
+        onNavigateToRSVP={() => scrollToSection('recados')}
       />
 
       {/* Footer */}

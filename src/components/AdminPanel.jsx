@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle, LoaderCircle } from 'lucide-react';
 import { storageService } from '../services/storageService';
 import ConfirmModal from './ConfirmModal';
 
@@ -13,6 +13,7 @@ import AdminGiftsManageTab from './admin/AdminGiftsManageTab';
 import AdminConfigTab from './admin/AdminConfigTab';
 import AdminMessagesTab from './admin/AdminMessagesTab';
 import AdminLogsTab from './admin/AdminLogsTab';
+import AdminPhotosTab from './admin/AdminPhotosTab';
 
 // Modals
 import AdminEditGiftModal from './admin/modals/AdminEditGiftModal';
@@ -46,9 +47,10 @@ export default function AdminPanel({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
-  const [activeTab, setActiveTab] = useState('gifts-report'); // 'gifts-report' | 'rsvps' | 'gifts' | 'config' | 'messages' | 'logs'
+  const [activeTab, setActiveTab] = useState('photos'); // 'photos' | 'gifts-report' | 'rsvps' | 'gifts' | 'config' | 'messages' | 'logs'
   const [logs, setLogs] = useState(() => storageService.getAdminLogs());
   const [isRefreshingCloud, setIsRefreshingCloud] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Sincronização completa de todas as tabelas em tempo real
   const refreshAllCloudData = async () => {
@@ -136,17 +138,21 @@ export default function AdminPanel({
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setIsLoggingIn(true);
     try {
       const accepted = await storageService.loginAdmin(pinInput.trim());
       if (!accepted) throw new Error('Acesso negado.');
       await storageService.refreshAdminData();
       setIsAuthenticated(true);
+      setActiveTab('photos');
       setPinError(false);
       setPinInput('');
     } catch (error) {
       console.error('Não foi possível entrar no painel:', error);
       await storageService.clearAdminSession();
       setPinError(true);
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -651,13 +657,25 @@ export default function AdminPanel({
 
         {/* Auth Barrier */}
         {!isAuthenticated ? (
-          <AdminLogin
-            pinInput={pinInput}
-            setPinInput={setPinInput}
-            pinError={pinError}
-            setPinError={setPinError}
-            onLogin={handleLogin}
-          />
+          isLoggingIn ? (
+            <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 p-8 text-center" role="status" aria-live="polite" aria-busy="true">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blush-50 text-blush-500 dark:bg-blush-950/40 dark:text-blush-400">
+                <LoaderCircle className="h-8 w-8 animate-spin" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="font-serif text-xl font-bold text-slate-800 dark:text-white">Carregando</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Validando o acesso e atualizando os dados do painel.</p>
+              </div>
+            </div>
+          ) : (
+            <AdminLogin
+              pinInput={pinInput}
+              setPinInput={setPinInput}
+              pinError={pinError}
+              setPinError={setPinError}
+              onLogin={handleLogin}
+            />
+          )
         ) : (
           /* Authenticated Dashboard */
           <div className="flex-1 flex flex-col min-h-0">
@@ -683,6 +701,9 @@ export default function AdminPanel({
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/50 dark:bg-slate-950/40">
               
               {/* TAB 0: RELATÓRIO QUEM VAI DAR O QUÊ */}
+              {activeTab === 'photos' && <AdminPhotosTab />}
+
+              {/* TAB 1: RELATÓRIO QUEM VAI DAR O QUÊ */}
               {activeTab === 'gifts-report' && (
                 <AdminGiftsReportTab
                   gifts={safeGifts}
