@@ -13,11 +13,32 @@ export function createTombstonesApi(service) {
     messageOverrides: new Map(),
   });
 
+  const persist = (ctx) => {
+    try {
+      localStorage.setItem(KEYS.DISMISSED_RSVPS, JSON.stringify(Array.from(ctx.dismissedRsvps)));
+      localStorage.setItem(KEYS.DISMISSED_PLEDGES, JSON.stringify(Array.from(ctx.dismissedPledges)));
+      localStorage.setItem(KEYS.DISMISSED_MESSAGES, JSON.stringify(Array.from(ctx.dismissedMessages)));
+      localStorage.setItem(KEYS.DISMISSED_GIFTS, JSON.stringify(Array.from(ctx.dismissedGifts)));
+    } catch {}
+  };
+
   return {
     // Cache e sincronização centralizada de exclusões/lápides na nuvem
     _tombstonePromise: null,
     _lastTombstoneFetch: 0,
     _cachedTombstones: null,
+
+    // Monta as lápides a partir de linhas de recados já baixadas (evita nova chamada).
+    applyTombstoneRows: (rows) => {
+      const ctx = emptyContext();
+      if (Array.isArray(rows)) {
+        collectTombstones(rows, ctx);
+        persist(ctx);
+      }
+      service._cachedTombstones = ctx;
+      service._lastTombstoneFetch = Date.now();
+      return ctx;
+    },
 
     fetchCloudTombstones: async (options = {}) => {
       if (!session.token) return emptyContext();
@@ -47,13 +68,7 @@ export function createTombstonesApi(service) {
           const rows = session.token ? await invokeAdminApi('admin-messages') : [];
           if (Array.isArray(rows)) {
             collectTombstones(rows, ctx);
-
-            try {
-              localStorage.setItem(KEYS.DISMISSED_RSVPS, JSON.stringify(Array.from(ctx.dismissedRsvps)));
-              localStorage.setItem(KEYS.DISMISSED_PLEDGES, JSON.stringify(Array.from(ctx.dismissedPledges)));
-              localStorage.setItem(KEYS.DISMISSED_MESSAGES, JSON.stringify(Array.from(ctx.dismissedMessages)));
-              localStorage.setItem(KEYS.DISMISSED_GIFTS, JSON.stringify(Array.from(ctx.dismissedGifts)));
-            } catch {}
+            persist(ctx);
           }
         } catch (err) {
           console.error('Erro ao buscar lápides no Supabase:', err);

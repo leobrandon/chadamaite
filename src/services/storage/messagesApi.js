@@ -6,6 +6,7 @@ import { generateUniqueId } from './ids.js';
 import { isExcludedOrTestMessage } from './filters.js';
 import { session, invokeAppApi, invokeAdminApi } from './session.js';
 import { mapMessageFromDB } from './mappers.js';
+import { visibleMessages } from './visibility.js';
 
 export function createMessagesApi(service) {
   return {
@@ -13,7 +14,7 @@ export function createMessagesApi(service) {
     fetchMessagesFromCloud: async () => {
       if (!isSupabaseConfigured || !supabase) return service.getMessages();
       const [tombstones, result] = await Promise.all([
-        service.fetchCloudTombstones({ force: true }),
+        service.fetchCloudTombstones(),
         session.token
           ? invokeAdminApi('admin-messages')
           : supabase.from('messages').select('id,author,text,date,likes,status,created_at').eq('status', 'approved').order('created_at', { ascending: false }),
@@ -24,14 +25,11 @@ export function createMessagesApi(service) {
         ...(tombstones?.dismissedMessages || []),
         ...service.getDismissedMessageIds(),
       ]);
-      const overrides = tombstones?.messageOverrides || new Map();
-      const mapped = (rows || []).map(mapMessageFromDB).filter((message) => {
-        if (!message || !message.id || isExcludedOrTestMessage(message)) return false;
-        if (!session.token && message.status !== 'approved') return false;
-        const id = String(message.id);
-        const bare = id.replace(/^msg-/, '');
-        return !dismissed.has(id) && !dismissed.has(bare) && !dismissed.has('msg-' + bare);
-      }).map((message) => ({ ...message, ...(overrides.get(message.id) || {}) }));
+      const mapped = visibleMessages(rows, {
+        dismissed,
+        overrides: tombstones?.messageOverrides,
+        isAdmin: Boolean(session.token),
+      });
       if (session.token) session.data.messages = mapped;
       else localStorage.setItem(KEYS.MESSAGES, JSON.stringify(mapped));
       window.dispatchEvent(new CustomEvent('messages_updated', { detail: mapped }));

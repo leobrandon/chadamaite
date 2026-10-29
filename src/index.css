@@ -418,6 +418,11 @@ body {
   }
 }
 
+/* Resposta imediata ao toque/clique: o botão "afunda" enquanto pressionado */
+button:not(:disabled):active {
+  transform: scale(0.97);
+}
+
 /* Interactive elements transition smoothly with tactile feedback */
 button,
 a,

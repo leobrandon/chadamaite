@@ -3,9 +3,9 @@ import { supabase, isSupabaseConfigured } from '../supabaseClient.js';
 import { sanitizeName } from '../../utils/security.js';
 import { KEYS } from './keys.js';
 import { generateUniqueId } from './ids.js';
-import { isTestGuest } from './filters.js';
 import { session, invokeAppApi, invokeAdminApi } from './session.js';
 import { mapPledgeFromDB } from './mappers.js';
+import { visiblePledges } from './visibility.js';
 
 export function createPledgesApi(service) {
   return {
@@ -21,12 +21,7 @@ export function createPledgesApi(service) {
       }
       const tombstones = await service.fetchCloudTombstones();
       const dismissed = tombstones?.dismissedPledges || new Set(service.getDismissedPledgeIds());
-      const mapped = (rows || []).map(mapPledgeFromDB).filter((pledge) => {
-        if (!pledge || !pledge.id || (session.token && isTestGuest(pledge.giverName))) return false;
-        const id = String(pledge.id);
-        const bare = id.replace(/^pledge-/, '');
-        return !dismissed.has(id) && !dismissed.has(bare) && !dismissed.has('pledge-' + bare);
-      });
+      const mapped = visiblePledges(rows, dismissed, { isAdmin: Boolean(session.token) });
       if (session.token) session.data.pledges = mapped;
       else localStorage.setItem(KEYS.PLEDGES, JSON.stringify(mapped));
       window.dispatchEvent(new CustomEvent('pledges_updated', { detail: mapped }));

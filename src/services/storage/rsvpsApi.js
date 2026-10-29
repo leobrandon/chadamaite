@@ -3,9 +3,9 @@ import { formatPhone } from '../../utils/phoneMask.js';
 import { sanitizeText, sanitizeName } from '../../utils/security.js';
 import { KEYS } from './keys.js';
 import { generateUniqueId } from './ids.js';
-import { isTestGuest } from './filters.js';
 import { session, invokeAppApi, invokeAdminApi } from './session.js';
 import { mapRSVPFromDB } from './mappers.js';
+import { visibleRsvps } from './visibility.js';
 
 export function createRsvpsApi(service) {
   return {
@@ -16,21 +16,11 @@ export function createRsvpsApi(service) {
         return [];
       }
       const [tombstones, rows] = await Promise.all([
-        service.fetchCloudTombstones({ force: true }),
+        service.fetchCloudTombstones(),
         invokeAdminApi('admin-rsvps'),
       ]);
       const dismissedSet = tombstones?.dismissedRsvps || new Set(service.getDismissedRSVPIds());
-      const overrides = tombstones?.rsvpOverrides || new Map();
-      const mapped = (rows || []).map(mapRSVPFromDB).filter((rsvp) => {
-        if (!rsvp || !rsvp.id || isTestGuest(rsvp.name)) return false;
-        const id = String(rsvp.id);
-        const bare = id.replace(/^rsvp-/, '');
-        return !dismissedSet.has(id) && !dismissedSet.has(bare) && !dismissedSet.has('rsvp-' + bare);
-      }).map((rsvp) => {
-        const id = String(rsvp.id);
-        const bare = id.replace(/^rsvp-/, '');
-        return { ...rsvp, ...(overrides.get(id) || overrides.get(bare) || {}) };
-      });
+      const mapped = visibleRsvps(rows, dismissedSet, tombstones?.rsvpOverrides);
       session.data.rsvps = mapped;
       window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: mapped }));
       return mapped;

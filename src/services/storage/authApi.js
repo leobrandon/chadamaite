@@ -1,8 +1,7 @@
 import { supabase, isSupabaseConfigured } from '../supabaseClient.js';
 import { KEYS } from './keys.js';
 import { session, invokeAppApi, invokeAdminApi } from './session.js';
-import { isTestGuest, isExcludedOrTestMessage } from './filters.js';
-import { mapGiftFromDB, mapRSVPFromDB, mapMessageFromDB, mapPledgeFromDB } from './mappers.js';
+import { visibleGifts, visibleRsvps, visibleMessages, visiblePledges } from './visibility.js';
 
 export function createAuthApi(service) {
   return {
@@ -51,17 +50,24 @@ export function createAuthApi(service) {
     refreshAdminData: async () => {
       if (import.meta.env.DEV && !isSupabaseConfigured) return;
       if (!session.token) throw new Error('Entre novamente no painel.');
+      // Uma única rodada de 4 chamadas em paralelo. As lápides saem das próprias linhas de
+      // recados, então o resultado já vem filtrado igual ao das cargas normais (sem "piscar").
       const [giftRows, rsvpRows, messageRows, pledgeRows] = await Promise.all([
         invokeAdminApi('admin-gifts'),
         invokeAdminApi('admin-rsvps'),
         invokeAdminApi('admin-messages'),
         invokeAdminApi('admin-pledges'),
       ]);
+      const tombstones = service.applyTombstoneRows(messageRows);
       session.data = {
-        gifts: (giftRows || []).map(mapGiftFromDB),
-        rsvps: (rsvpRows || []).map(mapRSVPFromDB).filter((r) => r && !isTestGuest(r.name)),
-        messages: (messageRows || []).map(mapMessageFromDB).filter((m) => m && !isExcludedOrTestMessage(m)),
-        pledges: (pledgeRows || []).map(mapPledgeFromDB).filter((p) => p && !isTestGuest(p.giverName)),
+        gifts: visibleGifts(giftRows, tombstones.dismissedGifts),
+        rsvps: visibleRsvps(rsvpRows, tombstones.dismissedRsvps, tombstones.rsvpOverrides),
+        messages: visibleMessages(messageRows, {
+          dismissed: new Set([...tombstones.dismissedMessages, ...service.getDismissedMessageIds()]),
+          overrides: tombstones.messageOverrides,
+          isAdmin: true,
+        }),
+        pledges: visiblePledges(pledgeRows, tombstones.dismissedPledges, { isAdmin: true }),
       };
       window.dispatchEvent(new CustomEvent('gifts_updated', { detail: session.data.gifts }));
       window.dispatchEvent(new CustomEvent('rsvps_updated', { detail: session.data.rsvps }));

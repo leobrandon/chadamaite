@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Check, Eye, EyeOff, Database, Download, FileCode } from 'lucide-react';
+import { Check, Eye, EyeOff, Database, Download, FileCode, LoaderCircle } from 'lucide-react';
 import storageService from '../../services/storageService';
 
 export default function AdminConfigTab({ config, onSaveConfig }) {
@@ -8,6 +8,7 @@ export default function AdminConfigTab({ config, onSaveConfig }) {
   const [showPin, setShowPin] = useState(false);
   const [configSaved, setConfigSaved] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [exportingType, setExportingType] = useState(null);
 
   const handleDownloadBackup = async (format) => {
@@ -88,6 +89,8 @@ export default function AdminConfigTab({ config, onSaveConfig }) {
     delete configToSave.adminPinHash;
     delete configToSave.adminPin;
     setSaveError('');
+    setConfigSaved(false);
+    setIsSaving(true);
 
     try {
       await onSaveConfig(configToSave, newPin.trim());
@@ -96,6 +99,8 @@ export default function AdminConfigTab({ config, onSaveConfig }) {
       setTimeout(() => setConfigSaved(false), 2500);
     } catch (error) {
       setSaveError(error?.message || 'Não foi possível salvar as configurações.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -246,7 +251,7 @@ export default function AdminConfigTab({ config, onSaveConfig }) {
               </button>
             </div>
             <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
-              Protegida por criptografia SHA-256 no navegador.
+              Guardada apenas como hash criptográfico (PBKDF2) no servidor.
             </p>
           </div>
         </div>
@@ -254,11 +259,18 @@ export default function AdminConfigTab({ config, onSaveConfig }) {
         <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <button
             type="submit"
-            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-2 min-h-[42px]"
+            disabled={isSaving}
+            aria-busy={isSaving}
+            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-2 min-h-[44px] active:scale-95 disabled:opacity-70 disabled:cursor-wait"
           >
-            <Check className="w-4 h-4" />
-            <span>Salvar Configurações</span>
+            {isSaving ? <LoaderCircle className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Check className="w-4 h-4" />}
+            <span>{isSaving ? 'Salvando...' : 'Salvar Configurações'}</span>
           </button>
+          {isSaving && newPin.trim() && (
+            <span role="status" className="text-xs text-slate-500 dark:text-slate-400 text-center">
+              Protegendo o novo PIN, isso pode levar alguns segundos...
+            </span>
+          )}
           {saveError && (
             <p role="alert" className="text-sm text-rose-600 dark:text-rose-400">{saveError}</p>
           )}

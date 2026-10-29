@@ -126,9 +126,17 @@ export default function App() {
     }
   };
 
+  // Aprovar/excluir atualizam a tela na hora e só voltam atrás se o servidor recusar.
   const handleApproveMessage = async (msgId) => {
-    const updated = await storageService.approveMessage(msgId);
-    if (Array.isArray(updated)) setMessages(updated);
+    const previous = messages;
+    setMessages((current) => current.map((m) => (m.id === msgId ? { ...m, status: 'approved' } : m)));
+    try {
+      const updated = await storageService.approveMessage(msgId);
+      if (Array.isArray(updated)) setMessages(updated);
+    } catch (error) {
+      setMessages(previous);
+      throw error;
+    }
   };
 
   const handleLikeMessage = async (msgId, delta = 1) => {
@@ -137,8 +145,15 @@ export default function App() {
   };
 
   const handleDeleteMessage = async (msgId) => {
-    const updated = await storageService.deleteMessage(msgId);
-    if (Array.isArray(updated)) setMessages(updated);
+    const previous = messages;
+    setMessages((current) => current.filter((m) => m.id !== msgId));
+    try {
+      const updated = await storageService.deleteMessage(msgId);
+      if (Array.isArray(updated)) setMessages(updated);
+    } catch (error) {
+      setMessages(previous);
+      throw error;
+    }
   };
 
   const handleUpdateMessage = async (msgId, fields) => {

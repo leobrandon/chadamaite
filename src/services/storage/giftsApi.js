@@ -5,6 +5,7 @@ import { KEYS } from './keys.js';
 import { generateUniqueId } from './ids.js';
 import { session, invokeAppApi, invokeAdminApi } from './session.js';
 import { mapGiftFromDB, mapGiftToDB } from './mappers.js';
+import { visibleGifts } from './visibility.js';
 
 export function createGiftsApi(service) {
   return {
@@ -21,12 +22,7 @@ export function createGiftsApi(service) {
           rows = data || [];
         }
         const dismissedSet = tombstones?.dismissedGifts || new Set(service.getDismissedGiftIds());
-        const mapped = (rows || []).map(mapGiftFromDB).filter((gift) => {
-          if (!gift || !gift.id) return false;
-          const idStr = String(gift.id);
-          const bareId = idStr.replace(/^gift-/, '');
-          return !dismissedSet.has(idStr) && !dismissedSet.has(bareId) && !dismissedSet.has('gift-' + bareId);
-        });
+        const mapped = visibleGifts(rows, dismissedSet);
         if (session.token) session.data.gifts = mapped;
         else localStorage.setItem(KEYS.GIFTS, JSON.stringify(mapped));
         window.dispatchEvent(new CustomEvent('gifts_updated', { detail: mapped }));

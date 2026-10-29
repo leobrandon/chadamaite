@@ -52,31 +52,18 @@ export default function AdminPanel({
   const [isRefreshingCloud, setIsRefreshingCloud] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  // Sincronização completa de todas as tabelas em tempo real
+  // Sincronização manual: uma única rodada de chamadas administrativas em paralelo.
+  // (O login já carrega tudo, então não há recarga automática ao abrir o painel.)
   const refreshAllCloudData = async () => {
     setIsRefreshingCloud(true);
     try {
-      await storageService.fetchCloudTombstones({ force: true });
-      await Promise.allSettled([
-        storageService.fetchRSVPsFromCloud(),
-        storageService.fetchPledgesFromCloud(),
-        storageService.fetchGiftsFromCloud(),
-        storageService.fetchMessagesFromCloud(),
-        storageService.fetchConfigFromCloud(),
-      ]);
+      await storageService.refreshAdminData();
     } catch (err) {
       console.error('Erro ao sincronizar nuvem no painel:', err);
     } finally {
       setIsRefreshingCloud(false);
     }
   };
-
-  // Carregar dados frescos da nuvem ao abrir o painel se já autenticado
-  useEffect(() => {
-    if (isOpen && isAuthenticated) {
-      refreshAllCloudData();
-    }
-  }, [isOpen, isAuthenticated]);
 
   // Listen to logs updates in real time
   useEffect(() => {
@@ -149,8 +136,9 @@ export default function AdminPanel({
       setPinInput('');
     } catch (error) {
       console.error('Não foi possível entrar no painel:', error);
-      await storageService.clearAdminSession();
       setPinError(true);
+      // Limpa a sessão em segundo plano para o erro aparecer sem esperar a rede.
+      void storageService.clearAdminSession();
     } finally {
       setIsLoggingIn(false);
     }
