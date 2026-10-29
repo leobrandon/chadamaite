@@ -251,7 +251,7 @@ export default function PhotoAlbum() {
               <button
                 type="button"
                 onClick={() => void reload()}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-blush-500 hover:bg-blush-600 text-white font-semibold text-sm px-5 py-2.5 transition"
+                className="inline-flex items-center justify-center gap-2 min-h-[44px] rounded-full bg-blush-500 hover:bg-blush-600 text-white font-semibold text-sm px-5 py-2.5 transition"
               >
                 <RefreshCw className="w-4 h-4" aria-hidden="true" />
                 Tentar novamente
@@ -299,7 +299,7 @@ export default function PhotoAlbum() {
                     type="button"
                     onClick={() => void loadMore()}
                     disabled={isLoadingMore}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-blush-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-blush-700 dark:text-blush-300 font-semibold text-sm px-5 py-2.5 hover:bg-blush-50 dark:hover:bg-slate-700 disabled:opacity-60 transition"
+                    className="inline-flex items-center justify-center gap-2 min-h-[44px] rounded-full border border-blush-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-blush-700 dark:text-blush-300 font-semibold text-sm px-5 py-2.5 hover:bg-blush-50 dark:hover:bg-slate-700 disabled:opacity-60 transition"
                   >
                     {isLoadingMore ? <LoaderCircle className="w-4 h-4 animate-spin" aria-hidden="true" /> : <RefreshCw className="w-4 h-4" aria-hidden="true" />}
                     Tentar novamente

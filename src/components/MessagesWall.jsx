@@ -252,7 +252,7 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
               <button
                 type="submit"
                 disabled={isSubmitting || !text.trim()}
-                className="w-full sm:w-auto px-6 py-3 rounded-full bg-blush-500 hover:bg-blush-600 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-md shadow-blush-500/20 disabled:opacity-50 transition flex items-center justify-center gap-2 order-1 sm:order-2 cursor-pointer"
+                className="w-full sm:w-auto min-h-[44px] px-6 py-3 rounded-full bg-blush-500 hover:bg-blush-600 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-md shadow-blush-500/20 disabled:opacity-50 transition flex items-center justify-center gap-2 order-1 sm:order-2 cursor-pointer"
               >
                 <Send className="w-4 h-4" />
                 <span>{isSubmitting ? 'Publicando...' : 'Publicar Recado 💕'}</span>
@@ -392,7 +392,7 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                               type="button"
                               whileTap={{ scale: 0.96 }}
                               onClick={() => toggleExpandMessage(msg.id)}
-                              className="mt-1.5 text-xs font-semibold text-blush-600 dark:text-blush-400 hover:text-blush-700 dark:hover:text-blush-300 transition-colors inline-block cursor-pointer focus:outline-none self-start py-0.5"
+                              className="mt-1.5 text-xs font-semibold text-blush-600 dark:text-blush-400 hover:text-blush-700 dark:hover:text-blush-300 transition-colors inline-flex items-center min-h-[44px] -ml-1 px-1 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blush-300 rounded-lg self-start"
                             >
                               {isExpanded ? 'Ler menos' : 'Ler mais'}
                             </motion.button>

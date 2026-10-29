@@ -32,10 +32,10 @@ export default function CloudHeadingReveal({
       {/* Badge Pill */}
       {badge && (
         <motion.div
-          initial={{ opacity: 0, y: -10, scale: 0.95 }}
+          initial={{ opacity: 0.5, y: -6, scale: 0.97 }}
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.4 }}
+          viewport={{ once: true, margin: "0px 0px 15% 0px" }}
+          transition={{ duration: 0.3 }}
           className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blush-100/90 dark:bg-blush-950/90 text-blush-600 dark:text-blush-300 text-xs font-bold mb-3 shadow-2xs"
         >
           {BadgeIcon && <BadgeIcon className="w-3.5 h-3.5" />}
@@ -45,10 +45,10 @@ export default function CloudHeadingReveal({
 
       {/* Main Title with Smooth Cloud Fade In */}
       <motion.h2
-        initial={{ opacity: 0, y: 15 }}
+        initial={{ opacity: 0.5, y: 8 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.1 }}
+        viewport={{ once: true, margin: "0px 0px 15% 0px" }}
+        transition={{ duration: 0.3 }}
         className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-800 dark:text-slate-100 tracking-tight"
       >
         {title}{' '}
@@ -62,10 +62,10 @@ export default function CloudHeadingReveal({
       {/* Subtitle */}
       {subtitle && (
         <motion.p
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0.5, y: 6 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          viewport={{ once: true, margin: "0px 0px 15% 0px" }}
+          transition={{ duration: 0.3, delay: 0.05 }}
           className="mt-3 text-slate-600 dark:text-slate-400 text-sm sm:text-base leading-relaxed"
         >
           {subtitle}

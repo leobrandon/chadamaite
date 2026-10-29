@@ -2,6 +2,7 @@ import React, { useState, useEffect, Suspense, lazy } from 'react';
 import './App.css';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
+import HeroSkeleton from './components/HeroSkeleton';
 import EventDetails from './components/EventDetails';
 import MessagesWall from './components/MessagesWall';
 import PhotoAlbum from './components/PhotoAlbum';
@@ -159,12 +160,11 @@ export default function App() {
     if (elem) elem.scrollIntoView({ behavior: 'smooth' });
   };
 
-  if (isInitialLoading && storageService.isCloudConnected) {
-    return (
-      <main className="min-h-screen grid place-items-center bg-[#fffaf5] px-6 text-center text-slate-700">
-        <p role="status" className="text-sm font-medium">Carregando as informações do evento...</p>
-      </main>
-    );
+  // Pré-visualização do skeleton em desenvolvimento: http://localhost:3000/?skeleton
+  const previewSkeleton = import.meta.env.DEV && new URLSearchParams(window.location.search).has('skeleton');
+
+  if (previewSkeleton || (isInitialLoading && storageService.isCloudConnected)) {
+    return <HeroSkeleton />;
   }
 
   if (initialSyncError && storageService.isCloudConnected) {

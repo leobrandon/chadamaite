@@ -44,7 +44,7 @@ export default function Footer({ config, onOpenAdmin }) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleShareClick}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition"
+            className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 py-2.5 rounded-full bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition"
           >
             <Share2 className="w-3.5 h-3.5" />
             <span>Compartilhar recordações no WhatsApp</span>
@@ -56,7 +56,7 @@ export default function Footer({ config, onOpenAdmin }) {
 
           <button
             onClick={onOpenAdmin}
-            className="flex items-center gap-1 text-slate-400 hover:text-white transition py-1 px-3 rounded-lg bg-slate-800 hover:bg-slate-700"
+            className="flex items-center justify-center gap-1.5 min-h-[44px] text-slate-400 hover:text-white transition py-2 px-4 rounded-lg bg-slate-800 hover:bg-slate-700"
           >
             <Shield className="w-3 h-3" />
             <span>Área Administrativa dos Pais</span>

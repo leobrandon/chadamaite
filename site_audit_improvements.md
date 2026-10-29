@@ -7,6 +7,31 @@
 
 ---
 
+## ✅ Status de Implementação (revisão de 29 de Outubro de 2026)
+
+> O texto abaixo é o diagnóstico original de 16/08/2026 e foi mantido como histórico. Esta tabela mostra o que mudou desde então. O site já está em modo **pós-evento** (fotos e recados), então os itens ligados a RSVP e lista de presentes ficaram sem uso para os convidados.
+
+| Item da auditoria | Status | Observação |
+| :--- | :--- | :--- |
+| Code-splitting do `AdminPanel` (`React.lazy`) | ✅ Feito | `App.jsx` carrega o painel sob demanda. |
+| Inputs com 16px no mobile (`text-base sm:text-sm`) | ✅ Feito | Confirmado em `MessagesWall.jsx`. |
+| Limite de caracteres em nome e recado | ✅ Feito | `maxLength` 80 e 500, mais `sanitizeText`/`sanitizeName`. |
+| Debounce no Realtime do Supabase | ✅ Feito | Timer de debounce em `storageService.js`. |
+| IDs com `crypto.randomUUID()` | ✅ Feito | Gerador com fallback em `storageService.js`. |
+| Limpar `src/App.css` do template Vite | ✅ Feito | Restam só as animações usadas. |
+| PIN do admin exposto na tabela pública | ✅ Resolvido | PBKDF2 com salt, RLS fechado e `GRANT` por coluna (`supabase/production/002_harden_public_access.sql`). **Atenção:** o valor antigo do PIN ficou no histórico deste arquivo no Git; se ainda for usado em algum lugar, troque-o. |
+| Tela de carregamento sem skeleton | ✅ Feito (29/10) | `HeroSkeleton.jsx` no lugar do texto "Carregando…". |
+| Animações de entrada e `prefers-reduced-motion` | ✅ Feito (29/10) | Títulos começam em 50% de opacidade, duram 0,3 s, e `MotionConfig reducedMotion="user"` mais regra CSS respeitam a preferência do sistema. |
+| Alvos de toque de 44×44 px | ✅ Feito (29/10) | Curtir, "Ler mais", botões do menu mobile e botão do rodapé. |
+| Contraste de textos `slate-400` e badges | ⏳ Pendente | Precisa de nova medição. |
+| `og:image` e `theme-color` | ⏳ Pendente | Preview do WhatsApp sem imagem. |
+| Link "pular para o conteúdo" | ⏳ Pendente | |
+| Modais de confirmação no lugar de `window.confirm` | ⏳ Pendente | Verificar no painel admin. |
+| Adicionar ao calendário, música, "avisar os papais" | ❌ Não se aplica | Pensados para antes do evento. |
+| Lista de presentes, RSVP e Pix para convidados | ❌ Não se aplica | O evento já aconteceu; a página pública não usa mais esses componentes. |
+
+---
+
 ## 📋 Sumário Executivo
 
 A aplicação **Chá de Bebê da Maitê** é uma Single Page Application (SPA) construída com **React 19**, **Vite 8**, **Tailwind CSS 3** e **Supabase** (PostgreSQL + Realtime). O projeto possui excelente apelo visual, paleta afetiva bem balanceada (*blush*, *cream*, *sage*, *gold*), tipografia elegante (*Great Vibes* + *Playfair Display* + *Plus Jakarta Sans*) e arquitetura funcional com sincronização em tempo real e fallback local (*localStorage*).
@@ -97,7 +122,7 @@ Abaixo estão detalhados os achados e um plano de melhorias priorizado em **Alta
 
 #### Pontos de Atenção:
 1. **Segurança do PIN Administrativo:**
-   - O PIN (`adminPin: '<PIN_DO_PAINEL>'`) é armazenado na tabela pública `event_config` e trafega em texto puro no JSON recebido pelo cliente. Qualquer usuário com conhecimento básico de DevTools (Network tab) consegue ler o PIN.
+   - O PIN (valor removido deste documento) era armazenado na tabela pública `event_config` e trafega em texto puro no JSON recebido pelo cliente. Qualquer usuário com conhecimento básico de DevTools (Network tab) consegue ler o PIN.
    - *Recomendação:* Para um evento familiar o risco é controlado, mas pode-se proteger com função RPC do Supabase ou hashing simples, além de restringir RLS para que campos sensíveis não sejam públicos se necessário.
 2. **Geração de IDs (`Date.now()`):**
    - Novas contribuições usam `pledge-${Date.now()}`. Se dois convidados enviarem no mesmo milissegundo, pode ocorrer colisão de chave primária.

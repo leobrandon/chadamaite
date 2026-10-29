@@ -7,6 +7,7 @@
     "dev": "vite --host 0.0.0.0 --port 3000",
     "build": "vite build",
     "lint": "oxlint",
+    "test": "node --experimental-test-module-mocks --test \"tests/**/*.test.mjs\" \"supabase/functions/**/*.test.mjs\"",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -165,7 +165,7 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, isDark, o
               <button
                 onClick={onToggleDark}
                 title={isDark ? 'Modo Claro' : 'Modo Escuro'}
-                className={`p-2 rounded-full border transition-all duration-300 transform active:scale-90 ${
+                className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full border transition-all duration-300 transform active:scale-90 ${
                   isDark
                     ? 'text-amber-300 bg-slate-800 border-slate-700'
                     : 'text-slate-600 bg-slate-50 border-slate-200 hover:bg-slate-100'
@@ -179,7 +179,7 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, isDark, o
                 href={getShareUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-full text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-800/60"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-800/60"
                 title="Compartilhar recordações no WhatsApp"
               >
                 <Share2 className="w-4 h-4" />
@@ -187,7 +187,7 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, isDark, o
 
               <button
                 onClick={onOpenAdmin}
-                className="p-2 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
                 title="Admin"
               >
                 <Shield className="w-4 h-4" />
@@ -195,7 +195,7 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, isDark, o
 
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-blush-50 dark:hover:bg-slate-800 focus:outline-none transition"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-700 dark:text-slate-200 hover:bg-blush-50 dark:hover:bg-slate-800 focus:outline-none transition"
                 aria-label="Abrir menu"
               >
                 {mobileMenuOpen ? <X className="w-6 h-6 text-blush-600 dark:text-blush-400" /> : <Menu className="w-6 h-6" />}

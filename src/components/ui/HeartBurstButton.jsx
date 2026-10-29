@@ -30,7 +30,7 @@ export default function HeartBurstButton({ isLiked, likesCount, onClick, classNa
         whileTap={{ scale: 0.85 }}
         whileHover={{ scale: 1.06 }}
         onClick={handleClick}
-        className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-semibold transition cursor-pointer shadow-xs relative z-10 ${
+        className={`flex items-center justify-center gap-1.5 text-xs px-3.5 py-1.5 min-h-[44px] min-w-[44px] rounded-full font-semibold transition cursor-pointer shadow-xs relative z-10 ${
           isLiked
             ? 'bg-blush-500 text-white shadow-blush-500/25 ring-2 ring-blush-200 dark:ring-blush-900'
             : 'bg-white/90 dark:bg-slate-800/90 text-blush-700 dark:text-blush-300 hover:bg-white dark:hover:bg-slate-800 hover:text-blush-800 dark:hover:text-blush-200 border border-blush-200/70 dark:border-slate-700'

@@ -1,22 +1,9 @@
 import React from 'react';
-import { Camera, Heart, Sparkles, MapPin, Calendar, Clock, Share2 } from 'lucide-react';
+import { Camera, Heart, Sparkles, Share2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { LetterPullUp, FadeInUp } from './hero/TextRevealPullUp';
 
-const formatPastTime = (time) => {
-  const value = String(time || '').trim();
-  const match = value.match(/^(\d{1,2}):(\d{2})$/);
-
-  if (match) {
-    const [, hours, minutes] = match;
-    return `${hours}h${minutes === '00' ? '' : minutes}`;
-  }
-
-  return value.replace(/^a partir\s+(?:das|de)\s+/i, '');
-};
-
 export default function HeroSection({ config, onNavigateToGifts, onNavigateToRSVP }) {
-  const eventTime = formatPastTime(config.time || config.displayTime);
   const getShareUrl = () => {
     const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
     const shareText = 'Olá! Veja as recordações do chá da Maitê: ' + currentUrl;
@@ -70,37 +57,8 @@ export default function HeroSection({ config, onNavigateToGifts, onNavigateToRSV
           </p>
         </FadeInUp>
 
-        {/* Quick event highlights banner with interactive hover & stagger entry */}
-        <FadeInUp delay={0.5}>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto mb-10 text-slate-700 dark:text-slate-200">
-            <motion.div
-              whileHover={{ y: -3, transition: { duration: 0.2 } }}
-              className="glass-card p-3.5 rounded-2xl flex items-center justify-center gap-2.5 shadow-sm hover:border-blush-300 dark:hover:border-blush-500/50 transition-colors"
-            >
-              <Calendar className="w-4 h-4 text-blush-500 dark:text-blush-400 shrink-0" />
-              <span className="text-xs sm:text-sm font-medium">{config.displayDate}</span>
-            </motion.div>
-            <motion.div
-              whileHover={{ y: -3, transition: { duration: 0.2 } }}
-              className="glass-card p-3.5 rounded-2xl flex items-center justify-center gap-2.5 shadow-sm hover:border-blush-300 dark:hover:border-blush-500/50 transition-colors"
-            >
-              <Clock className="w-4 h-4 text-blush-500 dark:text-blush-400 shrink-0" />
-              <span className="text-xs sm:text-sm font-medium">{eventTime}</span>
-            </motion.div>
-            <motion.div
-              whileHover={{ y: -3, transition: { duration: 0.2 } }}
-              className="glass-card p-3.5 rounded-2xl flex items-center justify-center gap-2.5 shadow-sm hover:border-blush-300 dark:hover:border-blush-500/50 transition-colors"
-            >
-              <MapPin className="w-4 h-4 text-blush-500 dark:text-blush-400 shrink-0" />
-              <span className="text-xs sm:text-sm font-medium truncate" title={config.locationName}>
-                {config.locationName}
-              </span>
-            </motion.div>
-          </div>
-        </FadeInUp>
-
         {/* Action Buttons with Ultra-Smooth Hover */}
-        <FadeInUp delay={0.65}>
+        <FadeInUp delay={0.5}>
           <div className="flex flex-wrap items-center justify-center gap-3 max-w-3xl mx-auto">
             <button
               type="button"
