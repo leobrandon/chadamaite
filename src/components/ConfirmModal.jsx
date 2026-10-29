@@ -111,7 +111,7 @@ export default function ConfirmModal({
             className={`px-5 py-2.5 rounded-2xl text-white font-bold text-xs sm:text-sm shadow-md transition active:scale-[0.98] ${
               isDestructive
                 ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/20'
-                : 'bg-blush-500 hover:bg-blush-600 shadow-blush-500/20'
+                : 'bg-blush-600 hover:bg-blush-700 shadow-blush-500/20'
             }`}
           >
             {confirmText}

@@ -251,7 +251,7 @@ export default function PhotoAlbum() {
               <button
                 type="button"
                 onClick={() => void reload()}
-                className="inline-flex items-center justify-center gap-2 min-h-[44px] rounded-full bg-blush-500 hover:bg-blush-600 text-white font-semibold text-sm px-5 py-2.5 transition"
+                className="inline-flex items-center justify-center gap-2 min-h-[44px] rounded-full bg-blush-600 hover:bg-blush-700 text-white font-semibold text-sm px-5 py-2.5 transition"
               >
                 <RefreshCw className="w-4 h-4" aria-hidden="true" />
                 Tentar novamente

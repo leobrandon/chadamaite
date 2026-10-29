@@ -203,6 +203,14 @@ export default function App() {
   return (
     <ToastProvider>
       <div className="min-h-screen bg-baby-pattern flex flex-col justify-between relative overflow-x-hidden">
+        {/* Atalho para quem navega por teclado ou leitor de tela */}
+        <a
+          href="#conteudo"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:px-4 focus:py-2.5 focus:rounded-full focus:bg-blush-600 focus:text-white focus:font-bold focus:text-sm focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-white"
+        >
+          Pular para o conteúdo
+        </a>
+
         {/* Full-site ambient floating elements (hearts, stars, clouds, sparkles, cute teddy bears) */}
         <FloatingAmbientParticles />
 
@@ -215,7 +223,7 @@ export default function App() {
         onToggleDark={toggleDark}
       />
 
-      <main className="flex-1">
+      <main id="conteudo" tabIndex={-1} className="flex-1 outline-none">
         {/* Hero Section */}
         <HeroSection
           config={config}

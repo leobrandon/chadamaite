@@ -82,7 +82,7 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, isDark, o
                 <span className="font-serif text-base sm:text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight leading-tight flex items-center gap-1 pr-1">
                   Chá da <span className="font-handwriting text-2xl sm:text-3xl text-blush-600 dark:text-blush-400 font-normal">Maitê</span>
                 </span>
-                <span className="text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-400 font-semibold leading-none mt-0.5">
+                <span className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-slate-400 font-semibold leading-none mt-0.5">
                   Leonardo & Isabella
                 </span>
               </div>
@@ -99,7 +99,7 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, isDark, o
                     onClick={() => handleNavClick(item.id)}
                     className={`flex items-center gap-1.5 lg:gap-2 px-3 lg:px-3.5 py-1.5 lg:py-2 rounded-full text-xs lg:text-sm font-medium transition-all whitespace-nowrap ${
                       isActive
-                        ? 'bg-blush-500 text-white shadow-md shadow-blush-500/25'
+                        ? 'bg-blush-600 text-white shadow-md shadow-blush-500/25'
                         : 'text-slate-600 dark:text-slate-300 hover:text-blush-600 dark:hover:text-blush-300 hover:bg-blush-50 dark:hover:bg-slate-800'
                     }`}
                   >
@@ -216,7 +216,7 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAdmin, isDark, o
                   onClick={() => handleNavClick(item.id)}
                   className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition ${
                     isActive
-                      ? 'bg-blush-500 text-white shadow-sm'
+                      ? 'bg-blush-600 text-white shadow-sm'
                       : 'text-slate-700 dark:text-slate-200 hover:bg-blush-50 dark:hover:bg-slate-800'
                   }`}
                 >

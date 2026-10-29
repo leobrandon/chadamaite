@@ -205,7 +205,7 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                   Seu Nome ou Família:
                 </label>
-                <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
                   {author.length}/80
                 </span>
               </div>
@@ -215,21 +215,21 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
                 placeholder="Ex: Titia Jéssica / Família Silva"
-                className="w-full px-4 py-3 rounded-xl bg-slate-50/70 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 dark:focus:ring-blush-950 outline-none text-base sm:text-sm transition"
+                className="w-full px-4 py-3 rounded-xl bg-slate-50/70 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 dark:focus:ring-blush-950 outline-none text-base sm:text-sm transition"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                  Seu Recado de Carinho: <span className="text-rose-500">*</span>
+                  Seu Recado de Carinho: <span className="text-rose-600" aria-hidden="true">*</span>
                 </label>
                 <span className={`text-[11px] font-medium transition ${
                   textRemaining < 50
                     ? 'text-rose-600 dark:text-rose-400 font-bold'
                     : textRemaining < 150
                     ? 'text-amber-600 dark:text-amber-400'
-                    : 'text-slate-400 dark:text-slate-500'
+                    : 'text-slate-500 dark:text-slate-400'
                 }`}>
                   {textRemaining} {textRemaining === 1 ? 'caractere restante' : 'caracteres restantes'}
                 </span>
@@ -241,18 +241,18 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Escreva sua mensagem cheia de afeto para a Maitê..."
-                className="w-full px-4 py-3 rounded-xl bg-slate-50/70 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 dark:focus:ring-blush-950 outline-none text-base sm:text-sm transition resize-none leading-relaxed"
+                className="w-full px-4 py-3 rounded-xl bg-slate-50/70 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:border-blush-400 focus:ring-2 focus:ring-blush-100 dark:focus:ring-blush-950 outline-none text-base sm:text-sm transition resize-none leading-relaxed"
               />
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 order-2 sm:order-1 text-center sm:text-left">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 order-2 sm:order-1 text-center sm:text-left">
                  Seu recado será publicado após rápida aprovação dos papais.
               </p>
               <button
                 type="submit"
                 disabled={isSubmitting || !text.trim()}
-                className="w-full sm:w-auto min-h-[44px] px-6 py-3 rounded-full bg-blush-500 hover:bg-blush-600 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-md shadow-blush-500/20 disabled:opacity-50 transition flex items-center justify-center gap-2 order-1 sm:order-2 cursor-pointer"
+                className="w-full sm:w-auto min-h-[44px] px-6 py-3 rounded-full bg-blush-600 hover:bg-blush-700 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-md shadow-blush-500/20 disabled:opacity-50 transition flex items-center justify-center gap-2 order-1 sm:order-2 cursor-pointer"
               >
                 <Send className="w-4 h-4" />
                 <span>{isSubmitting ? 'Publicando...' : 'Publicar Recado 💕'}</span>
@@ -297,7 +297,7 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                     setCurrentPage(1);
                   }}
                   placeholder="Buscar recados por nome..."
-                  className="w-full pl-8 pr-3 py-1.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-xs outline-none focus:border-blush-400 focus:ring-1 focus:ring-blush-100 dark:focus:ring-blush-950 transition"
+                  className="w-full pl-8 pr-3 py-1.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 placeholder:text-slate-500 dark:placeholder:text-slate-400 text-xs outline-none focus:border-blush-400 focus:ring-1 focus:ring-blush-100 dark:focus:ring-blush-950 transition"
                 />
               </div>
             )}
@@ -364,7 +364,7 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                                 {msg.author}
                               </span>
                               {displayDate && (
-                                <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
+                                <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
                                   {displayDate}
                                 </span>
                               )}
@@ -456,14 +456,14 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
                         return (
                           <React.Fragment key={page}>
                             {showEllipsisBefore && (
-                              <span className="px-1 text-slate-400 dark:text-slate-500 text-xs select-none">...</span>
+                              <span className="px-1 text-slate-500 dark:text-slate-400 text-xs select-none">...</span>
                             )}
                             <button
                               type="button"
                               onClick={() => handlePageChange(page)}
                               className={`w-9 h-9 rounded-xl text-xs font-bold transition flex items-center justify-center shadow-xs cursor-pointer ${
                                 activePage === page
-                                  ? 'bg-blush-500 text-white shadow-blush-500/20'
+                                  ? 'bg-blush-600 text-white shadow-blush-500/20'
                                   : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blush-50 dark:hover:bg-slate-700 hover:text-blush-600 dark:hover:text-blush-300'
                               }`}
                             >
@@ -488,7 +488,7 @@ export default function MessagesWall({ messages = [], onAddMessage, onLikeMessag
             )}
           </div>
         ) : (
-          <div className="text-center py-12 text-slate-400 dark:text-slate-500 text-sm glass-card rounded-3xl p-6 dark:bg-slate-800/60 dark:border-slate-700/60">
+          <div className="text-center py-12 text-slate-500 dark:text-slate-400 text-sm glass-card rounded-3xl p-6 dark:bg-slate-800/60 dark:border-slate-700/60">
             {searchQuery ? (
               <p>Nenhum recado encontrado para "{searchQuery}".</p>
             ) : (

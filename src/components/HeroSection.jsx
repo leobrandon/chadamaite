@@ -63,7 +63,7 @@ export default function HeroSection({ config, onNavigateToGifts, onNavigateToRSV
             <button
               type="button"
               onClick={onNavigateToGifts}
-              className="h-12 px-6 rounded-full bg-blush-500 hover:bg-blush-600 active:scale-95 text-white font-bold text-sm shadow-md shadow-blush-500/25 hover:shadow-xl hover:shadow-blush-500/35 hover:-translate-y-0.5 transition-all duration-200 ease-out flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer"
+              className="h-12 px-6 rounded-full bg-blush-600 hover:bg-blush-700 active:scale-95 text-white font-bold text-sm shadow-md shadow-blush-500/25 hover:shadow-xl hover:shadow-blush-500/35 hover:-translate-y-0.5 transition-all duration-200 ease-out flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer"
             >
               <Camera className="w-4 h-4 shrink-0" />
               <span>Ver fotos</span>

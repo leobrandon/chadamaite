@@ -36,7 +36,7 @@ export default function CloudHeadingReveal({
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={{ once: true, margin: "0px 0px 15% 0px" }}
           transition={{ duration: 0.3 }}
-          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blush-100/90 dark:bg-blush-950/90 text-blush-600 dark:text-blush-300 text-xs font-bold mb-3 shadow-2xs"
+          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blush-100/90 dark:bg-blush-950/90 text-blush-700 dark:text-blush-300 text-xs font-bold mb-3 shadow-2xs"
         >
           {BadgeIcon && <BadgeIcon className="w-3.5 h-3.5" />}
           <span>{badge}</span>

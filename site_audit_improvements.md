@@ -23,9 +23,10 @@
 | Tela de carregamento sem skeleton | ✅ Feito (29/10) | `HeroSkeleton.jsx` no lugar do texto "Carregando…". |
 | Animações de entrada e `prefers-reduced-motion` | ✅ Feito (29/10) | Títulos começam em 50% de opacidade, duram 0,3 s, e `MotionConfig reducedMotion="user"` mais regra CSS respeitam a preferência do sistema. |
 | Alvos de toque de 44×44 px | ✅ Feito (29/10) | Curtir, "Ler mais", botões do menu mobile e botão do rodapé. |
-| Contraste de textos `slate-400` e badges | ⏳ Pendente | Precisa de nova medição. |
-| `og:image` e `theme-color` | ⏳ Pendente | Preview do WhatsApp sem imagem. |
-| Link "pular para o conteúdo" | ⏳ Pendente | |
+| Contraste de textos `slate-400` e badges | ✅ Feito (29/10) | Medido no navegador (claro e escuro): botões rosa sólidos usam `blush-600`, textos auxiliares `slate-500`, selos `blush-700`. Painel admin ainda não foi medido. |
+| `og:image` e `theme-color` | ✅ Feito (29/10) | `public/og-image.jpg` (1200×630), tags Open Graph/Twitter e cor da barra no celular. |
+| Link "pular para o conteúdo" | ✅ Feito (29/10) | Primeiro item da tabulação; leva ao `<main id="conteudo">`. |
+| Botões flutuantes de rolagem no mobile | ✅ Feito (29/10) | Só "voltar ao topo", acima da barra Fotos/Recados. |
 | Modais de confirmação no lugar de `window.confirm` | ⏳ Pendente | Verificar no painel admin. |
 | Adicionar ao calendário, música, "avisar os papais" | ❌ Não se aplica | Pensados para antes do evento. |
 | Lista de presentes, RSVP e Pix para convidados | ❌ Não se aplica | O evento já aconteceu; a página pública não usa mais esses componentes. |

@@ -46,7 +46,7 @@ export default function MobileFloatingCTA({ onNavigateToGifts, onNavigateToRSVP 
           type="button"
           id="btn-sticky-recados"
           onClick={onNavigateToRSVP}
-          className="flex-1 py-2.5 px-3 rounded-xl bg-blush-500 hover:bg-blush-600 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-md shadow-blush-500/25"
+          className="flex-1 py-2.5 px-3 rounded-xl bg-blush-600 hover:bg-blush-700 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-md shadow-blush-500/25"
         >
           <MessageCircleHeart className="w-4 h-4 shrink-0" />
           <span className="truncate">Recados</span>
