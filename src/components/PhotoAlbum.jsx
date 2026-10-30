@@ -10,12 +10,27 @@ import {
   RefreshCw,
   X,
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { albumService } from '../services/albumService.js';
 import CloudHeadingReveal from './ui/CloudHeadingReveal';
 
 const PAGE_SIZE = 24;
 const SWIPE_THRESHOLD = 50;
+const SWIPE_VELOCITY = 500;
+const CLOSE_MS = 220;
+const PHOTO_EASE = [0.22, 1, 0.36, 1];
+
+// `origin` é o deslocamento da miniatura clicada até o centro da tela; a foto cresce a partir dela.
+const photoVariants = {
+  enter: ({ direction, origin }) => (direction === 0 && origin
+    ? { opacity: 0, scale: 0.35, x: origin.x, y: origin.y }
+    : { opacity: 0, scale: 0.96, x: direction * 80, y: 0 }),
+  center: { opacity: 1, scale: 1, x: 0, y: 0 },
+  exit: ({ direction }) => ({ opacity: 0, scale: 0.96, x: -direction * 80 }),
+  closing: ({ origin }) => (origin
+    ? { opacity: 0, scale: 0.35, x: origin.x, y: origin.y }
+    : { opacity: 0, scale: 0.95, x: 0, y: 0 }),
+};
 
 function createSessionSeed() {
   if (typeof globalThis.crypto?.randomUUID === 'function') {
@@ -73,13 +88,18 @@ export default function PhotoAlbum() {
   const [error, setError] = useState('');
   const [loadMoreError, setLoadMoreError] = useState('');
   const [openPhotoId, setOpenPhotoId] = useState(null);
+  const [isClosing, setIsClosing] = useState(false);
+  const [direction, setDirection] = useState(0);
+  const [entryId, setEntryId] = useState(null);
+  const [origin, setOrigin] = useState(null);
 
   const requestEpochRef = useRef(0);
   const loadingMoreRef = useRef(false);
   const photosRef = useRef(photos);
   const modalRef = useRef(null);
   const openerRef = useRef(null);
-  const touchStartRef = useRef(null);
+  const closeTimerRef = useRef(0);
+  const draggedRef = useRef(false);
   const openIndex = photos.findIndex((photo) => photo.id === openPhotoId);
   const openPhoto = openIndex >= 0 ? photos[openIndex] : null;
   const isLightboxOpen = Boolean(openPhoto);
@@ -156,19 +176,42 @@ export default function PhotoAlbum() {
     }
   }, [hasMore, seed]);
 
-  const closeLightbox = useCallback(() => setOpenPhotoId(null), []);
+  const closeLightbox = useCallback(() => {
+    if (closeTimerRef.current) return;
 
-  const moveLightbox = useCallback((direction) => {
+    setIsClosing(true);
+    closeTimerRef.current = window.setTimeout(() => {
+      closeTimerRef.current = 0;
+      setOpenPhotoId(null);
+      setIsClosing(false);
+    }, CLOSE_MS);
+  }, []);
+
+  useEffect(() => () => window.clearTimeout(closeTimerRef.current), []);
+
+  const moveLightbox = useCallback((step) => {
     const currentPhotos = photosRef.current;
-    if (currentPhotos.length < 2) return;
+    if (currentPhotos.length < 2 || closeTimerRef.current) return;
 
+    setDirection(step);
+    setEntryId(null);
     setOpenPhotoId((currentId) => {
       const currentIndex = currentPhotos.findIndex((photo) => photo.id === currentId);
       if (currentIndex < 0) return currentId;
-      const nextIndex = (currentIndex + direction + currentPhotos.length) % currentPhotos.length;
+      const nextIndex = (currentIndex + step + currentPhotos.length) % currentPhotos.length;
       return currentPhotos[nextIndex].id;
     });
   }, []);
+
+  useEffect(() => {
+    if (!isLightboxOpen) return;
+
+    // Pré-carrega as fotos vizinhas para a troca não mostrar um vazio.
+    [-1, 1].forEach((step) => {
+      const neighbor = photos[(openIndex + step + photos.length) % photos.length];
+      if (neighbor?.url) new Image().src = neighbor.url;
+    });
+  }, [isLightboxOpen, openIndex, photos]);
 
   useEffect(() => {
     if (openPhotoId && openIndex < 0) setOpenPhotoId(null);
@@ -214,28 +257,27 @@ export default function PhotoAlbum() {
     };
   }, [closeLightbox, isLightboxOpen, moveLightbox]);
 
-  const handleTouchStart = (event) => {
-    const touch = event.touches[0];
-    touchStartRef.current = event.touches.length === 1 ? { x: touch.clientX, y: touch.clientY } : null;
-  };
+  const handleDragEnd = (_event, info) => {
+    window.setTimeout(() => { draggedRef.current = false; }, 50);
 
-  const handleTouchEnd = (event) => {
-    const start = touchStartRef.current;
-    touchStartRef.current = null;
-    if (!start) return;
-
-    const touch = event.changedTouches[0];
-    const deltaX = touch.clientX - start.x;
-    const deltaY = touch.clientY - start.y;
-    if (Math.abs(deltaX) < SWIPE_THRESHOLD || Math.abs(deltaX) < Math.abs(deltaY) * 1.5) return;
-
-    moveLightbox(deltaX < 0 ? 1 : -1);
+    const { x } = info.offset;
+    if (Math.abs(x) < SWIPE_THRESHOLD && Math.abs(info.velocity.x) < SWIPE_VELOCITY) return;
+    moveLightbox(x < 0 ? 1 : -1);
   };
 
   const openLightbox = (event, photoId) => {
+    const rect = event.currentTarget.getBoundingClientRect();
     openerRef.current = event.currentTarget;
+    setOrigin({
+      x: rect.left + rect.width / 2 - window.innerWidth / 2,
+      y: rect.top + rect.height / 2 - window.innerHeight / 2,
+    });
+    setDirection(0);
+    setEntryId(photoId);
     setOpenPhotoId(photoId);
   };
+
+  const photoMotion = { direction, origin: openPhotoId === entryId ? origin : null };
 
   const orderDescription = order === 'random' ? 'Ordem aleatória nesta visita' : '';
 
@@ -346,19 +388,19 @@ export default function PhotoAlbum() {
       </section>
 
       {openPhoto && typeof document !== 'undefined' && createPortal(
-        <div
+        <motion.div
           ref={modalRef}
           role="dialog"
           aria-modal="true"
           aria-label="Visualização de foto do álbum"
           tabIndex={-1}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isClosing ? 0 : 1 }}
+          transition={{ duration: CLOSE_MS / 1000 }}
           onClick={(event) => {
             if (event.target === event.currentTarget) closeLightbox();
           }}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={() => { touchStartRef.current = null; }}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/95 p-3 sm:p-6 focus:outline-none touch-pan-y"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/95 p-3 sm:p-6 focus:outline-none"
         >
           <button
             type="button"
@@ -390,21 +432,39 @@ export default function PhotoAlbum() {
             </>
           )}
 
-          <div
+          <motion.div
+            drag={photos.length > 1 ? 'x' : false}
+            dragSnapToOrigin
+            dragElastic={0.25}
+            dragMomentum={false}
+            onDragStart={() => { draggedRef.current = true; }}
+            onDragEnd={handleDragEnd}
             onClick={(event) => {
-              if (event.target === event.currentTarget) closeLightbox();
+              if (event.target === event.currentTarget && !draggedRef.current) closeLightbox();
             }}
             className="flex h-full w-full flex-col items-center justify-center gap-3 px-10 sm:px-16"
           >
-            <img
-              src={openPhoto.url}
-              alt="Recordação do chá de bebê da Maitê"
-              className="max-h-[calc(100vh-6rem)] max-w-full object-contain"
-              decoding="async"
-            />
+            <div className="relative flex items-center justify-center">
+              <AnimatePresence initial custom={photoMotion} mode="popLayout">
+                <motion.img
+                  key={openPhoto.id}
+                  src={openPhoto.url}
+                  alt="Recordação do chá de bebê da Maitê"
+                  custom={photoMotion}
+                  variants={photoVariants}
+                  initial="enter"
+                  animate={isClosing ? 'closing' : 'center'}
+                  exit="exit"
+                  transition={{ duration: CLOSE_MS / 1000 + 0.06, ease: PHOTO_EASE }}
+                  draggable={false}
+                  className="max-h-[calc(100vh-6rem)] max-w-full select-none object-contain"
+                  decoding="async"
+                />
+              </AnimatePresence>
+            </div>
             <p className="text-xs text-white/75" aria-live="polite">{openIndex + 1} de {photos.length}</p>
-          </div>
-        </div>,
+          </motion.div>
+        </motion.div>,
         document.body,
       )}
     </>
