@@ -15,6 +15,7 @@ import { albumService } from '../services/albumService.js';
 import CloudHeadingReveal from './ui/CloudHeadingReveal';
 
 const PAGE_SIZE = 24;
+const SWIPE_THRESHOLD = 50;
 
 function createSessionSeed() {
   if (typeof globalThis.crypto?.randomUUID === 'function') {
@@ -78,6 +79,7 @@ export default function PhotoAlbum() {
   const photosRef = useRef(photos);
   const modalRef = useRef(null);
   const openerRef = useRef(null);
+  const touchStartRef = useRef(null);
   const openIndex = photos.findIndex((photo) => photo.id === openPhotoId);
   const openPhoto = openIndex >= 0 ? photos[openIndex] : null;
   const isLightboxOpen = Boolean(openPhoto);
@@ -212,6 +214,24 @@ export default function PhotoAlbum() {
     };
   }, [closeLightbox, isLightboxOpen, moveLightbox]);
 
+  const handleTouchStart = (event) => {
+    const touch = event.touches[0];
+    touchStartRef.current = event.touches.length === 1 ? { x: touch.clientX, y: touch.clientY } : null;
+  };
+
+  const handleTouchEnd = (event) => {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!start) return;
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    if (Math.abs(deltaX) < SWIPE_THRESHOLD || Math.abs(deltaX) < Math.abs(deltaY) * 1.5) return;
+
+    moveLightbox(deltaX < 0 ? 1 : -1);
+  };
+
   const openLightbox = (event, photoId) => {
     openerRef.current = event.currentTarget;
     setOpenPhotoId(photoId);
@@ -335,7 +355,10 @@ export default function PhotoAlbum() {
           onClick={(event) => {
             if (event.target === event.currentTarget) closeLightbox();
           }}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/95 p-3 sm:p-6 focus:outline-none"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={() => { touchStartRef.current = null; }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/95 p-3 sm:p-6 focus:outline-none touch-pan-y"
         >
           <button
             type="button"
