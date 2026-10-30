@@ -390,7 +390,12 @@ export default function PhotoAlbum() {
             </>
           )}
 
-          <div className="flex h-full w-full flex-col items-center justify-center gap-3 px-10 sm:px-16">
+          <div
+            onClick={(event) => {
+              if (event.target === event.currentTarget) closeLightbox();
+            }}
+            className="flex h-full w-full flex-col items-center justify-center gap-3 px-10 sm:px-16"
+          >
             <img
               src={openPhoto.url}
               alt="Recordação do chá de bebê da Maitê"
