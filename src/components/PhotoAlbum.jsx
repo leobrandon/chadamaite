@@ -54,7 +54,7 @@ function AlbumSkeleton() {
       {Array.from({ length: 8 }, (_, index) => (
         <div
           key={index}
-          className={`aspect-[4/3] rounded-2xl bg-blush-100/80 dark:bg-slate-800 animate-pulse ${index % 3 === 1 ? 'sm:aspect-square' : ''}`}
+          className="aspect-[4/3] rounded-2xl bg-blush-100/80 dark:bg-slate-800 animate-pulse"
         />
       ))}
     </div>
@@ -277,7 +277,7 @@ export default function PhotoAlbum() {
                     viewport={{ once: true, amount: 0.1 }}
                     transition={{ duration: 0.3, delay: Math.min(index % 4, 3) * 0.04 }}
                     onClick={(event) => openLightbox(event, photo.id)}
-                    className={`group relative aspect-[4/3] overflow-hidden rounded-2xl bg-blush-50 dark:bg-slate-800 shadow-sm ring-1 ring-blush-100 dark:ring-slate-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-blush-400 ${index % 5 === 2 ? 'sm:aspect-square' : ''}`}
+                    className={`group relative aspect-[4/3] overflow-hidden rounded-2xl bg-blush-50 dark:bg-slate-800 shadow-sm ring-1 ring-blush-100 dark:ring-slate-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-blush-400`}
                     aria-label={`Ampliar foto ${index + 1} do álbum`}
                   >
                     <img
