@@ -54,5 +54,3 @@ O Netlify permite publicar o site apenas arrastando a pasta do projeto construí
 > *Para ver a lista de presentes e confirmar sua presença, acesse nosso site especial:*  
 > *👉 [SEU_LINK_AQUI]*  
 > *Esperamos vocês com muito amor! — Leonardo & Isabella 💖"*
-
-<!-- teste de deploy automatico Vercel: 2026-11-16 -->
